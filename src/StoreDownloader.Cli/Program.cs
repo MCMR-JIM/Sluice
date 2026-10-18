@@ -20,8 +20,7 @@ internal static class Program
 
         if (command is "-h" or "--help" or "help" or "/?")
         {
-            HelpText.Print(Console.Out);
-            return 0;
+            return ShowHelp(rest);
         }
 
         if (command is "-v" or "--version" or "version")
@@ -32,8 +31,7 @@ internal static class Program
 
         if (rest.Contains("-h", StringComparer.Ordinal) || rest.Contains("--help", StringComparer.Ordinal))
         {
-            HelpText.Print(Console.Out);
-            return 0;
+            return ShowHelp([command]);
         }
 
         try
@@ -65,6 +63,25 @@ internal static class Program
             Console.Error.WriteLine($"error: network failure ({ex.Message})");
             return 1;
         }
+    }
+
+    private static int ShowHelp(string[] arguments)
+    {
+        if (arguments.Length == 0)
+        {
+            HelpText.Print(Console.Out);
+            return 0;
+        }
+
+        var command = CommandCatalog.Find(arguments[0]);
+        if (command is null)
+        {
+            HelpText.PrintUnknownCommand(arguments[0], Console.Error);
+            return 2;
+        }
+
+        HelpText.PrintCommand(command, Console.Out);
+        return 0;
     }
 
     private static int UnknownCommand(string command)
