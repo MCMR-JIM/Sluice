@@ -24,28 +24,21 @@ the dependency packages its manifest actually declares, installs the frameworks 
 
 ## Download
 
-Every tagged release ships self-contained single-file binaries, no .NET runtime needed:
+This is a Windows tool: packages are deployed with `Add-AppxPackage` through PowerShell, so every
+release ships Windows binaries only. They are self-contained single files, no .NET runtime needed.
 
-| Platform | Asset |
+| Machine | Asset |
 | --- | --- |
-| Windows x64, x86, arm64 | `storedl-<version>-windows-<arch>.exe` |
-| Linux x64, arm64 | `storedl-<version>-linux-<arch>` |
-| macOS x64, arm64 | `storedl-<version>-macos-<arch>` |
+| Windows x64 | `storedl-<version>-windows-x64.exe` |
+| Windows x86 | `storedl-<version>-windows-x86.exe` |
+| Windows arm64 | `storedl-<version>-windows-arm64.exe` |
 
-Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/StoreDownloader/releases/latest).
-Verify it against the published `SHA256SUMS.txt` first:
+Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/StoreDownloader/releases/latest),
+verify it against the published `SHA256SUMS.txt`, and run it:
 
-```console
-sha256sum -c SHA256SUMS.txt --ignore-missing
-chmod +x storedl-0.2.0-linux-x64
-./storedl-0.2.0-linux-x64 --version
-```
-
-Installing packages needs Windows. On Linux and macOS the same binary resolves, downloads,
-analyses and plans, which is how you build an offline package cache:
-
-```console
-storedl download <store-link> --all-arch --dir ./StoreCache
+```powershell
+Get-FileHash .\storedl-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
+.\storedl-0.2.0-windows-x64.exe doctor
 ```
 
 Prefer to build it? See [build and test](#build-and-test).
