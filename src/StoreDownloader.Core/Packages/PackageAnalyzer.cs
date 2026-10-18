@@ -81,6 +81,35 @@ public static class PackageAnalyzer
         }
     }
 
+    /// <summary>
+    /// Reads the manifest of one child package inside a bundle, without extracting the bundle.
+    /// </summary>
+    /// <param name="bundlePath">Path to the bundle.</param>
+    /// <param name="childFileName">Entry name of the child package inside the bundle.</param>
+    /// <returns>Analysis of the child package; <see cref="PackageAnalysis.FilePath"/> carries the bundle path.</returns>
+    public static PackageAnalysis AnalyzeChild(string bundlePath, string childFileName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(bundlePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(childFileName);
+
+        using var stream = File.OpenRead(bundlePath);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+        var entry = FindEntry(archive, childFileName)
+            ?? throw new StoreDownloaderException($"Bundle '{Path.GetFileName(bundlePath)}' has no entry '{childFileName}'.");
+
+        using var entryStream = entry.Open();
+        using var buffer = new MemoryStream();
+        entryStream.CopyTo(buffer);
+        buffer.Position = 0;
+
+        using var childArchive = new ZipArchive(buffer, ZipArchiveMode.Read);
+        var manifestEntry = FindEntry(childArchive, AppManifestEntryName)
+            ?? throw new StoreDownloaderException($"'{childFileName}' inside '{Path.GetFileName(bundlePath)}' has no {AppManifestEntryName}.");
+
+        using var manifestStream = manifestEntry.Open();
+        return ParseAppManifest(bundlePath, manifestStream);
+    }
+
     /// <summary>Reads one entry out of a package as text.</summary>
     /// <param name="filePath">Path to a package file.</param>
     /// <param name="entryName">Entry name inside the container.</param>
