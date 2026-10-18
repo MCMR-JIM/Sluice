@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\StoreDownloader.Core\StoreDownloader.Core.csproj" />
+    <ProjectReference Include="..\..\src\StoreDownloader.Cli\StoreDownloader.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>
