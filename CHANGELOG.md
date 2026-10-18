@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.1] - 2026-10-18
 
 ### Added
 
@@ -18,6 +18,14 @@ All notable changes to this project are documented here. The format follows
   where they were actually configured, because the registry returns DWORDs and the probe only
   understood JSON booleans. A disabled sideloading policy therefore produced no warning at all.
 * The install-test workflow no longer treats doctor's warning exit code as a step failure.
+
+### Verified
+
+* A real sideload ran on a disposable hosted Windows runner (Windows Server 2025, build 26100)
+  with the `install-test` workflow: the three framework packages the app was missing were
+  installed first, then the application bundle, the registration was read back as `status Ok`,
+  the executable path was confirmed in `C:\Program Files\WindowsApps`, and the package was
+  removed again. This is the case App Installer fails on with `0x80073CF3`.
 
 ## [0.2.0] - 2026-10-18
 
