@@ -283,9 +283,41 @@
     </Style>
 
     <!--
+        Scrollbars the way Windows 11 draws them: the bar floats on top of the content instead of
+        taking a column for itself, so a pane that scrolls does not lose width to it. Only panes that
+        opt in use this; a TextBox keeps the stock viewer, whose content host has its own rules.
+    -->
+    <Style x:Key="OverlayScrollViewer" TargetType="ScrollViewer">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollViewer">
+                    <Grid Background="Transparent">
+                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                Margin="{TemplateBinding Padding}"
+                                                CanContentScroll="{TemplateBinding CanContentScroll}" />
+                        <ScrollBar x:Name="PART_VerticalScrollBar" Orientation="Vertical"
+                                   HorizontalAlignment="Right" Margin="0,2,0,2"
+                                   Maximum="{TemplateBinding ScrollableHeight}"
+                                   ViewportSize="{TemplateBinding ViewportHeight}"
+                                   Value="{Binding VerticalOffset, Mode=OneWay,
+                                                   RelativeSource={RelativeSource TemplatedParent}}"
+                                   Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}" />
+                        <ScrollBar x:Name="PART_HorizontalScrollBar" Orientation="Horizontal"
+                                   VerticalAlignment="Bottom" Margin="2,0,0,0"
+                                   Maximum="{TemplateBinding ScrollableWidth}"
+                                   ViewportSize="{TemplateBinding ViewportWidth}"
+                                   Value="{Binding HorizontalOffset, Mode=OneWay,
+                                                   RelativeSource={RelativeSource TemplatedParent}}"
+                                   Visibility="{TemplateBinding ComputedHorizontalScrollBarVisibility}" />
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!--
         A Task Manager style scrollbar: no track, no arrows, a thin rounded grip that rests almost
-        invisible and comes up when the pointer reaches the gutter. The gutter itself stays wide
-        enough to grab, the grip inside it is what is drawn.
+        invisible and comes up when the pointer reaches the gutter.
     -->
     <Style x:Key="ThinScrollBar" TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent" />
@@ -297,7 +329,7 @@
                         <Track x:Name="PART_Track" Orientation="{TemplateBinding Orientation}"
                                IsDirectionReversed="True">
                             <Track.Thumb>
-                                <Thumb x:Name="Grip" Opacity="0.3" Margin="4,2">
+                                <Thumb x:Name="Grip" Opacity="0.25" Margin="3,2">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
                                             <Border Background="#B3FFFFFF" CornerRadius="2" />
@@ -318,7 +350,7 @@
                     <ControlTemplate.Triggers>
                         <!-- Horizontal bars draw the grip the other way round. -->
                         <Trigger Property="Orientation" Value="Horizontal">
-                            <Setter TargetName="Grip" Property="Margin" Value="2,4" />
+                            <Setter TargetName="Grip" Property="Margin" Value="2,3" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Trigger.EnterActions>
@@ -326,7 +358,7 @@
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="Grip"
                                                          Storyboard.TargetProperty="Opacity"
-                                                         To="0.85" Duration="0:0:0.12" />
+                                                         To="0.8" Duration="0:0:0.12" />
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.EnterActions>
@@ -335,7 +367,7 @@
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetName="Grip"
                                                          Storyboard.TargetProperty="Opacity"
-                                                         To="0.3" Duration="0:0:0.35" />
+                                                         To="0.25" Duration="0:0:0.35" />
                                     </Storyboard>
                                 </BeginStoryboard>
                             </Trigger.ExitActions>
@@ -345,11 +377,18 @@
             </Setter.Value>
         </Setter>
         <Style.Triggers>
+            <!-- The ScrollViewer template gives the bar a local width of the system scrollbar size,
+                 which beats a style setter; Min/MaxWidth is applied after that, so it is what keeps
+                 the gutter narrow. -->
             <Trigger Property="Orientation" Value="Vertical">
-                <Setter Property="Width" Value="12" />
+                <Setter Property="Width" Value="9" />
+                <Setter Property="MinWidth" Value="9" />
+                <Setter Property="MaxWidth" Value="9" />
             </Trigger>
             <Trigger Property="Orientation" Value="Horizontal">
-                <Setter Property="Height" Value="12" />
+                <Setter Property="Height" Value="9" />
+                <Setter Property="MinHeight" Value="9" />
+                <Setter Property="MaxHeight" Value="9" />
             </Trigger>
         </Style.Triggers>
     </Style>

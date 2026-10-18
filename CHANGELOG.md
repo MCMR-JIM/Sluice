@@ -10,6 +10,8 @@ All notable changes to this project are documented here. The format follows
 
 * Scrollbars look like the ones in Task Manager: no track, no arrows, a thin rounded grip that rests
   almost invisible and comes up when the pointer reaches the gutter.
+* A pane that scrolls no longer loses width to its scrollbar: the bar floats over the content instead
+  of taking a column of its own, so the text and the buttons keep the full pane width.
 
 ## [0.4.1] - 2026-10-19
 

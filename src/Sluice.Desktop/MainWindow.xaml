@@ -84,9 +84,12 @@
 
             <!-- source + options: one pane, hairline groups, no card chrome -->
             <Border CornerRadius="8" Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Padding="12,10"
+                    BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Padding="12,10,0,10"
                     Margin="0,2,0,2">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <!-- The bar hangs on the pane's right edge; the padding here is what keeps the text out
+                 from under it, so the pane loses nothing to a scrollbar column. -->
+            <ScrollViewer Style="{StaticResource OverlayScrollViewer}" Padding="0,0,10,0"
+                          VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Text="{Binding Loc[Source]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
                     <Grid>
@@ -270,7 +273,7 @@
                                 </Grid>
                             </Border>
 
-                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer Grid.Row="2" Style="{StaticResource OverlayScrollViewer}" VerticalScrollBarVisibility="Auto">
                                 <ItemsControl ItemsSource="{Binding Packages}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -357,7 +360,7 @@
                                            Text="{Binding Loc[PlanEmpty]}"
                                            Visibility="{Binding PlanRows.Count, Converter={StaticResource ZeroToVisibleConverter}}" />
 
-                                <ScrollViewer MaxHeight="104" VerticalScrollBarVisibility="Auto">
+                                <ScrollViewer Style="{StaticResource OverlayScrollViewer}" MaxHeight="104" VerticalScrollBarVisibility="Auto">
                                     <ItemsControl ItemsSource="{Binding PlanRows}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -406,7 +409,7 @@
                 <Border Grid.Row="2" CornerRadius="6" Background="{StaticResource SurfaceBrush}"
                         BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
                         Visibility="{Binding ShowLog, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ScrollViewer x:Name="LogScroll" VerticalScrollBarVisibility="Auto" Margin="0,6">
+                    <ScrollViewer x:Name="LogScroll" Style="{StaticResource OverlayScrollViewer}" VerticalScrollBarVisibility="Auto" Margin="0,6">
                         <ItemsControl ItemsSource="{Binding Log}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
