@@ -41,7 +41,24 @@ Get-FileHash .\storedl-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with 
 .\storedl-0.2.0-windows-x64.exe doctor
 ```
 
-Prefer to build it? See [build and test](#build-and-test).
+Both faces ship in the same archive: `storedl.exe` on the command line and `storedl-ui.exe`
+for the window below. Prefer to build it? See [build and test](#build-and-test).
+
+## Desktop window
+
+`storedl-ui.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
+watch the plan resolve, download and install step by step. It is a WPF window with the Windows 11
+Mica backdrop, a dark title bar and tight, Task Manager style density.
+
+![storedl window](docs/ui-window.png)
+
+What the window gives you that the command line cannot:
+
+* the resolved package list as a table (role, file, architecture, size, whether a URL was issued)
+* the install plan as ordered steps, each one turning green or red while it runs
+* live download progress and a colour-coded activity log with a copy button
+* inline @doctor` chips in the title bar (sideloading, Developer Mode) and an HRESULT lookup
+* a cancel button that actually cancels the running stage
 
 ## Quick start
 

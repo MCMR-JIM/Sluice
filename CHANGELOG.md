@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* A desktop window, `storedl-ui.exe`: the same resolve, download, plan, install and verify pipeline
+  driven from a WPF interface with the Windows 11 Mica backdrop, a dark title bar, dense
+  Task Manager style layout, a live package table, per step install progress, a colour coded
+  activity log, `doctor` chips and an HRESULT lookup.
+* `AppxInstaller` reports every finished install step through an `IProgress<InstallStepResult>`,
+  which is what lets a user interface show the plan turning green step by step.
+* Release archives now carry both binaries; `ci` cross publishes the window for every Windows
+  architecture as well.
+
 ## [0.2.1] - 2026-10-18
 
 ### Added
