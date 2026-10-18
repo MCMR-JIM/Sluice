@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:Sluice.Desktop.Converters"
         Title="Sluice"
-        Icon="Assets/app.ico"
         Height="760" Width="1180" MinHeight="560" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"

@@ -2,6 +2,7 @@ using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Sluice.Desktop.Interop;
 using Sluice.Desktop.ViewModels;
 
@@ -14,6 +15,11 @@ public partial class MainWindow : Window, IDisposable
     public MainWindow()
     {
         InitializeComponent();
+
+        // The title bar icon comes from the embedded mark; the exe icon is set at build time by
+        // ApplicationIcon, and both are generated from assets/logo.png.
+        Icon = new BitmapImage(new Uri("pack://application:,,,/Assets/app.png", UriKind.Absolute));
+
         SourceInitialized += OnSourceInitialized;
 
         _viewModel = new MainViewModel();

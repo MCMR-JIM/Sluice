@@ -33,24 +33,6 @@ Replacing the artwork means regenerating those three files from the new PNG; the
 up through `<ApplicationIcon>Assets\app.ico</ApplicationIcon>`, `Icon="Assets/app.ico"` on the window
 and `<Image Source="Assets/app.png">` in the header.
 
-## Prompt for generating the icon
-
-Hand this to any image model; it asks for a flat vector mark rather than a rendered illustration,
-which is what survives being shrunk to 16 pixels in a taskbar.
-
-> Design a flat vector app icon for a Windows developer tool called Sluice. Subject: a
-> shipping parcel seen in three-quarter view, its lid open, with a downward arrow sliding into it;
-> the arrow and the parcel share one continuous stroke so the shape reads at 16 px. Style: bold
-> geometric line art, uniform 2.5 px strokes, rounded joints, no gradients, no texture, no drop
-> shadow, no text. Composition: centred, optically balanced, 14% padding inside a 1024 by 1024
-> canvas, flat single-tone mark on a transparent background. Colour: mark in near black
-> `#04121A` for light mode and in Windows accent blue `#60CDFF` for dark mode; provide both
-> variants. Deliver 1024 by 1024 PNG, transparent, plus the same art inside a rounded square
-> (`22%` corner radius) filled with `#1F1F1F` for contexts that need a tile.
-
-If you would rather iterate on something more distinctive, ask for an alternative brief: *"a
-staircase of three stacked parcels, the top one dissolving into a pixel grid, same constraints"*.
-
 ## Naming rules
 
 * Product name in prose and UI: `Sluice`.
