@@ -22,19 +22,31 @@ public sealed record InstalledPackage(
         System.Version.TryParse(Version, out var parsed) ? parsed : new System.Version(0, 0);
 }
 
+/// <summary>What the planner needs to know about already installed packages.</summary>
+public interface IInstalledPackageInventory
+{
+    /// <summary>Lists installed framework packages.</summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<IReadOnlyList<InstalledPackage>> GetFrameworksAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Finds the highest installed version of a package name.</summary>
+    /// <param name="name">Package name.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task<InstalledPackage?> FindHighestAsync(string name, CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Reads the machine's installed package inventory through <c>Get-AppxPackage</c>, which is the
 /// only reliable way to know whether a dependency actually needs installing.
 /// </summary>
-public sealed class AppxInventory(PowerShellHost shell)
+public sealed class AppxInventory(PowerShellHost shell) : IInstalledPackageInventory
 {
     private const string SelectClause =
         "@{n='Name';e={$_.Name}},@{n='Version';e={$_.Version.ToString()}},"
         + "@{n='Architecture';e={$_.Architecture.ToString()}},@{n='Status';e={$_.Status.ToString()}},"
         + "@{n='PackageFullName';e={$_.PackageFullName}},@{n='IsFramework';e={$_.IsFramework}}";
 
-    /// <summary>Lists installed framework packages, which is what dependency checks need.</summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <inheritdoc />
     public Task<IReadOnlyList<InstalledPackage>> GetFrameworksAsync(CancellationToken cancellationToken = default) =>
         QueryAsync($"Get-AppxPackage -PackageTypeFilter Framework | Select-Object {SelectClause}", cancellationToken);
 
@@ -53,9 +65,7 @@ public sealed class AppxInventory(PowerShellHost shell)
         return QueryAsync($"Get-AppxPackage -Name '{escaped}*' | Select-Object {SelectClause}", cancellationToken);
     }
 
-    /// <summary>Finds the highest installed version of a package name, or <c>null</c>.</summary>
-    /// <param name="name">Package name.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <inheritdoc />
     public async Task<InstalledPackage?> FindHighestAsync(string name, CancellationToken cancellationToken = default)
     {
         var packages = await GetByNameAsync(name, cancellationToken).ConfigureAwait(false);
