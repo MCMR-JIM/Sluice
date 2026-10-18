@@ -1,12 +1,12 @@
 # Troubleshooting
 
 Most sideload failures come down to four things: the policy that allows sideloading, Developer
-Mode, the deployment services, and disk space. `StoreDownloader doctor` checks all four and tells you what
+Mode, the deployment services, and disk space. `Sluice doctor` checks all four and tells you what
 to change.
 
 ```console
-StoreDownloader doctor
-StoreDownloader explain 0x80073CF3
+Sluice doctor
+Sluice explain 0x80073CF3
 ```
 
 ## Contents
@@ -18,7 +18,7 @@ StoreDownloader explain 0x80073CF3
 
 ## Error codes
 
-Deployment failures report an HRESULT. `StoreDownloader explain <code>` prints the entry below, including
+Deployment failures report an HRESULT. `Sluice explain <code>` prints the entry below, including
 whether the tool retries automatically.
 
 | Code | Name | Meaning | Automatic remedy | Manual fix |
@@ -43,7 +43,7 @@ whether the tool retries automatically.
 
 ### Symptom: App Installer opens and skips the dependencies
 
-That is App Installer's behaviour: it deploys the single file you clicked. Use `StoreDownloader install`,
+That is App Installer's behaviour: it deploys the single file you clicked. Use `Sluice install`,
 or `Add-AppxPackage -Path ... -DependencyPath ...` by hand, so the frameworks go in first. This is
 the reason the tool exists.
 
@@ -53,12 +53,12 @@ Usual causes: a child package of a bundle was registered instead of the bundle, 
 is missing, or loose files were registered without their assets.
 
 ```console
-StoreDownloader analyze .\downloads
-StoreDownloader plan .\downloads --arch x64
-StoreDownloader install --dir .\downloads --force --yes
+Sluice analyze .\downloads
+Sluice plan .\downloads --arch x64
+Sluice install --dir .\downloads --force --yes
 ```
 
-`StoreDownloader analyze` shows the identity and dependencies of each file, `StoreDownloader plan` shows what the
+`Sluice analyze` shows the identity and dependencies of each file, `Sluice plan` shows what the
 tool thinks should be installed, and the install then verifies the registration.
 
 ### Symptom: 0x80073CF3 even though the dependencies are right there
@@ -67,13 +67,13 @@ Two common causes:
 
 1. **Wrong architecture.** An x86 framework cannot satisfy an x64 manifest, and the reverse. Let the
    tool pick with `--arch`, or use `--all-arch` for an archive.
-2. **Installed version too old.** The manifest requires a minimum version. `StoreDownloader plan` compares
+2. **Installed version too old.** The manifest requires a minimum version. `Sluice plan` compares
    the installed version and decides whether to install or skip; if it says "already installed", the
    requirement is satisfied by a newer version and the error comes from somewhere else.
 
 ### Symptom: the generated link stopped working
 
-CDN URLs are signed and expire within hours. Re-run `StoreDownloader download` (resolution is cheap), or
+CDN URLs are signed and expire within hours. Re-run `Sluice download` (resolution is cheap), or
 keep the files from the first run and install offline with `--skip-download`.
 
 ### Symptom: "encrypted package", or the app demands a licence
@@ -94,7 +94,7 @@ Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock 
 Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock -Name AllowDevelopmentWithoutDevLicense -Value 1
 ```
 
-Reboot afterwards, then re-run `StoreDownloader doctor`.
+Reboot afterwards, then re-run `Sluice doctor`.
 
 ### Symptom: nothing is registered after a successful install
 
@@ -107,12 +107,12 @@ AppXDeployment-Server holds the activity id printed in the error detail.
 
 | Command | What it answers |
 | --- | --- |
-| `StoreDownloader doctor` | Can this machine install sideloaded packages at all? |
-| `StoreDownloader doctor --json` | The same, for scripting |
-| `StoreDownloader resolve <url>` | What does the Store actually offer for this id? |
-| `StoreDownloader analyze <file>` | What identity, architecture and dependencies does this file carry? |
-| `StoreDownloader plan <dir>` | What would be installed, in what order, and what is blocking it? |
-| `StoreDownloader explain <code>` | What does this HRESULT mean and what fixes it? |
+| `Sluice doctor` | Can this machine install sideloaded packages at all? |
+| `Sluice doctor --json` | The same, for scripting |
+| `Sluice resolve <url>` | What does the Store actually offer for this id? |
+| `Sluice analyze <file>` | What identity, architecture and dependencies does this file carry? |
+| `Sluice plan <dir>` | What would be installed, in what order, and what is blocking it? |
+| `Sluice explain <code>` | What does this HRESULT mean and what fixes it? |
 
 PowerShell equivalents, when you want to see the raw state:
 
@@ -125,6 +125,6 @@ Get-Service AppXSvc, StateRepository, ClipSVC
 
 ## Reporting a problem
 
-`StoreDownloader resolve <url> --json` and `StoreDownloader plan <dir> --json` capture what the tool saw: product,
+`Sluice resolve <url> --json` and `Sluice plan <dir> --json` capture what the tool saw: product,
 category id, package identities, architectures, URLs and the plan. Neither contains personal data,
 which makes them safe to attach to an issue.

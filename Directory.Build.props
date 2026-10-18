@@ -14,8 +14,8 @@
     <Version>0.3.0</Version>
     <FileVersion>0.3.0.0</FileVersion>
     <AssemblyVersion>0.3.0.0</AssemblyVersion>
-    <Product>StoreDownloader</Product>
-    <Authors>StoreDownloader contributors</Authors>
+    <Product>Sluice</Product>
+    <Authors>Sluice contributors</Authors>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

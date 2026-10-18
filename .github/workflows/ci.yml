@@ -52,7 +52,7 @@ jobs:
       # EnableWindowsTargeting lets a Linux runner cross compile the WPF project.
       - name: Publish the command line tool
         run: >
-          dotnet publish src/StoreDownloader.Cli
+          dotnet publish src/Sluice.Cli
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -64,7 +64,7 @@ jobs:
 
       - name: Publish the desktop window
         run: >
-          dotnet publish src/StoreDownloader.Desktop
+          dotnet publish src/Sluice.Desktop
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -79,7 +79,7 @@ jobs:
       # is that it exists, starts with a PE header and carries a plausible amount of data.
       - name: Check both artifacts
         run: |
-          for BIN in "dist/${{ matrix.rid }}/StoreDownloader.exe" "dist/${{ matrix.rid }}-ui/StoreDownloader.UI.exe"; do
+          for BIN in "dist/${{ matrix.rid }}/Sluice.exe" "dist/${{ matrix.rid }}-ui/Sluice.UI.exe"; do
             test -f "${BIN}"
             SIZE=$(stat -c%s "${BIN}")
             echo "${BIN}: ${SIZE} bytes"

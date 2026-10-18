@@ -13,15 +13,15 @@ Five layers, each usable on its own, so the tool can be scripted in pieces.
 
 | Layer | Namespace | Responsibility |
 | --- | --- | --- |
-| Store | `StoreDownloader.Store` | Parse input, resolve product metadata and `WuCategoryId` |
-| Delivery | `StoreDownloader.Fe3` | Expand a category into packages with signed URLs |
-| Packages | `StoreDownloader.Packages` | Read manifests, choose architecture and resources |
-| Download | `StoreDownloader.Download` | Get bytes on disk, verify them, record a manifest |
-| Install | `StoreDownloader.Install` | Plan, deploy, escalate remedies, verify registration |
-| Windows | `StoreDownloader.Windows` | PowerShell host, installed inventory, environment probe |
-| Diagnostics | `StoreDownloader.Diagnostics` | The deployment HRESULT catalogue |
+| Store | `Sluice.Store` | Parse input, resolve product metadata and `WuCategoryId` |
+| Delivery | `Sluice.Fe3` | Expand a category into packages with signed URLs |
+| Packages | `Sluice.Packages` | Read manifests, choose architecture and resources |
+| Download | `Sluice.Download` | Get bytes on disk, verify them, record a manifest |
+| Install | `Sluice.Install` | Plan, deploy, escalate remedies, verify registration |
+| Windows | `Sluice.Windows` | PowerShell host, installed inventory, environment probe |
+| Diagnostics | `Sluice.Diagnostics` | The deployment HRESULT catalogue |
 
-`StoreDownloader.Cli` only wires them together: it contains command parsing, table rendering and
+`Sluice.Cli` only wires them together: it contains command parsing, table rendering and
 JSON output, no protocol knowledge.
 
 ## Design decisions

@@ -1,45 +1,44 @@
 # Brand
 
-The product is **StoreDownloader**. The command line tool is `StoreDownloader.exe`, the window is
-`StoreDownloader.UI.exe`. There is no short form: not in the window title, not in the docs, not in
+The product is **Sluice**. The command line tool is `Sluice.exe`, the window is
+`Sluice.UI.exe`. There is no short form: not in the window title, not in the docs, not in
 the release assets.
 
 ## Where the identity lives
 
 | Surface | Value |
 | --- | --- |
-| Window title | `StoreDownloader` |
-| Header wordmark | `StoreDownloader`, Segoe UI Variable Display, SemiBold |
+| Window title | `Sluice` |
+| Header wordmark | `Sluice`, Segoe UI Variable Display, SemiBold |
 | Version chip | `0.x.y`, Cascadia Mono, 45% opacity |
 | Accent | `#60CDFF` on dark, ink `#04121A` on the accent |
 | Surfaces | translucent black at 17% and 22% over the acrylic, hairlines white at 12% |
 | Backdrop | Windows acrylic, always; a solid canvas only as the fallback when the compositor refuses |
 
-## The current mark is a placeholder
+## The mark
 
-Two placeholders exist, both drawn in vectors, both meant to be replaced:
+`assets/logo.png` is the artwork. Everything else is derived from it, and repository artwork lives
+in an `assets` folder rather than next to the documentation:
 
-* `docs/logo.png` — the 512 px mark used at the top of the readme (a parcel with a download arrow
-  on an accent tile);
-* the `Viewbox` in `MainWindow.xaml` — the same idea as line art in the window header.
+| File | Used by |
+| --- | --- |
+| `assets/logo.png` | the readme, at 140 px wide |
+| `src/Sluice.Desktop/Assets/app.ico` | the window title bar, the taskbar and the exe itself |
+| `src/Sluice.Desktop/Assets/app.png` | the 16 px mark in the window header |
 
-Replace them like this:
+The ICO carries 16, 24, 32, 48, 64, 128 and 256 pixel frames, PNG compressed, with the white
+background keyed out so the mark reads on a dark taskbar.
 
-1. save the artwork as `docs/logo.png` (512 px or larger, transparent or tiled — the readme scales
-   it to 140 px);
-2. save the same art as `src/StoreDownloader.Desktop/Assets/app.ico` (16, 20, 24, 32, 40, 48, 64,
-   128 and 256 pixel frames in one file);
-3. add `<ApplicationIcon>Assets\app.ico</ApplicationIcon>` to
-   `src/StoreDownloader.Desktop/StoreDownloader.Desktop.csproj` and `Icon="Assets/app.ico"` on the
-   `Window` element, and optionally swap the header `Viewbox` for
-   `<Image Source="Assets/app.png" Width="18" Height="18" />`.
+Replacing the artwork means regenerating those three files from the new PNG; the project picks them
+up through `<ApplicationIcon>Assets\app.ico</ApplicationIcon>`, `Icon="Assets/app.ico"` on the window
+and `<Image Source="Assets/app.png">` in the header.
 
 ## Prompt for generating the icon
 
 Hand this to any image model; it asks for a flat vector mark rather than a rendered illustration,
 which is what survives being shrunk to 16 pixels in a taskbar.
 
-> Design a flat vector app icon for a Windows developer tool called StoreDownloader. Subject: a
+> Design a flat vector app icon for a Windows developer tool called Sluice. Subject: a
 > shipping parcel seen in three-quarter view, its lid open, with a downward arrow sliding into it;
 > the arrow and the parcel share one continuous stroke so the shape reads at 16 px. Style: bold
 > geometric line art, uniform 2.5 px strokes, rounded joints, no gradients, no texture, no drop
@@ -54,8 +53,8 @@ staircase of three stacked parcels, the top one dissolving into a pixel grid, sa
 
 ## Naming rules
 
-* Product name in prose and UI: `StoreDownloader`.
-* Never `storedl`, `SDL`, or any other abbreviation, including in commit subjects about the
+* Product name in prose and UI: `Sluice`.
+* Never `sluice`, `SDL`, or any other abbreviation, including in commit subjects about the
   surface (say "the window" or "the command line tool" instead).
-* File and folder names keep the same casing as the assemblies: `StoreDownloader.exe`,
-  `StoreDownloader.UI.exe`, `StoreDownloader-manifest.json`.
+* File and folder names keep the same casing as the assemblies: `Sluice.exe`,
+  `Sluice.UI.exe`, `Sluice-manifest.json`.
