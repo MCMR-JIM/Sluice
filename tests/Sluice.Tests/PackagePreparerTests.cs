@@ -38,12 +38,12 @@ public sealed class PackagePreparerTests
             [Create("Microsoft.UI.Xaml.2.7", "7000.785.2325.0", "x64", 700, ".appx")],
             [],
             []);
-        var notes = new List<string>();
+        var notes = new List<Sluice.Diagnostics.DiagnosticMessage>();
 
         PackagePreparer.SelectRequired(selection, [], "en-US", notes);
 
-        Assert.Contains(notes, note => note.Contains("Microsoft.UI.Xaml.2.7", StringComparison.Ordinal)
-            && note.Contains("not declared", StringComparison.Ordinal));
+        Assert.Contains(notes, note => note.Text.Contains("Microsoft.UI.Xaml.2.7", StringComparison.Ordinal)
+            && note.Text.Contains("not declared", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -42,6 +42,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _installSucceeded;
     private string _resultHeadline = string.Empty;
     private string _resultDetail = string.Empty;
+    private Func<Localization, string>? _statusRender;
+    private string? _headlineKey;
+    private Func<Localization, string>? _detailRender;
+    private uint? _explainCode;
     private string _explainInput = "0x80073CF3";
     private string _explainTitle = string.Empty;
     private string _explainBody = string.Empty;
@@ -66,7 +70,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         Packages.CollectionChanged += (_, _) => Raise(nameof(PackageCountText));
         ProductTitle = Loc.Get("DetailNothingParsed");
-        StatusLine = Loc.Get("StatusReady");
+        SetStatus(loc => loc.Get("StatusReady"));
         Loc.PropertyChanged += (_, args) =>
         {
             if (args.PropertyName != nameof(Localization.Language))
@@ -80,6 +84,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RebuildProductDetail();
             RebuildRegisteredDetail();
             RebuildStatusLine();
+            RebuildResultTexts();
+            if (_explainCode is { } explained && AppxErrorCatalog.TryLookup(explained, out var info))
+            {
+                ExplainBody = DescribeError(info);
+            }
+
+            foreach (var entry in Log)
+            {
+                entry.RefreshLanguage();
+            }
             foreach (var row in PlanRows)
             {
                 row.RefreshLanguage();
@@ -95,6 +109,33 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>Everything the window says, in the language the user picked.</summary>
     public Localization Loc { get; } = new();
+
+    /// <summary>Sets the status line from a key so a language change can re-render it.</summary>
+    /// <param name="render">Recipe for the line.</param>
+    private void SetStatus(Func<Localization, string> render)
+    {
+        _statusRender = render;
+        StatusLine = render(Loc);
+    }
+
+    /// <summary>Sets the status line to text that is already final.</summary>
+    /// <param name="text">Text to show.</param>
+    private void SetStatus(string text)
+    {
+        _statusRender = null;
+        StatusLine = text;
+    }
+
+    /// <summary>Sets the headline and the detail from keys the language change re-renders.</summary>
+    /// <param name="headlineKey">Key of the headline.</param>
+    /// <param name="detail">Recipe for the detail, when there is one.</param>
+    private void SetResult(string headlineKey, Func<Localization, string>? detail = null)
+    {
+        _headlineKey = headlineKey;
+        _detailRender = detail;
+        ResultHeadline = Loc.Get(headlineKey);
+        ResultDetail = detail is null ? string.Empty : detail(Loc);
+    }
 
     private void SetStage(string key)
     {
@@ -345,8 +386,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
-            AddLog(LogLevel.Warning, Loc.Get("LogCancelled"));
-            StatusLine = Loc.Get("StatusCancelled");
+            AddLog(LogLevel.Warning, loc => loc.Get("LogCancelled"));
+            SetStatus(loc => loc.Get("StatusCancelled"));
         }
         catch (SluiceException ex)
         {
@@ -373,8 +414,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private async Task ExecuteAsync(PipelineMode mode, StoreRequest request, CancellationToken token)
     {
         SetStage("StageResolve");
-        StatusLine = Loc.Format("StatusResolving", request.ProductId);
-        AddLog(LogLevel.Command, $"{ModeLabel(mode)} · {Reference}");
+        SetStatus(loc => loc.Format("StatusResolving", request.ProductId));
+        AddLog(LogLevel.Command, loc => $"{ModeLabel(mode)} · {Reference}");
 
         using var resolver = new StorePackageResolver();
         var resolution = await resolver.ResolveAsync(request, Locale, token).ConfigureAwait(true);
@@ -399,13 +440,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             });
         }
 
-        AddLog(LogLevel.Info, Loc.Format("LogParsed", resolution.Packages.Count, UiFormat.Size(resolution.TotalSizeInBytes)));
+        AddLog(LogLevel.Info, loc => loc.Format("LogParsed", resolution.Packages.Count, UiFormat.Size(resolution.TotalSizeInBytes)));
 
         if (mode == PipelineMode.Resolve)
         {
-            StatusLine = Loc.Get("StatusResolved");
-            ResultHeadline = Loc.Get("ResultResolved");
-            ResultDetail = $"{resolution.Product.Title} · {Loc.Format("DetailPackageCount", resolution.Packages.Count)}";
+            SetStatus(loc => loc.Get("StatusResolved"));
+            SetResult(
+                "ResultResolved",
+                loc => $"{resolution.Product.Title} · {loc.Format("DetailPackageCount", resolution.Packages.Count)}");
             return;
         }
 
@@ -436,11 +478,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             foreach (var note in preparation.Notes)
             {
-                AddLog(LogLevel.Info, note);
+                AddLog(LogLevel.Info, loc => loc.Text(note));
             }
 
             files = preparation.Downloaded.Select(result => result.Path).ToList();
-            AddLog(LogLevel.Success, Loc.Format(
+            AddLog(LogLevel.Success, loc => loc.Format(
                 "DownloadedPackages", files.Count, UiFormat.Size(preparation.Downloaded.Sum(r => r.SizeInBytes))));
         }
         else
@@ -453,7 +495,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 .ConfigureAwait(true);
 
             files = results.Select(result => result.Path).ToList();
-            AddLog(LogLevel.Success, Loc.Format(
+            AddLog(LogLevel.Success, loc => loc.Format(
                 "DownloadedPackages", files.Count, UiFormat.Size(results.Sum(r => r.SizeInBytes))));
         }
 
@@ -479,30 +521,33 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 PlanIssueSeverity.Warning => LogLevel.Warning,
                 _ => LogLevel.Info,
             };
-            AddLog(level, issue.Remediation is null ? issue.Message : $"{issue.Message} → {issue.Remediation}");
+            AddLog(
+                level,
+                loc => issue.Remediation is null
+                    ? loc.Text(issue.Message)
+                    : $"{loc.Text(issue.Message)} → {loc.Text(issue.Remediation)}");
         }
 
         if (mode == PipelineMode.Download)
         {
-            StatusLine = Loc.Get("StatusDownloaded");
-            ResultHeadline = Loc.Get("ResultDownloaded");
-            ResultDetail = Loc.Format("DetailFilesIn", files.Count, CacheDirectory);
+            SetStatus(loc => loc.Get("StatusDownloaded"));
+            SetResult("ResultDownloaded", loc => loc.Format("DetailFilesIn", files.Count, CacheDirectory));
             return;
         }
 
         if (!plan.CanProceed)
         {
-            StatusLine = Loc.Get("StatusPlanBlocked");
-            ResultHeadline = Loc.Get("ResultBlocked");
-            ResultDetail = Loc.Get("DetailBlocked");
+            SetStatus(loc => loc.Get("StatusPlanBlocked"));
+            SetResult("ResultBlocked", loc => loc.Get("DetailBlocked"));
             return;
         }
 
         if (mode == PipelineMode.Plan)
         {
-            StatusLine = Loc.Get("StatusPlanned");
-            ResultHeadline = Loc.Get("ResultPlanned");
-            ResultDetail = Loc.Format("DetailPlanSteps", plan.Steps.Count, plan.MainPackageName, plan.MainVersion);
+            SetStatus(loc => loc.Get("StatusPlanned"));
+            SetResult(
+                "ResultPlanned",
+                loc => loc.Format("DetailPlanSteps", plan.Steps.Count, plan.MainPackageName, plan.MainVersion));
             return;
         }
 
@@ -521,13 +566,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SetStage("StageDone");
             ProgressIndeterminate = false;
             Progress = 100;
-            ResultHeadline = Loc.Get("ResultInstalled");
+            SetResult("ResultInstalled");
             _registered = outcome.Registered;
             _installedMainName = plan.MainPackageName;
             _installSucceeded = true;
             RebuildRegisteredDetail();
             AddLog(LogLevel.Success, ResultDetail);
-            StatusLine = Loc.Get("StatusInstalled");
+            SetStatus(loc => loc.Get("StatusInstalled"));
         }
         else
         {
@@ -535,18 +580,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ProgressIndeterminate = false;
             _installSucceeded = false;
             var failure = outcome.StepResults.FirstOrDefault(result => !result.Succeeded);
-            ResultHeadline = Loc.Get("ResultInstallFailed");
+            SetResult("ResultInstallFailed");
             ResultDetail = failure?.Error is null
                 ? failure?.Message ?? Loc.Get("UnknownError")
                 : $"{failure.Error.FormattedCode} {failure.Error.Name} · {failure.Error.Meaning}";
             AddLog(LogLevel.Error, ResultDetail);
             if (failure?.Error is not null)
             {
-                AddLog(LogLevel.Info, $"{Loc.Get("ExplainWhy")}: {failure.Error.TypicalCause}");
-                AddLog(LogLevel.Info, $"{Loc.Get("ExplainHow")}: {failure.Error.ManualSteps}");
+                var error = failure.Error;
+                (string Cause, string Steps) explain = Loc.Language == UiLanguage.Chinese
+                    && ErrorExplainText.TryGet(error.Code, out var translated)
+                        ? (translated.Cause, translated.Steps)
+                        : (error.TypicalCause, error.ManualSteps);
+                AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainWhy")}: {explain.Cause}");
+                AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainHow")}: {explain.Steps}");
             }
 
-            StatusLine = Loc.Get("StatusInstallFailed");
+            SetStatus(loc => loc.Get("StatusInstallFailed"));
         }
     }
 
@@ -575,8 +625,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             var level = result.Succeeded ? LogLevel.Success : LogLevel.Error;
-            AddLog(level, $"{(result.Succeeded ? "ok" : "failed")} · {result.Step.FileName}"
-                + (result.HResult is null ? string.Empty : $" · {AppxErrorCatalog.Format(result.HResult.Value)}"));
+            AddLog(
+                level,
+                loc => $"{loc.Get(result.Succeeded ? "StateOk" : "StateFailed")} · {result.Step.FileName}"
+                    + (result.HResult is null ? string.Empty : $" · {AppxErrorCatalog.Format(result.HResult.Value)}"));
 
             var done = PlanRows.Count(row2 => row2.State is "ok" or "failed");
             Progress = PlanRows.Count == 0 ? 0 : Math.Round(done * 100d / PlanRows.Count, 1);
@@ -595,7 +647,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             foreach (var warning in report.Warnings)
             {
-                AddLog(LogLevel.Warning, warning);
+                AddLog(LogLevel.Warning, loc => loc.Text(warning));
             }
 
             StatusLine = report.Warnings.Count == 0
@@ -604,7 +656,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex)
         {
-            AddLog(LogLevel.Warning, Loc.Format("EnvCheckFailed", ex.Message));
+            AddLog(LogLevel.Warning, loc => loc.Format("EnvCheckFailed", ex.Message));
         }
     }
 
@@ -621,11 +673,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             + $"{product.Market}/{product.Locale} · {Loc.Format("ProductCategories", product.WuCategoryIds.Count)}";
     }
 
-    /// <summary>Re-renders the idle status line in the current language.</summary>
+    /// <summary>Re-renders the status line in the current language.</summary>
     private void RebuildStatusLine()
     {
         if (Busy)
         {
+            return;
+        }
+
+        if (_statusRender is not null)
+        {
+            StatusLine = _statusRender(Loc);
             return;
         }
 
@@ -634,6 +692,26 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 ? Loc.Get("StatusEnvironment")
                 : Loc.Format("StatusEnvironmentWarnings", report.Warnings.Count)
             : Loc.Get("StatusReady");
+    }
+
+    /// <summary>Re-renders the headline and the detail in the current language.</summary>
+    private void RebuildResultTexts()
+    {
+        if (_headlineKey is not null)
+        {
+            ResultHeadline = Loc.Get(_headlineKey);
+        }
+
+        if (_installSucceeded)
+        {
+            RebuildRegisteredDetail();
+            return;
+        }
+
+        if (_detailRender is not null)
+        {
+            ResultDetail = _detailRender(Loc);
+        }
     }
 
     /// <summary>Re-renders the install verdict in the current language.</summary>
@@ -695,10 +773,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
+        _explainCode = info.Code;
         ExplainTitle = $"{info.FormattedCode} · {info.Name}";
-        ExplainBody = Loc.Format("ExplainBody", info.Meaning, info.TypicalCause, info.ManualSteps);
+        ExplainBody = DescribeError(info);
         ExplainVisible = true;
     }
+
+    /// <summary>Explains a catalogued error in the language the window speaks.</summary>
+    /// <param name="info">Catalogued error.</param>
+    private string DescribeError(AppxErrorInfo info) =>
+        Loc.Language == UiLanguage.Chinese && ErrorExplainText.TryGet(info.Code, out var chinese)
+            ? Loc.Format("ExplainBody", chinese.Meaning, chinese.Cause, chinese.Steps)
+            : Loc.Format("ExplainBody", info.Meaning, info.TypicalCause, info.ManualSteps);
 
     private void Cancel() => _cancellation?.Cancel();
 
@@ -721,7 +807,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (!string.IsNullOrEmpty(text))
         {
             Clipboard.SetText(text);
-            StatusLine = Loc.Get("StatusCopied");
+            SetStatus(loc => loc.Get("StatusCopied"));
         }
     }
 
@@ -750,7 +836,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     }
 
     private void AddLog(LogLevel level, string text) =>
-        Log.Add(new LogEntry(DateTimeOffset.Now, level, text));
+        Log.Add(LogEntry.Plain(Loc, level, text));
+
+    /// <summary>Adds a line that is re-rendered whenever the language changes.</summary>
+    /// <param name="level">Severity shown in the gutter.</param>
+    /// <param name="render">Recipe for the text, given the current localization.</param>
+    private void AddLog(LogLevel level, Func<Localization, string> render) =>
+        Log.Add(LogEntry.Rendered(Loc, level, render));
 
     private static void Dispatcher(Action action)
     {

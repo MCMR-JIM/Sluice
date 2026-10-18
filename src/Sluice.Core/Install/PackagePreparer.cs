@@ -11,7 +11,7 @@ namespace Sluice.Install;
 public sealed record PreparationResult(
     IReadOnlyList<DownloadResult> Downloaded,
     IReadOnlyList<PackageDependency> RequiredDependencies,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<Diagnostics.DiagnosticMessage> Notes);
 
 /// <summary>
 /// Downloads the application first, reads the dependencies out of its manifest, and only then
@@ -44,7 +44,7 @@ public sealed class PackagePreparer(PackageDownloader downloader)
         ArgumentNullException.ThrowIfNull(resolution);
         ArgumentNullException.ThrowIfNull(selection);
 
-        var notes = new List<string>();
+        var notes = new List<Diagnostics.DiagnosticMessage>();
         var downloaded = new List<DownloadResult>();
 
         var mainResults = await downloader
@@ -78,7 +78,7 @@ public sealed class PackagePreparer(PackageDownloader downloader)
         PackageSelection selection,
         IReadOnlyList<PackageDependency> dependencies,
         string locale,
-        List<string>? notes = null)
+        List<Diagnostics.DiagnosticMessage>? notes = null)
     {
         ArgumentNullException.ThrowIfNull(selection);
         ArgumentNullException.ThrowIfNull(dependencies);
@@ -102,7 +102,8 @@ public sealed class PackagePreparer(PackageDownloader downloader)
                 continue;
             }
 
-            notes?.Add($"{candidate.Package.ReadableFileName} is not declared by the app manifest; not downloading it.");
+            notes?.Add(Diagnostics.DiagnosticMessage.Of(
+                    "PrepareNotDeclared", candidate.Package.ReadableFileName));
         }
 
         // Resource packages only make sense for the app itself, never for a framework.
@@ -125,7 +126,7 @@ public sealed class PackagePreparer(PackageDownloader downloader)
         IReadOnlyList<DownloadResult> mainResults,
         string architecture,
         string locale,
-        List<string> notes)
+        List<Diagnostics.DiagnosticMessage> notes)
     {
         foreach (var result in mainResults)
         {
@@ -143,19 +144,20 @@ public sealed class PackagePreparer(PackageDownloader downloader)
             var bundleSelection = BundlePackageSelector.Select(analysis, architecture, [locale]);
             if (bundleSelection.Application is null)
             {
-                notes.Add($"Bundle {analysis.FileName} has no application package for {architecture}.");
+                notes.Add(Diagnostics.DiagnosticMessage.Of("PrepareNoApplication", analysis.FileName, architecture));
                 return [];
             }
 
             try
             {
                 var child = PackageAnalyzer.AnalyzeChild(analysis.FilePath, bundleSelection.Application.FileName);
-                notes.Add($"{analysis.FileName} carries {bundleSelection.Application.FileName} for {architecture}.");
+                notes.Add(Diagnostics.DiagnosticMessage.Of(
+                "PrepareInnerPackage", analysis.FileName, bundleSelection.Application.FileName, architecture));
                 return child.Dependencies;
             }
             catch (SluiceException ex)
             {
-                notes.Add($"Could not read the inner manifest of {analysis.FileName}: {ex.Message}");
+                notes.Add(Diagnostics.DiagnosticMessage.Of("PrepareUnreadableBundle", analysis.FileName, ex.Message));
                 return [];
             }
         }

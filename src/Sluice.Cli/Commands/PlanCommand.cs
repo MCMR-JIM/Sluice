@@ -77,7 +77,7 @@ internal static class PlanCommand
                     (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture),
                     step.Kind.ToString(),
                     step.FileName,
-                    step.Reason,
+                    step.Reason.Text,
                 ])
                 .ToList());
 
@@ -86,10 +86,10 @@ internal static class PlanCommand
             Console.WriteLine();
             foreach (var issue in plan.Issues)
             {
-                Console.WriteLine($"[{issue.Severity.ToString().ToLowerInvariant()}] {issue.Message}");
+                Console.WriteLine($"[{issue.Severity.ToString().ToLowerInvariant()}] {issue.Message.Text}");
                 if (issue.Remediation is not null)
                 {
-                    Console.WriteLine($"         fix: {issue.Remediation}");
+                    Console.WriteLine($"         fix: {issue.Remediation.Text}");
                 }
             }
         }

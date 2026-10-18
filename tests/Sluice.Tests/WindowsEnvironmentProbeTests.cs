@@ -26,7 +26,7 @@ public sealed class WindowsEnvironmentProbeTests
         Assert.False(report.DeveloperModeEnabled);
         Assert.Equal("Windows 11 Pro", report.ProductName);
         Assert.Equal("26100", report.Build);
-        Assert.DoesNotContain(report.Warnings, warning => warning.Contains("Sideloading is disabled", StringComparison.Ordinal));
+        Assert.DoesNotContain(report.Warnings, warning => warning.Text.Contains("Sideloading is disabled", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public sealed class WindowsEnvironmentProbeTests
     {
         var report = Parse("""{"allowAllTrustedApps": 0, "allowDevelopmentWithoutDevLicense": 0, "services": {}}""");
 
-        Assert.Contains(report.Warnings, warning => warning.Contains("0x80073CFF", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, warning => warning.Text.Contains("0x80073CFF", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -62,8 +62,8 @@ public sealed class WindowsEnvironmentProbeTests
             {"allowAllTrustedApps": 1, "services": {"AppXSvc": "Stopped", "ClipSVC": "Stopped"}}
             """);
 
-        Assert.Contains(report.Warnings, warning => warning.Contains("AppXSvc", StringComparison.Ordinal));
-        Assert.DoesNotContain(report.Warnings, warning => warning.Contains("ClipSVC", StringComparison.Ordinal));
+        Assert.Contains(report.Warnings, warning => warning.Text.Contains("AppXSvc", StringComparison.Ordinal));
+        Assert.DoesNotContain(report.Warnings, warning => warning.Text.Contains("ClipSVC", StringComparison.Ordinal));
     }
 
     private static EnvironmentReport Parse(string json)
