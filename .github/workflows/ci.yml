@@ -60,11 +60,22 @@ jobs:
           -p:DebugType=none
           -o dist/${{ matrix.rid }}
 
-      - name: Smoke test the binary
+      # A cross published binary cannot run on the runner unless the architecture and the
+      # platform match, so only linux-x64 is actually executed; everything else is checked
+      # for shape: the file exists and carries a plausible amount of data.
+      - name: Check the artifact, execute it when the runner can
         run: |
           if [ -f "dist/${{ matrix.rid }}/storedl.exe" ]; then
-            ls -l "dist/${{ matrix.rid }}/storedl.exe"
+            BIN="dist/${{ matrix.rid }}/storedl.exe"
           else
-            chmod +x "dist/${{ matrix.rid }}/storedl"
-            "./dist/${{ matrix.rid }}/storedl" --version
+            BIN="dist/${{ matrix.rid }}/storedl"
+          fi
+          test -f "${BIN}"
+          SIZE=$(stat -c%s "${BIN}")
+          echo "${BIN}: ${SIZE} bytes"
+          test "${SIZE}" -gt 1000000
+          if [ "${{ matrix.rid }}" = "linux-x64" ]; then
+            chmod +x "${BIN}"
+            "${BIN}" --version
+            "${BIN}" --help | head -n 5
           fi
