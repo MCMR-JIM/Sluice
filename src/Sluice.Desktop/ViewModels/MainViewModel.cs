@@ -45,6 +45,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private Func<Localization, string>? _statusRender;
     private string? _headlineKey;
     private Func<Localization, string>? _detailRender;
+    private uint? _explainCode;
     private string _explainInput = "0x80073CF3";
     private string _explainTitle = string.Empty;
     private string _explainBody = string.Empty;
@@ -84,6 +85,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RebuildRegisteredDetail();
             RebuildStatusLine();
             RebuildResultTexts();
+            if (_explainCode is { } explained && AppxErrorCatalog.TryLookup(explained, out var info))
+            {
+                ExplainBody = DescribeError(info);
+            }
+
             foreach (var entry in Log)
             {
                 entry.RefreshLanguage();
@@ -581,8 +587,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             AddLog(LogLevel.Error, ResultDetail);
             if (failure?.Error is not null)
             {
-                AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainWhy")}: {failure.Error.TypicalCause}");
-                AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainHow")}: {failure.Error.ManualSteps}");
+                var error = failure.Error;
+                (string Cause, string Steps) explain = Loc.Language == UiLanguage.Chinese
+                    && ErrorExplainText.TryGet(error.Code, out var translated)
+                        ? (translated.Cause, translated.Steps)
+                        : (error.TypicalCause, error.ManualSteps);
+                AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainWhy")}: {explain.Cause}");
+                AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainHow")}: {explain.Steps}");
             }
 
             SetStatus(loc => loc.Get("StatusInstallFailed"));
@@ -762,10 +773,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
+        _explainCode = info.Code;
         ExplainTitle = $"{info.FormattedCode} · {info.Name}";
-        ExplainBody = Loc.Format("ExplainBody", info.Meaning, info.TypicalCause, info.ManualSteps);
+        ExplainBody = DescribeError(info);
         ExplainVisible = true;
     }
+
+    /// <summary>Explains a catalogued error in the language the window speaks.</summary>
+    /// <param name="info">Catalogued error.</param>
+    private string DescribeError(AppxErrorInfo info) =>
+        Loc.Language == UiLanguage.Chinese && ErrorExplainText.TryGet(info.Code, out var chinese)
+            ? Loc.Format("ExplainBody", chinese.Meaning, chinese.Cause, chinese.Steps)
+            : Loc.Format("ExplainBody", info.Meaning, info.TypicalCause, info.ManualSteps);
 
     private void Cancel() => _cancellation?.Cancel();
 
