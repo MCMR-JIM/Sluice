@@ -91,6 +91,15 @@ manifest reading is exercised against actual ZIP archives rather than mocks.
 ## Repository conventions
 
 * Conventional commits, one intent per commit, English.
-* `main` only receives merge commits from feature branches.
-* `feat/*` per capability, `test/*` and `docs/*` for their own work.
+* Work happens on `feat/*`, `fix/*`, `ci/*` and `docs/*` branches and lands through a pull
+  request; `main` only ever moves by merge commit.
+* Merged head branches are deleted automatically (`delete_branch_on_merge`). Branches that were
+  merged before that setting existed are swept by the `cleanup` workflow:
+  `gh workflow run cleanup.yml`.
+* CI runs on Linux and Windows for every pull request and cross publishes all seven runtime
+  identifiers, so a platform assumption cannot land unnoticed.
+* Releases are tagged on `main`: `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`. The
+  `release` workflow publishes the binaries, updates a release when it is re-run, and appends
+  generated notes to the preamble it carries.
+* The changelog is updated in the same pull request that adds the behaviour.
 * The build runs analyzers at `latest-recommended`; warnings are review items, not noise.
