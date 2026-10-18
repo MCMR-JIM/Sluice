@@ -11,4 +11,8 @@
     <ProjectReference Include="..\StoreDownloader.Core\StoreDownloader.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="StoreDownloader.Tests" />
+  </ItemGroup>
+
 </Project>
