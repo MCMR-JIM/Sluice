@@ -1,0 +1,157 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release, for example v0.2.0'
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  publish:
+    name: publish ${{ matrix.rid }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            asset: windows-x64.exe
+          - rid: win-x86
+            asset: windows-x86.exe
+          - rid: win-arm64
+            asset: windows-arm64.exe
+          - rid: linux-x64
+            asset: linux-x64
+          - rid: linux-arm64
+            asset: linux-arm64
+          - rid: osx-x64
+            asset: macos-x64
+          - rid: osx-arm64
+            asset: macos-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Read the version from the tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${TAG#v}" >> "${GITHUB_OUTPUT}"
+
+      - name: Publish ${{ matrix.rid }}
+        run: >
+          dotnet publish src/StoreDownloader.Cli
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
+          -p:Version=${{ steps.version.outputs.version }}
+          -o dist
+
+      - name: Name the binary for the release
+        run: |
+          mkdir -p assets
+          if [ -f dist/storedl.exe ]; then SRC="dist/storedl.exe"; else SRC="dist/storedl"; fi
+          ASSET="assets/storedl-${{ steps.version.outputs.version }}-${{ matrix.asset }}"
+          cp "${SRC}" "${ASSET}"
+          chmod +x "${ASSET}" || true
+          ls -l "${ASSET}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.rid }}
+          path: assets/*
+          if-no-files-found: error
+
+  release:
+    name: create the release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read the version from the tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${TAG#v}" >> "${GITHUB_OUTPUT}"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd assets
+          ls -l
+          sha256sum ./* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Write the notes preamble
+        run: |
+          cat > notes.md <<'EOF'
+          ## storedl, one binary per platform
+
+          Download the file for your platform, make it executable on macOS and Linux, and run it.
+          Every asset is self-contained: no .NET runtime has to be installed.
+
+          | Platform | Asset |
+          | --- | --- |
+          | Windows x64 / x86 / arm64 | `storedl-<version>-windows-<arch>.exe` |
+          | Linux x64 / arm64 | `storedl-<version>-linux-<arch>` |
+          | macOS x64 / arm64 | `storedl-<version>-macos-<arch>` |
+
+          Verify the download against `SHA256SUMS.txt` before running it.
+
+          ### What works where
+
+          Installing packages needs Windows: deployment is driven through `Add-AppxPackage` and
+          PowerShell. On macOS and Linux the same binary resolves, downloads, analyses and plans,
+          which is how an offline package cache is built:
+
+          `@
+          storedl download <store-link> --all-arch --dir ./StoreCache
+          `@
+
+          ### History
+          EOF
+          cat notes.md
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            assets/* \
+            --title "storedl ${{ steps.version.outputs.version }}" \
+            --target "${{ github.sha }}" \
+            --notes-file notes.md \
+            --generate-notes

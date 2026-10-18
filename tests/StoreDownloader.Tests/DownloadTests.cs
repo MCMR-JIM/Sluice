@@ -22,8 +22,12 @@ public sealed class DownloadTests : IDisposable
     [InlineData("Contoso.App_1.0.0.0_x64.msixbundle", "Contoso.App_1.0.0.0_x64.msixbundle")]
     [InlineData("bad:name?.appx", "bad_name_.appx")]
     [InlineData("Microsoft.VCLibs.140.00_14.0_x64.appx", "Microsoft.VCLibs.140.00_14.0_x64.appx")]
-    public void SanitisesFileNames(string input, string expected)
+    [InlineData("pipe|star*quote\"name.appx", "pipe_star_quote_name.appx")]
+    [InlineData("trailing.dot.", "trailing.dot")]
+    [InlineData("tab\tname.appx", "tab_name.appx")]
+    public void SanitisesFileNamesWithTheWindowsCharacterSetOnEveryPlatform(string input, string expected)
     {
+        // The same result is required on Linux and macOS, because the files are deployed on Windows.
         Assert.Equal(expected, FileNameSanitizer.Sanitize(input));
     }
 
