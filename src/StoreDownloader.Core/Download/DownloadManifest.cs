@@ -41,7 +41,7 @@ public sealed record DownloadManifest(
     IReadOnlyList<ManifestEntry> Packages)
 {
     /// <summary>File name of the manifest inside a download directory.</summary>
-    public const string FileName = "storedl-manifest.json";
+    public const string FileName = "StoreDownloader-manifest.json";
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {

@@ -8,16 +8,25 @@
     -->
 
     <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI</FontFamily>
+    <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI Semibold, Microsoft YaHei UI</FontFamily>
     <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Courier New</FontFamily>
 
-    <!-- translucent surfaces: alpha is what lets the backdrop read as glass -->
-    <SolidColorBrush x:Key="WindowVeilBrush" Color="#7A1C1C1C" />
-    <SolidColorBrush x:Key="SolidCanvasBrush" Color="#FF1C1C1C" />
-    <SolidColorBrush x:Key="SurfaceBrush" Color="#38FFFFFF" />
-    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#4DFFFFFF" />
-    <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#3D000000" />
-    <SolidColorBrush x:Key="HairlineBrush" Color="#33FFFFFF" />
-    <SolidColorBrush x:Key="HairlineStrongBrush" Color="#59FFFFFF" />
+    <!--
+        Nothing is painted over the window itself: the Mica backdrop IS the window. Only panels and
+        rows carry a hint of white, which is what makes the blur read instead of a flat dark form.
+    -->
+    <SolidColorBrush x:Key="WindowVeilBrush" Color="#00FFFFFF" />
+    <SolidColorBrush x:Key="SolidCanvasBrush" Color="#FF1F1F1F" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#14FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#26000000" />
+    <SolidColorBrush x:Key="HairlineBrush" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="HairlineStrongBrush" Color="#38FFFFFF" />
+    <SolidColorBrush x:Key="HoverBrush" Color="#1AFFFFFF" />
+    <LinearGradientBrush x:Key="SheenBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#12FFFFFF" Offset="0" />
+        <GradientStop Color="#00FFFFFF" Offset="0.35" />
+    </LinearGradientBrush>
 
     <SolidColorBrush x:Key="TextBrush" Color="#FFF7F7F7" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FFC4C4C4" />
@@ -32,7 +41,7 @@
 
     <!-- type -->
     <Style x:Key="DisplayText" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
         <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{StaticResource TextBrush}" />

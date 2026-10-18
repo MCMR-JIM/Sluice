@@ -46,7 +46,7 @@ public sealed class HelpTextTests
         var text = writer.ToString();
 
         Assert.Contains("SYNOPSIS", text, StringComparison.Ordinal);
-        Assert.Contains($"storedl {command!.Name}", text, StringComparison.Ordinal);
+        Assert.Contains($"{BuildInfo.ToolName} {command!.Name}", text, StringComparison.Ordinal);
         Assert.Contains("EXAMPLES", text, StringComparison.Ordinal);
         Assert.DoesNotContain("(default: )", text, StringComparison.Ordinal);
     }

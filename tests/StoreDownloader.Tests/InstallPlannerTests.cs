@@ -7,7 +7,7 @@ namespace StoreDownloader.Tests;
 
 public sealed class InstallPlannerTests : IDisposable
 {
-    private readonly string _directory = Path.Combine(Path.GetTempPath(), "storedl-plan-" + Guid.NewGuid().ToString("N"));
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "StoreDownloader-plan-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {

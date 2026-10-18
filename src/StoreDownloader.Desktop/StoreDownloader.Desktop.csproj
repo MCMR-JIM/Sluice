@@ -5,7 +5,7 @@
     <OutputType>WinExe</OutputType>
     <UseWPF>true</UseWPF>
     <RootNamespace>StoreDownloader.Desktop</RootNamespace>
-    <AssemblyName>storedl-ui</AssemblyName>
+    <AssemblyName>StoreDownloader.UI</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <RollForward>LatestMajor</RollForward>
   </PropertyGroup>

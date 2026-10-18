@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:StoreDownloader.Desktop.Converters"
-        Title="storedl"
+        Title="StoreDownloader"
         Height="760" Width="1180" MinHeight="560" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         Background="Transparent"
@@ -24,12 +24,15 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="{StaticResource WindowVeilBrush}">
+    <Grid Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+
+        <!-- a whisper of light at the top, the way Mica windows catch the desktop -->
+        <Rectangle Grid.Row="0" Grid.RowSpan="3" Fill="{StaticResource SheenBrush}" IsHitTestVisible="False" />
 
         <!-- ================= title bar area ================= -->
         <Grid Grid.Row="0" Margin="14,12,14,10">
@@ -40,12 +43,24 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Border Width="24" Height="24" CornerRadius="6" Background="{StaticResource AccentBrush}">
-                    <TextBlock Text="S" Foreground="{StaticResource AccentInkBrush}" FontSize="13" FontWeight="Bold"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
+                <!-- Placeholder mark: a parcel with a download arrow, drawn in vectors so it needs no
+                     asset. Drop a real icon in when one exists, see docs/brand.md. -->
+                <Viewbox Width="18" Height="18" VerticalAlignment="Center">
+                    <Canvas Width="24" Height="24">
+                        <Path Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6" StrokeLineJoin="Round"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M3,7.5 L12,3 L21,7.5 L21,16.5 L12,21 L3,16.5 Z" />
+                        <Path Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6" StrokeLineJoin="Round"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M3,7.5 L12,12 L21,7.5" />
+                        <Path Stroke="{StaticResource AccentBrush}" StrokeThickness="1.6" StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round" Data="M12,12 L12,19" />
+                    </Canvas>
+                </Viewbox>
+                <TextBlock Text="StoreDownloader" Style="{StaticResource DisplayText}" Margin="9,0,0,0"
+                           VerticalAlignment="Center" />
                 <TextBlock Text="{Binding ToolVersion}" Style="{StaticResource MonoText}" FontSize="11"
-                           Opacity="0.5" Margin="8,1,0,0" VerticalAlignment="Center" />
+                           Opacity="0.45" Margin="8,2,0,0" VerticalAlignment="Center" />
             </StackPanel>
 
             <ItemsControl Grid.Column="1" ItemsSource="{Binding Chips}" Margin="16,0,8,0" VerticalAlignment="Center">
@@ -66,8 +81,18 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <Button Grid.Column="2" Content="重新检查环境" Style="{StaticResource GhostButton}"
-                    Command="{Binding RefreshEnvironmentCommand}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="背景" Style="{StaticResource GroupLabel}" VerticalAlignment="Center"
+                           Margin="0,0,6,0" />
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Backdrop" Content="亚克力"
+                             IsChecked="{Binding IsBackdropAcrylic, Mode=TwoWay}" />
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Backdrop" Content="Mica"
+                             IsChecked="{Binding IsBackdropMica, Mode=TwoWay}" />
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Backdrop" Content="纯色"
+                             IsChecked="{Binding IsBackdropSolid, Mode=TwoWay}" Margin="0,0,10,0" />
+                <Button Content="重新检查环境" Style="{StaticResource GhostButton}"
+                        Command="{Binding RefreshEnvironmentCommand}" />
+            </StackPanel>
         </Grid>
 
         <!-- ================= body ================= -->
@@ -78,8 +103,11 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <!-- source + options, flat groups separated by hairlines -->
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <!-- source + options: one pane, hairline groups, no card chrome -->
+            <Border CornerRadius="8" Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Padding="12,10"
+                    Margin="0,2,0,2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Text="来源" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
                     <Grid>
@@ -170,6 +198,7 @@
                     </Border>
                 </StackPanel>
             </ScrollViewer>
+            </Border>
 
             <!-- data -->
             <Grid Grid.Column="2">
@@ -267,7 +296,16 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1"
-                                                    Padding="12,5">
+                                                    Padding="12,5" Background="Transparent">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource HoverBrush}" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="64" />
@@ -299,14 +337,25 @@
                                 </ItemsControl>
                             </ScrollViewer>
 
-                            <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            <StackPanel Grid.Row="2" Margin="18,22,18,0" VerticalAlignment="Top"
                                         Visibility="{Binding Packages.Count, Converter={StaticResource ZeroToVisibleConverter}}">
-                                <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center"
-                                           Foreground="{StaticResource TextSecondaryBrush}"
-                                           Text="粘贴 Store 链接，按「解析」看后端真实包列表。" />
-                                <TextBlock Style="{StaticResource CaptionText}" HorizontalAlignment="Center"
-                                           Margin="0,4,0,0"
-                                           Text="或者直接「安装到本机」：解析 → 只下需要的依赖 → 框架先行 → 装主体 → 回读注册。" />
+                                <Viewbox Width="26" Height="26" HorizontalAlignment="Left" Opacity="0.55">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.4"
+                                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="M3,7.5 L12,3 L21,7.5 L21,16.5 L12,21 L3,16.5 Z" />
+                                        <Path Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.4"
+                                              StrokeLineJoin="Round" Data="M3,7.5 L12,12 L21,7.5" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock Style="{StaticResource DisplayText}" FontSize="13" Margin="0,10,0,0"
+                                           Text="还没有解析任何链接" />
+                                <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" MaxWidth="460"
+                                           HorizontalAlignment="Left"
+                                           Text="粘贴一个 Store 链接后点「解析」：会列出后端真实的下发包、架构、大小，以及每个包的签名下载地址是否可用。" />
+                                <TextBlock Style="{StaticResource CaptionText}" Margin="0,10,0,0" MaxWidth="460"
+                                           HorizontalAlignment="Left"
+                                           Text="也可以直接「安装到本机」：只下载清单里声明的依赖，框架先行，装完回读注册再报结果。" />
                             </StackPanel>
                         </Grid>
 

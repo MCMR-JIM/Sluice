@@ -8,7 +8,7 @@ public sealed class BuildInfoTests
     [Fact]
     public void ExposesTheToolNameAndVersion()
     {
-        Assert.Equal("storedl", BuildInfo.ToolName);
+        Assert.Equal("StoreDownloader", BuildInfo.ToolName);
         Assert.False(string.IsNullOrWhiteSpace(BuildInfo.Version));
         Assert.Matches(@"^\d+\.\d+\.\d+", BuildInfo.Version);
     }

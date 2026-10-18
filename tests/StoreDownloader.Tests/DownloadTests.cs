@@ -8,7 +8,7 @@ namespace StoreDownloader.Tests;
 
 public sealed class DownloadTests : IDisposable
 {
-    private readonly string _directory = Path.Combine(Path.GetTempPath(), "storedl-dl-" + Guid.NewGuid().ToString("N"));
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "StoreDownloader-dl-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {

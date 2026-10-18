@@ -42,6 +42,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _explainBody = string.Empty;
     private bool _explainVisible;
     private bool _showLog;
+    private Interop.BackdropKind _backdrop = Interop.BackdropKind.Acrylic;
     private string _cacheDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "storedl", "packages");
 
@@ -62,7 +63,43 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _ = RefreshEnvironmentAsync();
     }
 
-    public string ToolVersion { get; } = $"{BuildInfo.ToolName} {BuildInfo.Version}";
+    public string ToolVersion { get; } = BuildInfo.Version;
+
+    /// <summary>Raised when the user picks a different window backdrop.</summary>
+    public event EventHandler<Interop.BackdropKind>? BackdropChanged;
+
+    public Interop.BackdropKind Backdrop
+    {
+        get => _backdrop;
+        set
+        {
+            if (SetProperty(ref _backdrop, value))
+            {
+                Raise(nameof(IsBackdropAcrylic));
+                Raise(nameof(IsBackdropMica));
+                Raise(nameof(IsBackdropSolid));
+                BackdropChanged?.Invoke(this, value);
+            }
+        }
+    }
+
+    public bool IsBackdropAcrylic
+    {
+        get => Backdrop == Interop.BackdropKind.Acrylic;
+        set { if (value) { Backdrop = Interop.BackdropKind.Acrylic; } }
+    }
+
+    public bool IsBackdropMica
+    {
+        get => Backdrop == Interop.BackdropKind.Mica;
+        set { if (value) { Backdrop = Interop.BackdropKind.Mica; } }
+    }
+
+    public bool IsBackdropSolid
+    {
+        get => Backdrop == Interop.BackdropKind.Solid;
+        set { if (value) { Backdrop = Interop.BackdropKind.Solid; } }
+    }
 
     public ObservableCollection<PackageRow> Packages { get; } = [];
 
