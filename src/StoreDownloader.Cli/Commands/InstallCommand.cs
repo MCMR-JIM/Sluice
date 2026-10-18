@@ -24,7 +24,7 @@ internal static class InstallCommand
             return 2;
         }
         var architecture = WindowsArchitecture.Normalize(arguments.Get("arch") ?? WindowsArchitecture.Current);
-        var locale = arguments.Get("locale") ?? StoreUrlParser.DefaultLocale;
+        var locale = arguments.Get("locale") ?? Defaults.Locale;
         var directory = arguments.Get("dir");
         var dryRun = arguments.Has("dry-run");
         var json = arguments.Has("json");
@@ -56,30 +56,54 @@ internal static class InstallCommand
                     locale,
                     IncludeAllArchitectures: arguments.Has("all-arch")));
 
-            var wanted = new List<ResolvedPackage>(selection.Main);
-            wanted.AddRange(selection.Dependencies);
-            wanted.AddRange(selection.Resources);
-
             if (!json)
             {
                 Console.WriteLine($"Product : {resolution.Product.Title} ({resolution.Product.ProductId})");
                 Console.WriteLine($"Target  : {architecture}, locale {locale}");
                 Console.WriteLine($"Folder  : {directory}");
-                Console.WriteLine($"Files   : {wanted.Count} package(s), {TablePrinter.FormatSize(wanted.Sum(package => package.Package.SizeInBytes))}");
+                Console.WriteLine($"App     : {selection.Main.Count} package(s) plus the dependencies its manifest asks for");
                 Console.WriteLine();
             }
 
             using var downloader = new PackageDownloader();
-            var results = await downloader
-                .DownloadManyAsync(wanted, directory, new DownloadOptions(MaxParallelism: arguments.GetInt32("parallel", 3)), CancellationToken.None)
-                .ConfigureAwait(false);
+            var downloadOptions = new DownloadOptions(MaxParallelism: arguments.GetInt32("parallel", 3));
+            var downloaded = new List<DownloadResult>();
+
+            if (arguments.Has("all-deps"))
+            {
+                // Offline archives want every candidate, not just the ones the manifest names.
+                var wanted = new List<ResolvedPackage>(selection.Main);
+                wanted.AddRange(selection.Dependencies);
+                wanted.AddRange(selection.Resources);
+                downloaded.AddRange(await downloader
+                    .DownloadManyAsync(wanted, directory, downloadOptions, CancellationToken.None)
+                    .ConfigureAwait(false));
+            }
+            else
+            {
+                var preparation = await new PackagePreparer(downloader)
+                    .PrepareAsync(resolution, selection, directory, architecture, locale, downloadOptions, CancellationToken.None)
+                    .ConfigureAwait(false);
+                downloaded.AddRange(preparation.Downloaded);
+
+                if (!json)
+                {
+                    foreach (var note in preparation.Notes)
+                    {
+                        Console.WriteLine($"  {note}");
+                    }
+
+                    Console.WriteLine();
+                }
+            }
+
             await DownloadManifest
-                .SaveAsync(directory, DownloadManifest.FromResults(resolution, results, architecture, locale), CancellationToken.None)
+                .SaveAsync(directory, DownloadManifest.FromResults(resolution, downloaded, architecture, locale), CancellationToken.None)
                 .ConfigureAwait(false);
 
             if (!json)
             {
-                Console.WriteLine($"Downloaded {results.Count} package(s) ({TablePrinter.FormatSize(results.Sum(result => result.SizeInBytes))}).");
+                Console.WriteLine($"Downloaded {downloaded.Count} package(s) ({TablePrinter.FormatSize(downloaded.Sum(result => result.SizeInBytes))}).");
                 Console.WriteLine();
             }
         }

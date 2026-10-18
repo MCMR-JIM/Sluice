@@ -41,6 +41,7 @@ internal static class HelpText
         writer.WriteLine("  --yes                         Do not ask for confirmation");
         writer.WriteLine("  --force                       Allow installing over a higher version");
         writer.WriteLine("  --skip-download               Install from --dir without resolving the Store again");
+        writer.WriteLine("  --all-deps                    Download every candidate dependency, not just the declared ones");
         writer.WriteLine("  --all-users                   Install for every user (needs elevation)");
         writer.WriteLine("  --no-register                 Do not fall back to loose file registration");
         writer.WriteLine();
