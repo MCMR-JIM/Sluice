@@ -1,0 +1,63 @@
+name: cleanup
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  delete-head-branch:
+    name: delete the merged head branch
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete the branch that was just merged
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "${BRANCH}" = "${DEFAULT_BRANCH}" ]; then
+            echo "refusing to delete the default branch (${BRANCH})"
+            exit 0
+          fi
+          if gh api --silent "repos/${REPO}/git/ref/heads/${BRANCH}" 2>/dev/null; then
+            gh api --method DELETE "repos/${REPO}/git/refs/heads/${BRANCH}"
+            echo "deleted ${BRANCH}"
+          else
+            echo "${BRANCH} is already gone"
+          fi
+
+  sweep:
+    name: sweep branches already merged into the default branch
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Delete every merged branch except the default one
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          git fetch --prune origin
+          git branch -r --merged "origin/${DEFAULT_BRANCH}" \
+            | sed 's|^ *origin/||' \
+            | grep -v -E "^(HEAD|${DEFAULT_BRANCH})$" \
+            > merged.txt || true
+          cat merged.txt
+          while read -r branch; do
+            [ -z "${branch}" ] && continue
+            gh api --method DELETE "repos/${REPO}/git/refs/heads/${branch}" && echo "deleted ${branch}"
+          done < merged.txt
