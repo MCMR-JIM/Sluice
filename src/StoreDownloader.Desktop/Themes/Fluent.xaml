@@ -22,7 +22,13 @@
         one 10% plane for legibility, panels that lift with 6% white, sunken inputs at 20% black.
         Everything else is what the compositor blurs behind the window.
     -->
-    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#0D000000" />
+    <!-- A gradient veil rather than a flat one: enough black for text to stay readable over a bright
+         window, thin enough that shapes behind it still move through. -->
+    <LinearGradientBrush x:Key="SurfaceBaseBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#59000000" Offset="0" />
+        <GradientStop Color="#45000000" Offset="0.55" />
+        <GradientStop Color="#38000000" Offset="1" />
+    </LinearGradientBrush>
     <SolidColorBrush x:Key="SurfaceBrush" Color="#12FFFFFF" />
     <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#24FFFFFF" />
     <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#2E000000" />
