@@ -85,8 +85,9 @@ Store link generators get you *links*. Everything that goes wrong afterwards is 
 | `doctor` | - | Check sideloading policy, Developer Mode, deployment services, free space |
 | `explain` | HRESULT such as `0x80073CF3` | Explain a deployment error and how to get past it |
 
-`storedl --help` lists every option and `storedl --version` prints the runtime it would
-deploy into.
+Every command has its own manual page inside the binary: `storedl help install` (or
+`storedl install --help`) prints the synopsis, arguments, every option with its default, examples
+and notes. `storedl --help` is the index, `storedl --version` the runtime it would deploy into.
 
 ### Recipes
 
