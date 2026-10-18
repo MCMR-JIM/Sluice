@@ -28,7 +28,7 @@
         2. every component inside it is opaque, so panels read as solid surfaces on the glass;
         3. only the gaps between components and the window edge show the acrylic.
     -->
-    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#B8000000" />
+    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#85000000" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FF1E1E1E" />
     <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#FF2A2A2A" />
     <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#FF151515" />
