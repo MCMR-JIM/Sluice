@@ -17,18 +17,22 @@ the release assets.
 
 ## The current mark is a placeholder
 
-What ships today is a vector parcel drawn in XAML (`MainWindow.xaml`, the `Viewbox` at the top
-left): a box outline with a lid line. It exists so the header is not a letter in a rounded square,
-and it is meant to be replaced.
+Two placeholders exist, both drawn in vectors, both meant to be replaced:
 
-Drop the finished icon in and nothing else has to change:
+* `docs/logo.png` — the 512 px mark used at the top of the readme (a parcel with a download arrow
+  on an accent tile);
+* the `Viewbox` in `MainWindow.xaml` — the same idea as line art in the window header.
 
-1. save the artwork as `src/StoreDownloader.Desktop/Assets/app.ico` (16, 20, 24, 32, 40, 48, 64,
-   128 and 256 pixel frames in one file),
-2. add `<ApplicationIcon>Assets\app.ico</ApplicationIcon>` to
-   `src/StoreDownloader.Desktop/StoreDownloader.Desktop.csproj`,
-3. give the window a bitmap: `Icon="Assets/app.ico"` on the `Window` element, and optionally swap
-   the `Viewbox` in the header for `<Image Source="Assets/app.png" Width="18" Height="18" />`.
+Replace them like this:
+
+1. save the artwork as `docs/logo.png` (512 px or larger, transparent or tiled — the readme scales
+   it to 140 px);
+2. save the same art as `src/StoreDownloader.Desktop/Assets/app.ico` (16, 20, 24, 32, 40, 48, 64,
+   128 and 256 pixel frames in one file);
+3. add `<ApplicationIcon>Assets\app.ico</ApplicationIcon>` to
+   `src/StoreDownloader.Desktop/StoreDownloader.Desktop.csproj` and `Icon="Assets/app.ico"` on the
+   `Window` element, and optionally swap the header `Viewbox` for
+   `<Image Source="Assets/app.png" Width="18" Height="18" />`.
 
 ## Prompt for generating the icon
 
