@@ -24,6 +24,18 @@ internal static class Program
             return 0;
         }
 
+        if (command is "-v" or "--version" or "version")
+        {
+            VersionText.Print(Console.Out);
+            return 0;
+        }
+
+        if (rest.Contains("-h", StringComparer.Ordinal) || rest.Contains("--help", StringComparer.Ordinal))
+        {
+            HelpText.Print(Console.Out);
+            return 0;
+        }
+
         try
         {
             return command switch

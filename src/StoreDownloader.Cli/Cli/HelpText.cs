@@ -26,6 +26,7 @@ internal static class HelpText
         writer.WriteLine("  --arch <arch>                 Target architecture (default: this machine)");
         writer.WriteLine("  --json                        Emit machine readable JSON");
         writer.WriteLine("  -h, --help                    Show this help");
+        writer.WriteLine("  -v, --version                 Show the tool version and runtime");
         writer.WriteLine();
         writer.WriteLine("Download options:");
         writer.WriteLine("  --dir <path>                  Destination folder (default ./downloads)");
