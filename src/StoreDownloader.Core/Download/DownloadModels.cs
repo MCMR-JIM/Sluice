@@ -1,0 +1,94 @@
+using System.Buffers;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Security.Cryptography;
+using StoreDownloader.Fe3;
+using StoreDownloader.Http;
+using StoreDownloader.Resolution;
+
+namespace StoreDownloader.Download;
+
+/// <summary>Options that control a download run.</summary>
+/// <param name="MaxParallelism">How many files may be downloaded at once.</param>
+/// <param name="Overwrite">Re-download files that already exist and verify, instead of skipping them.</param>
+/// <param name="VerifyDigest">Verify the SHA-1 digest the delivery service published.</param>
+/// <param name="Progress">Callback invoked with throttled progress updates.</param>
+public sealed record DownloadOptions(
+    int MaxParallelism = 3,
+    bool Overwrite = false,
+    bool VerifyDigest = true,
+    Action<DownloadProgress>? Progress = null)
+{
+    /// <summary>Options used when the caller supplies none.</summary>
+    public static DownloadOptions Default { get; } = new();
+}
+
+/// <summary>Progress of a single file.</summary>
+/// <param name="FileName">File being downloaded.</param>
+/// <param name="BytesReceived">Bytes written so far.</param>
+/// <param name="TotalBytes">Expected size, or 0 when the server did not say.</param>
+public sealed record DownloadProgress(string FileName, long BytesReceived, long TotalBytes)
+{
+    /// <summary>Completion ratio between 0 and 1, or 0 when the size is unknown.</summary>
+    public double Fraction => TotalBytes > 0 ? Math.Clamp((double)BytesReceived / TotalBytes, 0, 1) : 0;
+}
+
+/// <summary>How a downloaded file was validated.</summary>
+public enum DownloadVerification
+{
+    /// <summary>No digest was published, so nothing was checked.</summary>
+    NotPublished,
+
+    /// <summary>The published digest matched.</summary>
+    DigestMatch,
+
+    /// <summary>Verification was disabled by the caller.</summary>
+    Skipped,
+
+    /// <summary>The published digest did not match the bytes on disk.</summary>
+    Mismatch,
+}
+
+/// <summary>Outcome of downloading one package.</summary>
+/// <param name="Package">Package that was downloaded.</param>
+/// <param name="Path">Where the file lives on disk.</param>
+/// <param name="SizeInBytes">Size on disk.</param>
+/// <param name="Verification">How the file was validated.</param>
+/// <param name="Reused">True when an existing, already valid file was reused.</param>
+public sealed record DownloadResult(
+    WuPackage Package,
+    string Path,
+    long SizeInBytes,
+    DownloadVerification Verification,
+    bool Reused);
+
+/// <summary>Raised when a package cannot be downloaded or fails verification.</summary>
+public sealed class DownloadException : StoreDownloaderException
+{
+    /// <summary>Creates an exception with a message.</summary>
+    /// <param name="message">Human readable description.</param>
+    /// <param name="innerException">Underlying failure.</param>
+    public DownloadException(string message, Exception? innerException = null) : base(message, innerException)
+    {
+    }
+}
+
+/// <summary>Makes package file names safe for the file system.</summary>
+public static class FileNameSanitizer
+{
+    /// <summary>Replaces characters that are invalid in Windows file names.</summary>
+    /// <param name="fileName">Candidate file name.</param>
+    public static string Sanitize(string fileName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var builder = new System.Text.StringBuilder(fileName.Length);
+        foreach (var character in fileName)
+        {
+            builder.Append(Array.IndexOf(invalid, character) >= 0 ? '_' : character);
+        }
+
+        return builder.ToString();
+    }
+}

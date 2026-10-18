@@ -20,13 +20,16 @@ public sealed record PackageSelectionOptions(
 /// <param name="Resources">Resource packages for the target locales.</param>
 /// <param name="Skipped">Packages that were deliberately left out, with reasons.</param>
 public sealed record PackageSelection(
-    IReadOnlyList<WuPackage> Main,
-    IReadOnlyList<WuPackage> Dependencies,
-    IReadOnlyList<WuPackage> Resources,
+    IReadOnlyList<ResolvedPackage> Main,
+    IReadOnlyList<ResolvedPackage> Dependencies,
+    IReadOnlyList<ResolvedPackage> Resources,
     IReadOnlyList<string> Skipped)
 {
     /// <summary>Every selected package, main first.</summary>
-    public IReadOnlyList<WuPackage> All => [.. Main, .. Dependencies, .. Resources];
+    public IReadOnlyList<ResolvedPackage> All => [.. Main, .. Dependencies, .. Resources];
+
+    /// <summary>Total size of the selection.</summary>
+    public long TotalSizeInBytes => All.Sum(package => package.Package.SizeInBytes);
 }
 
 /// <summary>
@@ -102,11 +105,7 @@ public static class PackageSelector
             dependencySelection.AddRange(PickBest([.. group], targetArchitecture, options.IncludeAllArchitectures));
         }
 
-        return new PackageSelection(
-            mainSelection.Select(package => package.Package).ToList(),
-            dependencySelection.Select(package => package.Package).ToList(),
-            resources.Select(package => package.Package).ToList(),
-            skipped);
+        return new PackageSelection(mainSelection, dependencySelection, resources, skipped);
     }
 
     private static List<ResolvedPackage> PickBest(
