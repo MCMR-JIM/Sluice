@@ -25,14 +25,14 @@ public sealed class PackageSelectorTests
         var selection = PackageSelector.Select(resolution, new PackageSelectionOptions("x64", "en-US"));
 
         var main = Assert.Single(selection.Main);
-        Assert.Equal("Contoso.Notes_2.0.0.0_neutral.msixbundle", main.ReadableFileName);
+        Assert.Equal("Contoso.Notes_2.0.0.0_neutral.msixbundle", main.Package.ReadableFileName);
 
         Assert.Equal(2, selection.Dependencies.Count);
-        var libs = selection.Dependencies.Single(package => package.PackageIdentityName == "Microsoft.VCLibs.140.00");
-        Assert.Equal("14.0.33728.0", libs.Version);
-        Assert.Equal("x64", libs.Architecture);
-        var runtime = selection.Dependencies.Single(package => package.PackageIdentityName == "Microsoft.WindowsAppRuntime.2");
-        Assert.Equal("x64", runtime.Architecture);
+        var libs = selection.Dependencies.Single(package => package.Package.PackageIdentityName == "Microsoft.VCLibs.140.00");
+        Assert.Equal("14.0.33728.0", libs.Package.Version);
+        Assert.Equal("x64", libs.Package.Architecture);
+        var runtime = selection.Dependencies.Single(package => package.Package.PackageIdentityName == "Microsoft.WindowsAppRuntime.2");
+        Assert.Equal("x64", runtime.Package.Architecture);
 
         Assert.Contains(selection.Skipped, note => note.Contains("arm64", StringComparison.Ordinal));
     }
@@ -46,7 +46,7 @@ public sealed class PackageSelectorTests
 
         var selection = PackageSelector.Select(resolution, new PackageSelectionOptions("x64", "en-US"));
 
-        Assert.Equal("x64", Assert.Single(selection.Main).Architecture);
+        Assert.Equal("x64", Assert.Single(selection.Main).Package.Architecture);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class PackageSelectorTests
         var selection = PackageSelector.Select(resolution, new PackageSelectionOptions("x64", "zh-cn"));
 
         var resource = Assert.Single(selection.Resources);
-        Assert.Equal("zh-CN", resource.InstallerSpecificIdentifier.Split('_')[3]);
+        Assert.Equal("zh-CN", resource.Package.InstallerSpecificIdentifier.Split('_')[3]);
     }
 
     [Fact]
