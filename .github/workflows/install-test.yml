@@ -35,8 +35,8 @@ jobs:
 
       - name: Build the tool from this commit
         run: |
-          dotnet publish src/StoreDownloader.Cli -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o bin
-          .\bin\StoreDownloader.exe --version
+          dotnet publish src/Sluice.Cli -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o bin
+          .\bin\Sluice.exe --version
 
       - name: Allow sideloading on the runner
         run: |
@@ -51,20 +51,20 @@ jobs:
           Get-AppxPackage -PackageTypeFilter Framework |
             Where-Object { $_.Name -match 'NET.Native|VCLibs' } |
             Select-Object Name, Version, Architecture | Sort-Object Name | Format-Table -AutoSize
-          .\bin\StoreDownloader.exe doctor
+          .\bin\Sluice.exe doctor
           # doctor exits 3 when it found warnings; that is information, not a failed step.
           exit 0
 
       - name: Resolve the link
-        run: .\bin\StoreDownloader.exe resolve "${{ env.STORE_URL }}"
+        run: .\bin\Sluice.exe resolve "${{ env.STORE_URL }}"
 
       - name: Plan only, install nothing
-        run: .\bin\StoreDownloader.exe install "${{ env.STORE_URL }}" --dry-run --dir "${{ env.CACHE_DIR }}"
+        run: .\bin\Sluice.exe install "${{ env.STORE_URL }}" --dry-run --dir "${{ env.CACHE_DIR }}"
 
       - name: Install for real
         id: install
         run: |
-          .\bin\StoreDownloader.exe install "${{ env.STORE_URL }}" --yes --dir "${{ env.CACHE_DIR }}" 2>&1 |
+          .\bin\Sluice.exe install "${{ env.STORE_URL }}" --yes --dir "${{ env.CACHE_DIR }}" 2>&1 |
             Tee-Object -FilePath install.log
           exit $LASTEXITCODE
 

@@ -51,7 +51,7 @@ jobs:
 
       - name: Publish the command line tool
         run: >
-          dotnet publish src/StoreDownloader.Cli
+          dotnet publish src/Sluice.Cli
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -64,7 +64,7 @@ jobs:
 
       - name: Publish the desktop window
         run: >
-          dotnet publish src/StoreDownloader.Desktop
+          dotnet publish src/Sluice.Desktop
           -c Release
           -r ${{ matrix.rid }}
           --self-contained true
@@ -79,9 +79,9 @@ jobs:
       - name: Pack both binaries for this architecture
         run: |
           mkdir -p assets
-          ASSET="assets/StoreDownloader-${{ steps.version.outputs.version }}-${{ matrix.asset }}.zip"
-          cd dist && zip -q "${OLDPWD}/${ASSET}" StoreDownloader.exe
-          cd .. && cd dist-ui && zip -q "${OLDPWD}/${ASSET}" StoreDownloader.UI.exe
+          ASSET="assets/Sluice-${{ steps.version.outputs.version }}-${{ matrix.asset }}.zip"
+          cd dist && zip -q "${OLDPWD}/${ASSET}" Sluice.exe
+          cd .. && cd dist-ui && zip -q "${OLDPWD}/${ASSET}" Sluice.UI.exe
           cd .. && unzip -l "${ASSET}"
 
       - uses: actions/upload-artifact@v4
@@ -123,27 +123,27 @@ jobs:
       - name: Write the notes preamble
         run: |
           cat > notes.md <<'EOF'
-          ## StoreDownloader, a Windows tool
+          ## Sluice, a Windows tool
 
           This tool deploys Store packages with `Add-AppxPackage` through PowerShell, so the builds are
           Windows only. Every archive is self-contained: no .NET runtime has to be installed, and it
           carries both faces of the tool:
 
-          - `StoreDownloader.exe`, the command line tool
-          - `StoreDownloader.UI.exe`, the desktop window (acrylic backdrop, opaque panels)
+          - `Sluice.exe`, the command line tool
+          - `Sluice.UI.exe`, the desktop window (acrylic backdrop, opaque panels)
 
           | Machine | Asset |
           | --- | --- |
-          | Windows x64 | `StoreDownloader-<version>-windows-x64.zip` |
-          | Windows x86 | `StoreDownloader-<version>-windows-x86.zip` |
-          | Windows arm64 | `StoreDownloader-<version>-windows-arm64.zip` |
+          | Windows x64 | `Sluice-<version>-windows-x64.zip` |
+          | Windows x86 | `Sluice-<version>-windows-x86.zip` |
+          | Windows arm64 | `Sluice-<version>-windows-arm64.zip` |
 
           Verify the download against `SHA256SUMS.txt` before running it, then:
 
           ```
-          .\StoreDownloader.exe doctor
-          .\StoreDownloader.exe install <store-link>
-          .\StoreDownloader.UI.exe
+          .\Sluice.exe doctor
+          .\Sluice.exe install <store-link>
+          .\Sluice.UI.exe
           ```
 
           ### Verified on a virtual machine
@@ -170,7 +170,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.version.outputs.tag }}"
-          TITLE="StoreDownloader ${{ steps.version.outputs.version }}"
+          TITLE="Sluice ${{ steps.version.outputs.version }}"
           if gh release view "${TAG}" > /dev/null 2>&1; then
             echo "release ${TAG} exists, replacing its assets and notes"
             gh release upload "${TAG}" assets/* --clobber

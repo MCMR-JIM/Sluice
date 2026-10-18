@@ -1,0 +1,460 @@
+<Window x:Class="Sluice.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:Sluice.Desktop.Converters"
+        Title="Sluice"
+        Height="760" Width="1180" MinHeight="560" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        FontFamily="{StaticResource UiFont}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+    <Window.Resources>
+        <conv:LogLevelToBrushConverter x:Key="LogLevelToBrush" />
+        <conv:ToneToBrushConverter x:Key="ToneToBrush" />
+        <conv:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}" />
+
+        <Style x:Key="RowText" TargetType="TextBlock" BasedOn="{StaticResource MonoText}">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Window.Resources>
+
+    <!-- One flat semi transparent black plane; every panel below it is opaque. -->
+    <Grid Background="{StaticResource SurfaceBaseBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+
+
+        <!-- ================= title bar area ================= -->
+        <Grid Grid.Row="0" Margin="14,12,14,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Image Source="Assets/app.png" Width="16" Height="16" VerticalAlignment="Center"
+                       RenderOptions.BitmapScalingMode="HighQuality" />
+                <TextBlock Text="Sluice" Style="{StaticResource DisplayText}" Margin="9,0,0,0"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{Binding ToolVersion}" Style="{StaticResource MonoText}" FontSize="11"
+                           Opacity="0.45" Margin="8,2,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Chips}" Margin="16,0,8,0" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                            <Ellipse Width="5" Height="5" Margin="0,0,5,0" VerticalAlignment="Center"
+                                     Fill="{Binding Tone, Converter={StaticResource ToneToBrush}}" />
+                            <TextBlock Text="{Binding Text}" FontSize="11"
+                                       Foreground="{StaticResource TextTertiaryBrush}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Lang" Content="中文"
+                             IsChecked="{Binding Loc.IsChinese, Mode=TwoWay}" />
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Lang" Content="EN"
+                             IsChecked="{Binding Loc.IsEnglish, Mode=TwoWay}" Margin="0,0,10,0" />
+                <Button Content="{Binding Loc[RefreshEnvironment]}" Style="{StaticResource GhostButton}"
+                        Command="{Binding RefreshEnvironmentCommand}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ================= body ================= -->
+        <Grid Grid.Row="1" Margin="14,0,14,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="272" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- source + options: one pane, hairline groups, no card chrome -->
+            <Border CornerRadius="8" Background="{StaticResource SurfaceBrush}"
+                    BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Padding="12,10"
+                    Margin="0,2,0,2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="{Binding Loc[Source]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Style="{StaticResource FluentTextBox}"
+                                 Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanRun}" />
+                        <Button Grid.Column="1" Content="{Binding Loc[Paste]}" Style="{StaticResource GhostButton}" Margin="4,0,0,0"
+                                Command="{Binding PasteCommand}" IsEnabled="{Binding CanRun}" />
+                    </Grid>
+
+                    <TextBlock Text="{Binding Loc[Arch]}" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="x64"
+                                     IsChecked="{Binding IsX64, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="x86"
+                                     IsChecked="{Binding IsX86, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="arm64"
+                                     IsChecked="{Binding IsArm64, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding Loc[Locale]}" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
+                    <TextBox Style="{StaticResource FluentTextBox}" Text="{Binding Locale}"
+                             IsEnabled="{Binding CanRun}" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="{Binding Loc[IncludeAllArch]}"
+                                  IsChecked="{Binding AllArchitectures}" IsEnabled="{Binding CanRun}" />
+                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="{Binding Loc[AllUsers]}"
+                                  Margin="14,0,0,0" IsChecked="{Binding AllUsers}" IsEnabled="{Binding CanRun}" />
+                    </StackPanel>
+
+                    <Button Content="{Binding Loc[InstallToMachine]}" Style="{StaticResource PrimaryButton}" Margin="0,12,0,0"
+                            Command="{Binding InstallCommand}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="{Binding Loc[Resolve]}" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ResolveCommand}" />
+                        <Button Grid.Column="2" Content="{Binding Loc[Download]}" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding DownloadCommand}" />
+                        <Button Grid.Column="4" Content="{Binding Loc[Plan]}" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding PlanCommand}" />
+                    </Grid>
+                    <Button Content="{Binding Loc[CancelTask]}" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
+                            HorizontalAlignment="Left" Command="{Binding CancelCommand}" />
+
+                    <Border Height="1" Background="{StaticResource HairlineBrush}" Margin="0,14" />
+
+                    <TextBlock Text="{Binding Loc[Cache]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <TextBlock Style="{StaticResource MonoText}" FontSize="11" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding CacheDirectory}" />
+                    <Button Content="{Binding Loc[OpenFolder]}" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
+                            HorizontalAlignment="Left" Command="{Binding OpenFolderCommand}" />
+
+                    <Border Height="1" Background="{StaticResource HairlineBrush}" Margin="0,14" />
+
+                    <TextBlock Text="{Binding Loc[Explain]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Style="{StaticResource FluentTextBox}"
+                                 Text="{Binding ExplainInput, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Grid.Column="1" Content="{Binding Loc[Query]}" Style="{StaticResource SecondaryButton}" Margin="4,0,0,0"
+                                Command="{Binding ExplainCommand}" />
+                    </Grid>
+
+                    <Border Margin="0,8,0,0" CornerRadius="4" Padding="10"
+                            Background="{StaticResource SurfaceSunkenBrush}"
+                            BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
+                            Visibility="{Binding ExplainVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource MonoText}" FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{StaticResource AccentBrush}" Text="{Binding ExplainTitle}" />
+                            <TextBlock Style="{StaticResource BodyText}" FontSize="11.5" Margin="0,6,0,0"
+                                       Text="{Binding ExplainBody}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+            </Border>
+
+            <!-- data -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- product strip -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource DisplayText}" FontSize="13.5" TextTrimming="CharacterEllipsis"
+                                   Text="{Binding ProductTitle}" />
+                        <TextBlock Style="{StaticResource CaptionText}" FontSize="11" Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis" Text="{Binding ProductDetail}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource SectionTitle}" FontSize="11.5" HorizontalAlignment="Right"
+                                   Foreground="{StaticResource AccentBrush}" Text="{Binding ResultHeadline}" />
+                        <TextBlock Style="{StaticResource CaptionText}" FontSize="10.5" HorizontalAlignment="Right"
+                                   MaxWidth="320" TextAlignment="Right" TextTrimming="CharacterEllipsis"
+                                   Text="{Binding ResultDetail}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- tabs + counters -->
+                <Grid Grid.Row="1" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="{Binding Loc[TabPackages]}"
+                                     IsChecked="{Binding ShowPackages, Mode=TwoWay}" />
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="{Binding Loc[TabLog]}"
+                                     IsChecked="{Binding ShowLog, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Style="{StaticResource CaptionText}" FontSize="11" VerticalAlignment="Center"
+                                   Margin="0,0,10,0" Text="{Binding PackageCountText}" />
+                        <Button Content="{Binding Loc[CopyLog]}" Style="{StaticResource GhostButton}"
+                                Command="{Binding CopyLogCommand}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- packages -->
+                <Border Grid.Row="2" CornerRadius="6" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
+                        Visibility="{Binding ShowPackages, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- column header, full bleed -->
+                            <Border Grid.Row="0" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1"
+                                    Padding="12,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="76" />
+                                        <ColumnDefinition Width="44" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[ColumnRole]}" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[ColumnFile]}" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Loc[ColumnArch]}" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Loc[ColumnSize]}" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="4" Text="{Binding Loc[ColumnLink]}" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Packages}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1"
+                                                    Padding="12,5" Background="Transparent">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="{StaticResource HoverBrush}" />
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="76" />
+                                                        <ColumnDefinition Width="44" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                               Text="{Binding RoleText}" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource RowText}"
+                                                               Text="{Binding FileName}" />
+                                                    <TextBlock Grid.Column="2" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" HorizontalAlignment="Right"
+                                                               Foreground="{StaticResource TextTertiaryBrush}"
+                                                               Text="{Binding Architecture}" />
+                                                    <TextBlock Grid.Column="3" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" HorizontalAlignment="Right"
+                                                               Text="{Binding Size}" />
+                                                    <TextBlock Grid.Column="4" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" HorizontalAlignment="Right"
+                                                               Foreground="{StaticResource SuccessBrush}"
+                                                               Text="{Binding Link}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="2" Margin="18,22,18,0" VerticalAlignment="Top"
+                                        Visibility="{Binding Packages.Count, Converter={StaticResource ZeroToVisibleConverter}}">
+                                <Viewbox Width="26" Height="26" HorizontalAlignment="Left" Opacity="0.55">
+                                    <Canvas Width="24" Height="24">
+                                        <Path Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.4"
+                                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                              Data="M3,7.5 L12,3 L21,7.5 L21,16.5 L12,21 L3,16.5 Z" />
+                                        <Path Stroke="{StaticResource TextSecondaryBrush}" StrokeThickness="1.4"
+                                              StrokeLineJoin="Round" Data="M3,7.5 L12,12 L21,7.5" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock Style="{StaticResource DisplayText}" FontSize="13" Margin="0,10,0,0"
+                                           Text="{Binding Loc[EmptyTitle]}" />
+                                <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" MaxWidth="460"
+                                           HorizontalAlignment="Left"
+                                           Text="{Binding Loc[EmptyBody]}" />
+                                <TextBlock Style="{StaticResource CaptionText}" Margin="0,10,0,0" MaxWidth="460"
+                                           HorizontalAlignment="Left"
+                                           Text="{Binding Loc[EmptyHint]}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- plan, flat list under the packages -->
+                        <Border Grid.Row="1" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0"
+                                Height="150">
+                            <StackPanel>
+                                <Grid Margin="12,6,12,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[PlanSection]}" Style="{StaticResource GroupLabel}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource CaptionText}" FontSize="10.5"
+                                               HorizontalAlignment="Right" Text="{Binding Loc[PlanFormula]}" />
+                                </Grid>
+
+                                <TextBlock Style="{StaticResource CaptionText}" FontSize="11" Margin="12,0,12,8"
+                                           Text="{Binding Loc[PlanEmpty]}"
+                                           Visibility="{Binding PlanRows.Count, Converter={StaticResource ZeroToVisibleConverter}}" />
+
+                                <ScrollViewer MaxHeight="104" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding PlanRows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="12,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="18" />
+                                                        <ColumnDefinition Width="48" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="44" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                               Text="{Binding Order}" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                                               Text="{Binding KindLabel}" />
+                                                    <TextBlock Grid.Column="2" Style="{StaticResource RowText}"
+                                                               FontSize="11" Text="{Binding FileName}" Margin="4,0,8,0" />
+                                                    <TextBlock Grid.Column="3" FontSize="10.5" HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center" Text="{Binding StateLabel}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                                                                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsFailed}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- log -->
+                <Border Grid.Row="2" CornerRadius="6" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
+                        Visibility="{Binding ShowLog, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ScrollViewer x:Name="LogScroll" VerticalScrollBarVisibility="Auto" Margin="0,6">
+                        <ItemsControl ItemsSource="{Binding Log}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="12,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Style="{StaticResource RowText}" FontSize="10.5"
+                                                   Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding Time}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource RowText}" FontSize="10.5"
+                                                   Foreground="{Binding Level, Converter={StaticResource LogLevelToBrush}}"
+                                                   Text="{Binding Level}" />
+                                        <TextBlock Grid.Column="2" Style="{StaticResource RowText}" FontSize="11"
+                                                   TextWrapping="Wrap" TextTrimming="None" Text="{Binding Text}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- status -->
+                <Border Grid.Row="3" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0"
+                        Padding="0,8,0,2">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="170" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Style="{StaticResource GroupLabel}" VerticalAlignment="Center"
+                               Foreground="{StaticResource AccentBrush}" Text="{Binding Stage}" Margin="0,0,10,0" />
+                    <ProgressBar Grid.Column="1" Style="{StaticResource FluentProgress}" VerticalAlignment="Center"
+                                 Margin="0,0,12,0" Minimum="0" Maximum="100"
+                                 Value="{Binding Progress, Mode=OneWay}"
+                                 IsIndeterminate="{Binding ProgressIndeterminate, Mode=OneWay}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource RowText}" FontSize="11"
+                               Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding StatusLine}" />
+                </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

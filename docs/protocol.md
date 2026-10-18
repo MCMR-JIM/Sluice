@@ -3,8 +3,8 @@
 How a Store link becomes a package, end to end. This is the part link generators do not explain
 and the part that breaks when Microsoft changes something.
 
-Relevant code: `src/StoreDownloader.Core/Store`, `src/StoreDownloader.Core/Fe3` and
-`src/StoreDownloader.Core/Packages`.
+Relevant code: `src/Sluice.Core/Store`, `src/Sluice.Core/Fe3` and
+`src/Sluice.Core/Packages`.
 
 ## Contents
 

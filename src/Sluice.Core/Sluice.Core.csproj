@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Sluice</RootNamespace>
+    <AssemblyName>Sluice.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sluice.Tests" />
+  </ItemGroup>
+
+</Project>

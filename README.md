@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/logo.png" alt="StoreDownloader" width="140">
+  <img src="assets/logo.png" alt="Sluice" width="140">
 </p>
 
-<h1 align="center">StoreDownloader</h1>
+<h1 align="center">Sluice</h1>
 
 <p align="center"><strong>One command that turns a Microsoft Store link into a working install.</strong></p>
 
@@ -10,7 +10,7 @@ Store link in, running app out. The tool resolves the real package URLs, downloa
 the dependency packages its manifest actually declares, installs the frameworks first with
 `Add-AppxPackage`, then reads the registration back to prove it worked.
 
-[![ci](https://github.com/MCMR-JIM/StoreDownloader/actions/workflows/ci.yml/badge.svg)](https://github.com/MCMR-JIM/StoreDownloader/actions/workflows/ci.yml)
+[![ci](https://github.com/MCMR-JIM/Sluice/actions/workflows/ci.yml/badge.svg)](https://github.com/MCMR-JIM/Sluice/actions/workflows/ci.yml)
 
 ## Contents
 
@@ -33,24 +33,24 @@ release ships Windows binaries only. They are self-contained single files, no .N
 
 | Machine | Asset |
 | --- | --- |
-| Windows x64 | `StoreDownloader-<version>-windows-x64.exe` |
-| Windows x86 | `StoreDownloader-<version>-windows-x86.exe` |
-| Windows arm64 | `StoreDownloader-<version>-windows-arm64.exe` |
+| Windows x64 | `Sluice-<version>-windows-x64.exe` |
+| Windows x86 | `Sluice-<version>-windows-x86.exe` |
+| Windows arm64 | `Sluice-<version>-windows-arm64.exe` |
 
-Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/StoreDownloader/releases/latest),
+Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/Sluice/releases/latest),
 verify it against the published `SHA256SUMS.txt`, and run it:
 
 ```powershell
-Get-FileHash .\StoreDownloader-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
-.\StoreDownloader-0.2.0-windows-x64.exe doctor
+Get-FileHash .\Sluice-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
+.\Sluice-0.2.0-windows-x64.exe doctor
 ```
 
-Both faces ship in the same archive: `StoreDownloader.exe` on the command line and `StoreDownloader.UI.exe`
+Both faces ship in the same archive: `Sluice.exe` on the command line and `Sluice.UI.exe`
 for the window below. Prefer to build it? See [build and test](#build-and-test).
 
 ## Desktop window
 
-`StoreDownloader.UI.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
+`Sluice.UI.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
 watch the plan resolve, download and install step by step. It is a WPF window on the Windows 11
 acrylic backdrop — the desktop behind it is blurred, not hidden — with a dark title bar, rounded
 corners and Task Manager density. The look has three rules: one flat semi transparent black plane
@@ -71,9 +71,9 @@ What the window gives you that the command line cannot:
 On Windows, with the binary on your path:
 
 ```console
-StoreDownloader doctor
-StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh --dry-run
-StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh
+Sluice doctor
+Sluice install https://apps.microsoft.com/detail/9nksqgp7f2nh --dry-run
+Sluice install https://apps.microsoft.com/detail/9nksqgp7f2nh
 ```
 
 A real run looks like this:
@@ -130,44 +130,44 @@ Store link generators get you *links*. Everything that goes wrong afterwards is 
 | `doctor` | - | Check sideloading policy, Developer Mode, deployment services, free space |
 | `explain` | HRESULT such as `0x80073CF3` | Explain a deployment error and how to get past it |
 
-Every command has its own manual page inside the binary: `StoreDownloader help install` (or
-`StoreDownloader install --help`) prints the synopsis, arguments, every option with its default, examples
-and notes. `StoreDownloader --help` is the index, `StoreDownloader --version` the runtime it would deploy into.
+Every command has its own manual page inside the binary: `Sluice help install` (or
+`Sluice install --help`) prints the synopsis, arguments, every option with its default, examples
+and notes. `Sluice --help` is the index, `Sluice --version` the runtime it would deploy into.
 
 ### Recipes
 
 Install straight from the Store:
 
 ```console
-StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh
+Sluice install https://apps.microsoft.com/detail/9nksqgp7f2nh
 ```
 
 Inspect before touching anything:
 
 ```console
-StoreDownloader install 9NKSQGP7F2NH --dry-run
-StoreDownloader analyze .\downloads
-StoreDownloader plan .\downloads --arch x64
+Sluice install 9NKSQGP7F2NH --dry-run
+Sluice analyze .\downloads
+Sluice plan .\downloads --arch x64
 ```
 
 Build an offline archive for another machine, then replay it with no network:
 
 ```console
-StoreDownloader download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\StoreCache
-StoreDownloader install --dir D:\StoreCache
+Sluice download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\StoreCache
+Sluice install --dir D:\StoreCache
 ```
 
 Fetch framework packages only, for an app you already have:
 
 ```console
-StoreDownloader download <product-id> --deps-only --dir .\downloads
+Sluice download <product-id> --deps-only --dir .\downloads
 ```
 
 Diagnose a machine that refuses to install anything:
 
 ```console
-StoreDownloader doctor
-StoreDownloader explain 0x80073CF3 --json
+Sluice doctor
+Sluice explain 0x80073CF3 --json
 ```
 
 ### Options worth knowing
@@ -215,20 +215,20 @@ string before it returns any payload at all, is in [docs/protocol.md](docs/proto
 * **Windows 10 1809 or newer** to install: deployment is driven through PowerShell 5.1 or 7.
 * Resolving, downloading, analysing and planning work anywhere .NET 8 runs.
 * No administrator rights for a per-user install; `--all-users` needs elevation.
-* Sideloading must be allowed. `StoreDownloader doctor` reports whether it is, and what to change.
+* Sideloading must be allowed. `Sluice doctor` reports whether it is, and what to change.
 
 ## Build and test
 
 ```console
 dotnet build
 dotnet test
-dotnet run --project src/StoreDownloader.Cli -- doctor
+dotnet run --project src/Sluice.Cli -- doctor
 ```
 
 Single-file build for distribution:
 
 ```console
-dotnet publish src/StoreDownloader.Cli -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out
+dotnet publish src/Sluice.Cli -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out
 ```
 
 The test suite runs offline. It reads the delivery service parser through a checked-in fixture,
@@ -242,12 +242,12 @@ no network and no Windows deployment stack are required.
 * **Paid apps** need an entitlement. Free apps, which are what people actually sideload, resolve fully.
 * **Signed URLs expire** within hours. Resolve and download in the same run, or keep the files.
 * The delivery service is Microsoft's internal protocol and can change. Everything that depends on
-  its behaviour sits behind `src/StoreDownloader.Core/Fe3` and is covered by fixture tests.
+  its behaviour sits behind `src/Sluice.Core/Fe3` and is covered by fixture tests.
 
 ## Project layout
 
 ```text
-src/StoreDownloader.Core
+src/Sluice.Core
   Store/        url parsing, display catalog and Store Edge clients
   Fe3/          delivery service: SOAP envelopes, response parsing, package model
   Packages/     appx, msix and bundle manifests; architecture and resource selection
@@ -255,8 +255,8 @@ src/StoreDownloader.Core
   Install/      plans, Add-AppxPackage execution, remedies, verification
   Diagnostics/  deployment HRESULT catalogue
   Windows/      PowerShell host, installed package inventory, environment probe
-src/StoreDownloader.Cli        the StoreDownloader command line
-tests/StoreDownloader.Tests    offline tests with synthetic package fixtures
+src/Sluice.Cli        the Sluice command line
+tests/Sluice.Tests    offline tests with synthetic package fixtures
 docs/                          protocol notes, troubleshooting, architecture
 ```
 
