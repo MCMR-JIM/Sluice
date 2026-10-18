@@ -29,28 +29,30 @@ release ships Windows binaries only. They are self-contained single files, no .N
 
 | Machine | Asset |
 | --- | --- |
-| Windows x64 | `storedl-<version>-windows-x64.exe` |
-| Windows x86 | `storedl-<version>-windows-x86.exe` |
-| Windows arm64 | `storedl-<version>-windows-arm64.exe` |
+| Windows x64 | `StoreDownloader-<version>-windows-x64.exe` |
+| Windows x86 | `StoreDownloader-<version>-windows-x86.exe` |
+| Windows arm64 | `StoreDownloader-<version>-windows-arm64.exe` |
 
 Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/StoreDownloader/releases/latest),
 verify it against the published `SHA256SUMS.txt`, and run it:
 
 ```powershell
-Get-FileHash .\storedl-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
-.\storedl-0.2.0-windows-x64.exe doctor
+Get-FileHash .\StoreDownloader-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
+.\StoreDownloader-0.2.0-windows-x64.exe doctor
 ```
 
-Both faces ship in the same archive: `storedl.exe` on the command line and `storedl-ui.exe`
+Both faces ship in the same archive: `StoreDownloader.exe` on the command line and `StoreDownloader.UI.exe`
 for the window below. Prefer to build it? See [build and test](#build-and-test).
 
 ## Desktop window
 
-`storedl-ui.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
-watch the plan resolve, download and install step by step. It is a WPF window with the Windows 11
-Mica backdrop, a dark title bar and tight, Task Manager style density.
+`StoreDownloader.UI.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
+watch the plan resolve, download and install step by step. It is a WPF window with a real Windows 11
+backdrop — acrylic by default, Mica or a plain canvas on demand — a dark title bar, rounded corners
+and Task Manager density. The header switch labelled 背景 changes the backdrop live, so the glass can
+be compared against a flat canvas on the same machine.
 
-![storedl window](docs/ui-window.png)
+![StoreDownloader window](docs/ui-window.png)
 
 What the window gives you that the command line cannot:
 
@@ -65,9 +67,9 @@ What the window gives you that the command line cannot:
 On Windows, with the binary on your path:
 
 ```console
-storedl doctor
-storedl install https://apps.microsoft.com/detail/9nksqgp7f2nh --dry-run
-storedl install https://apps.microsoft.com/detail/9nksqgp7f2nh
+StoreDownloader doctor
+StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh --dry-run
+StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh
 ```
 
 A real run looks like this:
@@ -124,44 +126,44 @@ Store link generators get you *links*. Everything that goes wrong afterwards is 
 | `doctor` | - | Check sideloading policy, Developer Mode, deployment services, free space |
 | `explain` | HRESULT such as `0x80073CF3` | Explain a deployment error and how to get past it |
 
-Every command has its own manual page inside the binary: `storedl help install` (or
-`storedl install --help`) prints the synopsis, arguments, every option with its default, examples
-and notes. `storedl --help` is the index, `storedl --version` the runtime it would deploy into.
+Every command has its own manual page inside the binary: `StoreDownloader help install` (or
+`StoreDownloader install --help`) prints the synopsis, arguments, every option with its default, examples
+and notes. `StoreDownloader --help` is the index, `StoreDownloader --version` the runtime it would deploy into.
 
 ### Recipes
 
 Install straight from the Store:
 
 ```console
-storedl install https://apps.microsoft.com/detail/9nksqgp7f2nh
+StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh
 ```
 
 Inspect before touching anything:
 
 ```console
-storedl install 9NKSQGP7F2NH --dry-run
-storedl analyze .\downloads
-storedl plan .\downloads --arch x64
+StoreDownloader install 9NKSQGP7F2NH --dry-run
+StoreDownloader analyze .\downloads
+StoreDownloader plan .\downloads --arch x64
 ```
 
 Build an offline archive for another machine, then replay it with no network:
 
 ```console
-storedl download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\StoreCache
-storedl install --dir D:\StoreCache
+StoreDownloader download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\StoreCache
+StoreDownloader install --dir D:\StoreCache
 ```
 
 Fetch framework packages only, for an app you already have:
 
 ```console
-storedl download <product-id> --deps-only --dir .\downloads
+StoreDownloader download <product-id> --deps-only --dir .\downloads
 ```
 
 Diagnose a machine that refuses to install anything:
 
 ```console
-storedl doctor
-storedl explain 0x80073CF3 --json
+StoreDownloader doctor
+StoreDownloader explain 0x80073CF3 --json
 ```
 
 ### Options worth knowing
@@ -209,7 +211,7 @@ string before it returns any payload at all, is in [docs/protocol.md](docs/proto
 * **Windows 10 1809 or newer** to install: deployment is driven through PowerShell 5.1 or 7.
 * Resolving, downloading, analysing and planning work anywhere .NET 8 runs.
 * No administrator rights for a per-user install; `--all-users` needs elevation.
-* Sideloading must be allowed. `storedl doctor` reports whether it is, and what to change.
+* Sideloading must be allowed. `StoreDownloader doctor` reports whether it is, and what to change.
 
 ## Build and test
 
@@ -249,7 +251,7 @@ src/StoreDownloader.Core
   Install/      plans, Add-AppxPackage execution, remedies, verification
   Diagnostics/  deployment HRESULT catalogue
   Windows/      PowerShell host, installed package inventory, environment probe
-src/StoreDownloader.Cli        the storedl command line
+src/StoreDownloader.Cli        the StoreDownloader command line
 tests/StoreDownloader.Tests    offline tests with synthetic package fixtures
 docs/                          protocol notes, troubleshooting, architecture
 ```
@@ -261,6 +263,7 @@ docs/                          protocol notes, troubleshooting, architecture
 | [docs/protocol.md](docs/protocol.md) | Link to package: catalog, delivery service, bundles, installing |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Error codes, symptom to fix, how to collect a report |
 | [docs/architecture.md](docs/architecture.md) | Layering, design decisions, testing, conventions |
+| [docs/brand.md](docs/brand.md) | Name, palette, the placeholder mark and the prompt for a real icon |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 
 ## License

@@ -6,9 +6,21 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+* The product is consistently called `StoreDownloader`: window title, header, help text, binaries
+  (`StoreDownloader.exe` and `StoreDownloader.UI.exe`), release archives and the download
+  manifest file name. No short form anywhere.
+* The header no longer shows a letter in a rounded square. A vector parcel mark stands in until a
+  real icon exists; [docs/brand.md](docs/brand.md) documents the palette, the swap in procedure and
+  a prompt for generating the artwork.
+* The window paints nothing over its own background any more, so the backdrop is visible: acrylic
+  (`DWMSBT_TRANSIENTWINDOW`) by default, with Mica and a solid canvas selectable from the header.
+  Panels are white at 8% over the blur, separators hairline, rows highlight on hover.
+
 ### Added
 
-* A desktop window, `storedl-ui.exe`: the same resolve, download, plan, install and verify pipeline
+* A desktop window, `StoreDownloader.UI.exe`: the same resolve, download, plan, install and verify pipeline
   driven from a WPF interface with the Windows 11 Mica backdrop, a dark title bar, dense
   Task Manager style layout, a live package table, per step install progress, a colour coded
   activity log, `doctor` chips and an HRESULT lookup.
@@ -44,9 +56,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-* Built-in manual: `storedl help <command>` and `storedl <command> --help` print synopsis,
+* Built-in manual: `StoreDownloader help <command>` and `StoreDownloader <command> --help` print synopsis,
   arguments, every option with its default, examples and notes, all shipped inside the binary.
-* `storedl --version` prints the version, runtime and OS it would deploy into.
+* `StoreDownloader --version` prints the version, runtime and OS it would deploy into.
 * Dependency-aware downloads: `install` now fetches the application first, reads the
   dependencies out of its manifest and downloads only those. `--all-deps` restores the old
   behaviour for offline archives.
@@ -87,7 +99,7 @@ All notable changes to this project are documented here. The format follows
 * Package analysis for `.msix`, `.appx`, `.msixbundle` and `.appxbundle`: identity,
   dependencies, resource ids and bundle children.
 * Resumable, parallel downloads verified against the published SHA-1, with
-  `storedl-manifest.json` written next to the files.
+  `StoreDownloader-manifest.json` written next to the files.
 * Framework-first install planning against the installed package inventory.
 * Deployment through `Add-AppxPackage` with automatic remedies per HRESULT, plus registration
   verification.
