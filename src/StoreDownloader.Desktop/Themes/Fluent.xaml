@@ -22,34 +22,22 @@
         one 10% plane for legibility, panels that lift with 6% white, sunken inputs at 20% black.
         Everything else is what the compositor blurs behind the window.
     -->
-    <!-- A gradient veil rather than a flat one: enough black for text to stay readable over a bright
-         window, thin enough that shapes behind it still move through. -->
-    <LinearGradientBrush x:Key="SurfaceBaseBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#59000000" Offset="0" />
-        <GradientStop Color="#45000000" Offset="0.55" />
-        <GradientStop Color="#38000000" Offset="1" />
-    </LinearGradientBrush>
-    <SolidColorBrush x:Key="SurfaceBrush" Color="#12FFFFFF" />
-    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#24FFFFFF" />
-    <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#2E000000" />
-    <SolidColorBrush x:Key="HairlineBrush" Color="#26FFFFFF" />
-    <SolidColorBrush x:Key="HairlineStrongBrush" Color="#40FFFFFF" />
-    <SolidColorBrush x:Key="HoverBrush" Color="#1FFFFFFF" />
-    <!-- a lit top edge and a soft bottom edge: the pane reads as glass even over a dark backdrop -->
-    <LinearGradientBrush x:Key="GlassEdgeBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#40FFFFFF" Offset="0" />
-        <GradientStop Color="#14FFFFFF" Offset="0.5" />
-        <GradientStop Color="#0DFFFFFF" Offset="1" />
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="GlassTintBrush" StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#1A5EC8FF" Offset="0" />
-        <GradientStop Color="#0A5EC8FF" Offset="0.45" />
-        <GradientStop Color="#00000000" Offset="1" />
-    </LinearGradientBrush>
-    <LinearGradientBrush x:Key="SheenBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#14FFFFFF" Offset="0" />
-        <GradientStop Color="#00FFFFFF" Offset="0.45" />
-    </LinearGradientBrush>
+    <!--
+        Three rules, and they are the whole look:
+        1. the window background is ONE flat, semi transparent black — no gradient, no tint layers;
+        2. every component inside it is opaque, so panels read as solid surfaces on the glass;
+        3. only the gaps between components and the window edge show the acrylic.
+    -->
+    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#B8000000" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FF1E1E1E" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#FF2A2A2A" />
+    <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#FF151515" />
+    <SolidColorBrush x:Key="HairlineBrush" Color="#FF333333" />
+    <SolidColorBrush x:Key="HairlineStrongBrush" Color="#FF454545" />
+    <SolidColorBrush x:Key="HoverBrush" Color="#FF2F2F2F" />
+
+
+
 
     <SolidColorBrush x:Key="TextBrush" Color="#FFFAFAFA" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FFD2D2D2" />
