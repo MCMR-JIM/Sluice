@@ -23,9 +23,11 @@ jobs:
   sideload:
     name: sideload on a windows runner
     runs-on: windows-latest
+    # The runner context is not available in a job level env block, so this uses the
+    # github context and the workspace instead.
     env:
-      STORE_URL: ${{ inputs.store_url }}
-      CACHE_DIR: ${{ runner.temp }}\store-cache
+      STORE_URL: ${{ github.event.inputs.store_url }}
+      CACHE_DIR: ${{ github.workspace }}\store-cache
     steps:
       - uses: actions/checkout@v4
 
