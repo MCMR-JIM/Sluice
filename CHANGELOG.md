@@ -4,6 +4,35 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-10-19
+
+### Fixed
+
+* The window keeps the chosen language everywhere. Machine chips, the product subtitle, the status
+  line and the result headline were rendered once and never refreshed, so switching to EN left
+  Chinese behind; they now re-render on the switch. The chips are updated in place, because clearing
+  and repopulating the collection in one pass made WPF drop the first containers - the machine name
+  and the architecture used to disappear from the header after a flip.
+* The activity log follows the language too: every line keeps the recipe it was built from, so a
+  switch re-renders the whole transcript, including the severity gutter (命令/信息/完成 and
+  cmd/info/done instead of raw enum names).
+* The shell keeps the mark. The process now claims the AppUserModelID `MCMR-JIM.Sluice` and the
+  exe's version resource says Sluice, so the taskbar no longer falls back to the generic window
+  glyph after the binary is replaced.
+* The crash dialog is bilingual instead of always Chinese.
+
+### Changed
+
+* The readme badges sit directly under the tagline.
+
+### Added
+
+* Diagnostics carry a code plus the values they format (`DiagnosticMessage`): environment warnings,
+  bundle and preparation notes, plan issues and step reasons are translated by the window while the
+  command line and the JSON output keep printing the same English text.
+* The error-code lookup explains every catalogued deployment error in Chinese as well, and the panel
+  re-renders when the language changes.
+
 ## [0.4.0] - 2026-10-19
 
 ### Changed
