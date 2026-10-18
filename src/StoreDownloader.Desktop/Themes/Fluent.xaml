@@ -17,6 +17,7 @@
     -->
     <SolidColorBrush x:Key="WindowVeilBrush" Color="#00FFFFFF" />
     <SolidColorBrush x:Key="SolidCanvasBrush" Color="#FF1F1F1F" />
+    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#0AFFFFFF" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#14FFFFFF" />
     <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#33FFFFFF" />
     <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#26000000" />

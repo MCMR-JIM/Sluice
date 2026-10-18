@@ -24,7 +24,9 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="Transparent">
+    <!-- 4% white keeps the whole window reading as one pane over the backdrop, so desktop content
+         behind it never shows up as hard edged strips between the panels. -->
+    <Grid Background="{StaticResource SurfaceBaseBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
