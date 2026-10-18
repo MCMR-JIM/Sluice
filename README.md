@@ -49,8 +49,10 @@ for the window below. Prefer to build it? See [build and test](#build-and-test).
 `StoreDownloader.UI.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
 watch the plan resolve, download and install step by step. It is a WPF window on the Windows 11
 acrylic backdrop — the desktop behind it is blurred, not hidden — with a dark title bar, rounded
-corners and Task Manager density. The window paints translucent black over the acrylic, so panels
-darken the glass instead of covering it.
+corners and Task Manager density. The window adds almost nothing of its own over the acrylic — a 5%
+black plane, panels that lift with 7% white, a lit top edge — so the blur is what the surfaces are
+made of. Over a dark background dark acrylic stays dark, exactly like Settings or Terminal; drag it
+over a bright window to see the glass.
 
 ![StoreDownloader window](docs/ui-window.png)
 

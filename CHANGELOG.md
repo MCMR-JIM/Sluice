@@ -14,10 +14,10 @@ All notable changes to this project are documented here. The format follows
 * The header no longer shows a letter in a rounded square. A vector parcel mark stands in until a
   real icon exists; [docs/brand.md](docs/brand.md) documents the palette, the swap in procedure and
   a prompt for generating the artwork.
-* The window sits on the Windows acrylic backdrop (`DWMSBT_TRANSIENTWINDOW`) and paints translucent
-  black over it, so the glass is what the panels are made of. No appearance switch to fiddle with;
-  a solid canvas is used only when the compositor has no backdrop. Rows highlight on hover,
-  separators are hairline.
+* The window sits on the Windows acrylic backdrop (`DWMSBT_TRANSIENTWINDOW`) and adds almost no
+  paint of its own: a 5% black plane for legibility, panels lifting with 7% white, inputs at 18%
+  black, a lit top edge and a faint accent tint. No appearance switch; a solid canvas is used only
+  when the compositor has no backdrop. Rows highlight on hover, separators are hairline.
 
 ### Added
 
