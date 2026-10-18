@@ -31,8 +31,8 @@ public sealed record EnvironmentReport(
 
 /// <summary>
 /// Checks the parts of Windows that actually decide whether an appx install will succeed:
-/// sideloading policy, Developer Mode, the deployment services and elevation. Most "the
-/// package could not be registered" reports come down to one of these.
+/// sideloading policy, Developer Mode, the deployment services and elevation. Most "the package
+/// could not be registered" reports come down to one of these.
 /// </summary>
 public static class WindowsEnvironmentProbe
 {
@@ -111,8 +111,18 @@ public static class WindowsEnvironmentProbe
         }
 
         using var document = JsonDocument.Parse(result.StandardOutput);
-        var root = document.RootElement;
+        return ParseReport(document.RootElement, architecture, shell.Executable);
+    }
 
+    /// <summary>
+    /// Turns the JSON the probe script emits into a report. Internal so the mapping from the
+    /// script's output to the report can be tested without a machine.
+    /// </summary>
+    /// <param name="root">Root of the probe payload.</param>
+    /// <param name="architecture">Machine architecture.</param>
+    /// <param name="powerShellPath">PowerShell the caller will use.</param>
+    internal static EnvironmentReport ParseReport(JsonElement root, string architecture, string? powerShellPath)
+    {
         var services = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         if (root.TryGetProperty("services", out var servicesElement) && servicesElement.ValueKind == JsonValueKind.Object)
         {
@@ -125,7 +135,9 @@ public static class WindowsEnvironmentProbe
         var sideloading = ReadBool(root, "allowAllTrustedApps");
         var developerMode = ReadBool(root, "allowDevelopmentWithoutDevLicense");
         var elevated = ReadBool(root, "elevated");
-        var freeSpace = root.TryGetProperty("freeSpace", out var freeSpaceElement) && freeSpaceElement.TryGetInt64(out var space) ? space : 0;
+        var freeSpace = root.TryGetProperty("freeSpace", out var freeSpaceElement) && freeSpaceElement.TryGetInt64(out var space)
+            ? space
+            : 0;
 
         var warnings = new List<string>();
         if (sideloading == false && developerMode != true)
@@ -171,7 +183,7 @@ public static class WindowsEnvironmentProbe
             developerMode,
             services,
             elevated,
-            shell.Executable,
+            powerShellPath,
             freeSpace,
             warnings);
     }
@@ -179,8 +191,22 @@ public static class WindowsEnvironmentProbe
     private static string? ReadString(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    private static bool? ReadBool(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
-            ? value.GetBoolean()
-            : null;
+    // The registry returns DWORD values, so ConvertTo-Json emits 1 and 0 rather than true and
+    // false. Treating those as unknown made doctor report the policy as unreadable on every
+    // machine where it is actually configured.
+    private static bool? ReadBool(JsonElement element, string name)
+    {
+        if (!element.TryGetProperty(name, out var value))
+        {
+            return null;
+        }
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number when value.TryGetInt32(out var number) => number != 0,
+            _ => null,
+        };
+    }
 }
