@@ -1,0 +1,19 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{cs,csx}]
+dotnet_sort_system_directives_first = true
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+[*.{json,yml,yaml,xml,csproj,props,targets,md}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

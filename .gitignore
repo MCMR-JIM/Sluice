@@ -1,0 +1,25 @@
+# Build output
+bin/
+obj/
+artifacts/
+*.user
+*.suo
+
+# Test / coverage
+TestResults/
+coverage*.json
+coverage*.xml
+*.trx
+
+# Local scratch space (probe scripts, downloaded packages, logs)
+.scratch/
+downloads/
+
+# Editors
+.vs/
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+desktop.ini

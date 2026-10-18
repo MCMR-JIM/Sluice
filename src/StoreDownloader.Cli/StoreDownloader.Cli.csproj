@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>StoreDownloader.Cli</RootNamespace>
+    <AssemblyName>storedl</AssemblyName>
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StoreDownloader.Core\StoreDownloader.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>StoreDownloader</RootNamespace>
+    <AssemblyName>StoreDownloader.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>
