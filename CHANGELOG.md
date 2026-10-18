@@ -4,14 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.2] - 2026-10-19
 
 ### Changed
 
 * Scrollbars look like the ones in Task Manager: no track, no arrows, a thin rounded grip that rests
-  almost invisible and comes up when the pointer reaches the gutter.
-* A pane that scrolls no longer loses width to its scrollbar: the bar floats over the content instead
-  of taking a column of its own, so the text and the buttons keep the full pane width.
+  almost invisible and comes up when the pointer reaches the gutter. The bar hangs on the pane's
+  right edge and the pane keeps the width a scrollbar column used to take: on a 1500 pixel wide
+  window the content's right edge moved from 406 to 423 while the pane border stayed at 438.
+* The readme downloads a zip and expands it instead of quoting one old release, the publish commands
+  match the release workflow, the project layout lists the window, and the brand page describes the
+  flat 52% plane and the icon wiring the code actually uses.
 
 ## [0.4.1] - 2026-10-19
 
