@@ -49,7 +49,8 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Publish ${{ matrix.rid }}
+      # EnableWindowsTargeting lets a Linux runner cross compile the WPF project.
+      - name: Publish the command line tool
         run: >
           dotnet publish src/StoreDownloader.Cli
           -c Release
@@ -58,15 +59,31 @@ jobs:
           -p:PublishSingleFile=true
           -p:EnableCompressionInSingleFile=true
           -p:DebugType=none
+          -p:EnableWindowsTargeting=true
           -o dist/${{ matrix.rid }}
+
+      - name: Publish the desktop window
+        run: >
+          dotnet publish src/StoreDownloader.Desktop
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -p:EnableWindowsTargeting=true
+          -o dist/${{ matrix.rid }}-ui
 
       # The runner is Linux, so the Windows binary can be built here but not executed: the check
       # is that it exists, starts with a PE header and carries a plausible amount of data.
-      - name: Check the artifact
+      - name: Check both artifacts
         run: |
-          BIN="dist/${{ matrix.rid }}/storedl.exe"
-          test -f "${BIN}"
-          SIZE=$(stat -c%s "${BIN}")
-          echo "${BIN}: ${SIZE} bytes"
-          test "${SIZE}" -gt 1000000
-          head -c 2 "${BIN}" | od -An -tx1 | grep -qi '4d 5a' && echo "PE image (MZ header) confirmed"
+          for BIN in "dist/${{ matrix.rid }}/storedl.exe" "dist/${{ matrix.rid }}-ui/storedl-ui.exe"; do
+            test -f "${BIN}"
+            SIZE=$(stat -c%s "${BIN}")
+            echo "${BIN}: ${SIZE} bytes"
+            test "${SIZE}" -gt 1000000
+            head -c 2 "${BIN}" | od -An -tx1 | grep -qi '4d 5a'
+          done
+          echo "both binaries are PE images"

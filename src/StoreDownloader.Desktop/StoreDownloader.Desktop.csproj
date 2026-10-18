@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>StoreDownloader.Desktop</RootNamespace>
+    <AssemblyName>storedl-ui</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RollForward>LatestMajor</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StoreDownloader.Core\StoreDownloader.Core.csproj" />
+  </ItemGroup>
+
+</Project>

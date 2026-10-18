@@ -26,11 +26,11 @@ jobs:
       matrix:
         include:
           - rid: win-x64
-            asset: windows-x64.exe
+            asset: windows-x64
           - rid: win-x86
-            asset: windows-x86.exe
+            asset: windows-x86
           - rid: win-arm64
-            asset: windows-arm64.exe
+            asset: windows-arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -49,7 +49,7 @@ jobs:
           echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
           echo "version=${TAG#v}" >> "${GITHUB_OUTPUT}"
 
-      - name: Publish ${{ matrix.rid }}
+      - name: Publish the command line tool
         run: >
           dotnet publish src/StoreDownloader.Cli
           -c Release
@@ -62,12 +62,27 @@ jobs:
           -p:Version=${{ steps.version.outputs.version }}
           -o dist
 
-      - name: Name the binary for the release
+      - name: Publish the desktop window
+        run: >
+          dotnet publish src/StoreDownloader.Desktop
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
+          -p:Version=${{ steps.version.outputs.version }}
+          -o dist-ui
+
+      - name: Pack both binaries for this architecture
         run: |
           mkdir -p assets
-          ASSET="assets/storedl-${{ steps.version.outputs.version }}-${{ matrix.asset }}"
-          cp dist/storedl.exe "${ASSET}"
-          ls -l "${ASSET}"
+          ASSET="assets/storedl-${{ steps.version.outputs.version }}-${{ matrix.asset }}.zip"
+          cd dist && zip -q "${OLDPWD}/${ASSET}" storedl.exe
+          cd .. && cd dist-ui && zip -q "${OLDPWD}/${ASSET}" storedl-ui.exe
+          cd .. && unzip -l "${ASSET}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -111,19 +126,24 @@ jobs:
           ## storedl, a Windows tool
 
           This tool deploys Store packages with `Add-AppxPackage` through PowerShell, so the builds are
-          Windows only. Every asset is self-contained: no .NET runtime has to be installed.
+          Windows only. Every archive is self-contained: no .NET runtime has to be installed, and it
+          carries both faces of the tool:
+
+          - `storedl.exe`, the command line tool
+          - `storedl-ui.exe`, the desktop window (Fluent dark, Mica backdrop)
 
           | Machine | Asset |
           | --- | --- |
-          | Windows x64 | `storedl-<version>-windows-x64.exe` |
-          | Windows x86 | `storedl-<version>-windows-x86.exe` |
-          | Windows arm64 | `storedl-<version>-windows-arm64.exe` |
+          | Windows x64 | `storedl-<version>-windows-x64.zip` |
+          | Windows x86 | `storedl-<version>-windows-x86.zip` |
+          | Windows arm64 | `storedl-<version>-windows-arm64.zip` |
 
           Verify the download against `SHA256SUMS.txt` before running it, then:
 
           ```
-          .\storedl-<version>-windows-x64.exe doctor
-          .\storedl-<version>-windows-x64.exe install <store-link>
+          .\storedl.exe doctor
+          .\storedl.exe install <store-link>
+          .\storedl-ui.exe
           ```
 
           ### Verified on a virtual machine

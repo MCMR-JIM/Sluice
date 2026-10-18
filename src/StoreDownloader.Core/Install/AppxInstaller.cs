@@ -53,8 +53,12 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
 
     /// <summary>Runs the plan.</summary>
     /// <param name="plan">Plan to execute.</param>
+    /// <param name="progress">Optional receiver for each completed step, for user interfaces.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task<InstallOutcome> InstallAsync(InstallPlan plan, CancellationToken cancellationToken = default)
+    public async Task<InstallOutcome> InstallAsync(
+        InstallPlan plan,
+        IProgress<InstallStepResult>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
         EnsureWindows();
@@ -67,6 +71,7 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
             cancellationToken.ThrowIfCancellationRequested();
             var result = await RunStepAsync(step, dependencyPaths, cancellationToken).ConfigureAwait(false);
             results.Add(result);
+            progress?.Report(result);
 
             if (!result.Succeeded)
             {
@@ -79,7 +84,7 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
             return new InstallOutcome(true, results, null, plan.Issues);
         }
 
-        var registered = await ReadRegistrationAsync(plan, results, cancellationToken).ConfigureAwait(false);
+        var registered = await ReadRegistrationAsync(plan, results, progress, cancellationToken).ConfigureAwait(false);
         var succeeded = registered is not null
             && (plan.MainVersion is null
                 || !System.Version.TryParse(plan.MainVersion, out var expected)
@@ -112,6 +117,7 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
     private async Task<InstalledPackage?> ReadRegistrationAsync(
         InstallPlan plan,
         List<InstallStepResult> results,
+        IProgress<InstallStepResult>? progress,
         CancellationToken cancellationToken)
     {
         var registered = await VerifyAsync(plan, cancellationToken).ConfigureAwait(false);
@@ -122,7 +128,9 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
 
         if (verifyStep is not null)
         {
-            results.Add(new InstallStepResult(verifyStep, registered is not null, null, message, null, [message]));
+            var verification = new InstallStepResult(verifyStep, registered is not null, null, message, null, [message]);
+            results.Add(verification);
+            progress?.Report(verification);
         }
 
         return registered;
