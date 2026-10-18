@@ -12,6 +12,7 @@ the dependency packages its manifest actually declares, installs the frameworks 
 
 | Section | What you get |
 | --- | --- |
+| [Download](#download) | Prebuilt binaries per platform and architecture |
 | [Quick start](#quick-start) | First install in three commands |
 | [Why this exists](#why-this-exists) | The problems link generators leave behind |
 | [Commands](#commands) | Every command and the options that matter |
@@ -21,14 +22,42 @@ the dependency packages its manifest actually declares, installs the frameworks 
 | [Limitations](#limitations) | What it deliberately does not do |
 | [Documents](#documents) | Protocol notes, troubleshooting, architecture |
 
-## Quick start
+## Download
+
+Every tagged release ships self-contained single-file binaries, no .NET runtime needed:
+
+| Platform | Asset |
+| --- | --- |
+| Windows x64, x86, arm64 | `storedl-<version>-windows-<arch>.exe` |
+| Linux x64, arm64 | `storedl-<version>-linux-<arch>` |
+| macOS x64, arm64 | `storedl-<version>-macos-<arch>` |
+
+Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/StoreDownloader/releases/latest).
+Verify it against the published `SHA256SUMS.txt` first:
 
 ```console
-dotnet publish src/StoreDownloader.Cli -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out
+sha256sum -c SHA256SUMS.txt --ignore-missing
+chmod +x storedl-0.2.0-linux-x64
+./storedl-0.2.0-linux-x64 --version
+```
 
-.\out\storedl.exe doctor
-.\out\storedl.exe install https://apps.microsoft.com/detail/9nksqgp7f2nh --dry-run
-.\out\storedl.exe install https://apps.microsoft.com/detail/9nksqgp7f2nh
+Installing packages needs Windows. On Linux and macOS the same binary resolves, downloads,
+analyses and plans, which is how you build an offline package cache:
+
+```console
+storedl download <store-link> --all-arch --dir ./StoreCache
+```
+
+Prefer to build it? See [build and test](#build-and-test).
+
+## Quick start
+
+On Windows, with the binary on your path:
+
+```console
+storedl doctor
+storedl install https://apps.microsoft.com/detail/9nksqgp7f2nh --dry-run
+storedl install https://apps.microsoft.com/detail/9nksqgp7f2nh
 ```
 
 A real run looks like this:
@@ -222,6 +251,7 @@ docs/                          protocol notes, troubleshooting, architecture
 | [docs/protocol.md](docs/protocol.md) | Link to package: catalog, delivery service, bundles, installing |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Error codes, symptom to fix, how to collect a report |
 | [docs/architecture.md](docs/architecture.md) | Layering, design decisions, testing, conventions |
+| [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 
 ## License
 
