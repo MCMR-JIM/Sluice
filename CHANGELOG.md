@@ -15,7 +15,7 @@ All notable changes to this project are documented here. The format follows
   real icon exists; [docs/brand.md](docs/brand.md) documents the palette, the swap in procedure and
   a prompt for generating the artwork.
 * The window sits on the Windows acrylic backdrop (`DWMSBT_TRANSIENTWINDOW`) under one flat semi
-  transparent black plane (72% black, no gradient, no tint layers); every component inside is
+  transparent black plane (52% black, no gradient, no tint layers); every component inside is
   opaque, so panels read as solid surfaces and only the gaps and the window edge show the blur.
   Rows highlight on hover, separators are hairline.
 

@@ -50,8 +50,8 @@ for the window below. Prefer to build it? See [build and test](#build-and-test).
 watch the plan resolve, download and install step by step. It is a WPF window on the Windows 11
 acrylic backdrop — the desktop behind it is blurred, not hidden — with a dark title bar, rounded
 corners and Task Manager density. The look has three rules: one flat semi transparent black plane
-over the acrylic, every component inside it opaque, and only the gaps and the window edge show the
-blur behind. Over a dark background dark acrylic stays dark, exactly like Settings or Terminal; drag
+(52% black) over the acrylic, every component inside it opaque, and only the gaps and the window
+edge show the blur behind. Over a dark background dark acrylic stays dark, exactly like Settings or Terminal; drag
 it over a bright window to see the glass move.
 
 ![StoreDownloader window](docs/ui-window.png)
