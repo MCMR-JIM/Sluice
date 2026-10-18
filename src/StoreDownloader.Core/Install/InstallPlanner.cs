@@ -14,7 +14,7 @@ public sealed record InstallPlannerOptions(string? Architecture = null, string? 
 /// </summary>
 public sealed class InstallPlanner
 {
-    private readonly AppxInventory? _inventory;
+    private readonly IInstalledPackageInventory? _inventory;
 
     /// <summary>Creates a planner that does not inspect the machine.</summary>
     public InstallPlanner()
@@ -23,7 +23,7 @@ public sealed class InstallPlanner
 
     /// <summary>Creates a planner that compares against what is already installed.</summary>
     /// <param name="inventory">Inventory to use.</param>
-    public InstallPlanner(AppxInventory inventory) => _inventory = inventory;
+    public InstallPlanner(IInstalledPackageInventory inventory) => _inventory = inventory;
 
     /// <summary>Creates a planner over a PowerShell host.</summary>
     /// <param name="shell">Host used to query installed packages.</param>

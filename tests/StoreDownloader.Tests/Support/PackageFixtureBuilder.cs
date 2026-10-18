@@ -95,6 +95,35 @@ internal static class PackageFixtureBuilder
         return path;
     }
 
+    /// <summary>Creates a bundle that really contains a child package file.</summary>
+    public static string CreateBundleWithPayload(
+        string directory,
+        string fileName,
+        string identityName,
+        string version,
+        string childPath,
+        string childEntryName)
+    {
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, fileName);
+        var childSize = new FileInfo(childPath).Length;
+
+        var manifest = $"""
+            <?xml version="1.0" encoding="utf-8"?>
+            <Bundle xmlns="http://schemas.microsoft.com/appx/2013/bundle">
+              <Identity Name="{identityName}" Publisher="CN=Contoso" Version="{version}" />
+              <Packages>
+                <Package Type="application" Version="{version}" Architecture="x64" FileName="{childEntryName}" Offset="0" Size="{childSize}" />
+              </Packages>
+            </Bundle>
+            """;
+
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
+        WriteEntry(archive, "AppxMetadata/AppxBundleManifest.xml", manifest);
+        archive.CreateEntryFromFile(childPath, childEntryName);
+        return path;
+    }
+
     public static string CreatePlainZip(string directory, string fileName)
     {
         Directory.CreateDirectory(directory);
