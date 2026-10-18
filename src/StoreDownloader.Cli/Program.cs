@@ -29,6 +29,7 @@ internal static class Program
             return command switch
             {
                 "resolve" => await ResolveCommand.RunAsync(rest).ConfigureAwait(false),
+                "download" => await DownloadCommand.RunAsync(rest).ConfigureAwait(false),
                 _ => UnknownCommand(command),
             };
         }
