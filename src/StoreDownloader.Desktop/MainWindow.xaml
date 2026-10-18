@@ -24,8 +24,7 @@
         </Style>
     </Window.Resources>
 
-    <!-- 4% white keeps the whole window reading as one pane over the backdrop, so desktop content
-         behind it never shows up as hard edged strips between the panels. -->
+    <!-- One flat semi transparent black plane; every panel below it is opaque. -->
     <Grid Background="{StaticResource SurfaceBaseBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -33,11 +32,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- the tint and the sheen are what make it read as glass rather than as black paint -->
-        <Rectangle Grid.Row="0" Grid.RowSpan="3" Fill="{StaticResource GlassTintBrush}" IsHitTestVisible="False" />
-        <Rectangle Grid.Row="0" Grid.RowSpan="3" Fill="{StaticResource SheenBrush}" IsHitTestVisible="False" />
-        <Border Grid.Row="0" Grid.RowSpan="3" BorderBrush="{StaticResource GlassEdgeBrush}" BorderThickness="1"
-                CornerRadius="8" IsHitTestVisible="False" Margin="0" />
+
 
         <!-- ================= title bar area ================= -->
         <Grid Grid.Row="0" Margin="14,12,14,10">
