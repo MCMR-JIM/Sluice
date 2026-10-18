@@ -1,0 +1,105 @@
+name: install-test
+
+# Runs a real sideload on a disposable GitHub hosted Windows virtual machine: resolve,
+# download, plan, Add-AppxPackage, read the registration back, then remove it again.
+# Nothing here touches a developer machine.
+
+on:
+  workflow_dispatch:
+    inputs:
+      store_url:
+        description: 'Store link or product id to install'
+        required: true
+        default: 'https://apps.microsoft.com/detail/9p7w59rsqhpb?hl=zh-CN&gl=CN'
+      keep_installed:
+        description: 'Leave the package installed instead of removing it again'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  sideload:
+    name: sideload on a windows runner
+    runs-on: windows-latest
+    env:
+      STORE_URL: ${{ inputs.store_url }}
+      CACHE_DIR: ${{ runner.temp }}\store-cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the released Windows binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Path bin -Force | Out-Null
+          gh release download --repo "${{ github.repository }}" --pattern 'storedl-*-windows-x64.exe' --dir bin --clobber
+          Get-ChildItem bin\*.exe | ForEach-Object { Rename-Item -LiteralPath $_.FullName -NewName 'storedl.exe' -Force }
+          Get-ChildItem bin | Select-Object Name, Length
+          .\bin\storedl.exe --version
+
+      - name: Allow sideloading on the runner
+        run: |
+          New-Item -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Force | Out-Null
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Name AllowAllTrustedApps -Value 1 -Type DWord
+          Set-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock' -Name AllowDevelopmentWithoutDevLicense -Value 1 -Type DWord
+
+      - name: Machine report
+        run: |
+          Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber, OsArchitecture | Format-List
+          '--- frameworks the app needs, as they exist on the runner ---'
+          Get-AppxPackage -PackageTypeFilter Framework |
+            Where-Object { $_.Name -match 'NET.Native|VCLibs' } |
+            Select-Object Name, Version, Architecture | Sort-Object Name | Format-Table -AutoSize
+          .\bin\storedl.exe doctor
+
+      - name: Resolve the link
+        run: .\bin\storedl.exe resolve "${{ env.STORE_URL }}"
+
+      - name: Plan only, install nothing
+        run: .\bin\storedl.exe install "${{ env.STORE_URL }}" --dry-run --dir "${{ env.CACHE_DIR }}"
+
+      - name: Install for real
+        id: install
+        run: |
+          .\bin\storedl.exe install "${{ env.STORE_URL }}" --yes --dir "${{ env.CACHE_DIR }}" 2>&1 |
+            Tee-Object -FilePath install.log
+          exit $LASTEXITCODE
+
+      - name: Prove the registration
+        if: always()
+        run: |
+          '--- everything the deployment service now knows about ---'
+          Get-AppxPackage | Where-Object { $_.Name -match 'QuickNote|HaoCai' } |
+            Select-Object Name, Version, Architecture, Status, PackageFullName | Format-Table -AutoSize
+          '--- where it landed and what it points at ---'
+          $pkg = Get-AppxPackage -Name '53887HaoCai*'
+          if ($pkg) {
+            $pkg | Select-Object InstallLocation, Status | Format-List
+            $manifest = Join-Path $pkg.InstallLocation 'AppxManifest.xml'
+            if (Test-Path $manifest) {
+              Select-String -Path $manifest -Pattern 'DisplayName|Executable' | Select-Object -First 6
+            }
+          } else {
+            'nothing registered under 53887HaoCai'
+          }
+
+      - name: Remove it again
+        if: ${{ always() && !inputs.keep_installed }}
+        run: |
+          $left = @(Get-AppxPackage -Name '53887HaoCai*')
+          foreach ($package in $left) {
+            Write-Host "removing $($package.PackageFullName)"
+            Remove-AppxPackage -Package $package.PackageFullName -ErrorAction Continue
+          }
+          "packages left: " + @(Get-AppxPackage -Name '53887HaoCai*').Count
+
+      - name: Upload the install log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-test-log
+          path: install.log
+          if-no-files-found: warn
+          retention-days: 7
