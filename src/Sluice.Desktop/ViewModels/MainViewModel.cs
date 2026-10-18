@@ -30,6 +30,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _allUsers;
     private bool _busy;
     private string _stageKey = "StageIdle";
+    private EnvironmentReport? _environment;
     private double _progress;
     private bool _progressIndeterminate;
     private string _statusLine = string.Empty;
@@ -71,6 +72,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
             Raise(nameof(Stage));
             Raise(nameof(PackageCountText));
+            RebuildChips();
             foreach (var row in PlanRows)
             {
                 row.RefreshLanguage();
@@ -579,18 +581,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         try
         {
             var report = await WindowsEnvironmentProbe.ProbeAsync(_shell).ConfigureAwait(true);
-
-            Chips.Clear();
-            Chips.Add(new EnvironmentChip($"{report.Architecture}", "neutral"));
-            Chips.Add(new EnvironmentChip(
-                report.ProductName is null ? "Windows" : $"{report.ProductName} {report.Build}",
-                "neutral"));
-            Chips.Add(new EnvironmentChip(
-                Loc.Get(report.SideloadingEnabled switch { true => "ChipSideloadOn", false => "ChipSideloadOff", null => "ChipSideloadUnknown" }),
-                report.SideloadingEnabled switch { true => "ok", false => "bad", null => "warn" }));
-            Chips.Add(new EnvironmentChip(
-                Loc.Get(report.DeveloperModeEnabled switch { true => "ChipDevOn", false => "ChipDevOff", null => "ChipDevUnknown" }),
-                report.DeveloperModeEnabled switch { true => "ok", false => "warn", null => "neutral" }));
+            _environment = report;
+            RebuildChips();
 
             foreach (var warning in report.Warnings)
             {
@@ -605,6 +597,27 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             AddLog(LogLevel.Warning, Loc.Format("EnvCheckFailed", ex.Message));
         }
+    }
+
+    /// <summary>Rebuilds the header chips in the current language.</summary>
+    private void RebuildChips()
+    {
+        if (_environment is not { } report)
+        {
+            return;
+        }
+
+        Chips.Clear();
+        Chips.Add(new EnvironmentChip(report.Architecture, "neutral"));
+        Chips.Add(new EnvironmentChip(
+            report.ProductName is null ? "Windows" : $"{report.ProductName} {report.Build}",
+            "neutral"));
+        Chips.Add(new EnvironmentChip(
+            Loc.Get(report.SideloadingEnabled switch { true => "ChipSideloadOn", false => "ChipSideloadOff", null => "ChipSideloadUnknown" }),
+            report.SideloadingEnabled switch { true => "ok", false => "bad", null => "warn" }));
+        Chips.Add(new EnvironmentChip(
+            Loc.Get(report.DeveloperModeEnabled switch { true => "ChipDevOn", false => "ChipDevOff", null => "ChipDevUnknown" }),
+            report.DeveloperModeEnabled switch { true => "ok", false => "warn", null => "neutral" }));
     }
 
     private void Explain()

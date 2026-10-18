@@ -42,16 +42,9 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                <Image Source="Assets/app.png" Width="16" Height="16" VerticalAlignment="Center"
-                       RenderOptions.BitmapScalingMode="HighQuality" />
-                <TextBlock Text="Sluice" Style="{StaticResource DisplayText}" Margin="9,0,0,0"
-                           VerticalAlignment="Center" />
-                <TextBlock Text="{Binding ToolVersion}" Style="{StaticResource MonoText}" FontSize="11"
-                           Opacity="0.45" Margin="8,2,0,0" VerticalAlignment="Center" />
-            </StackPanel>
-
-            <ItemsControl Grid.Column="1" ItemsSource="{Binding Chips}" Margin="16,0,8,0" VerticalAlignment="Center">
+            <!-- The caption bar already shows the mark and the name, so the row starts with the
+                 machine chips instead of repeating them. -->
+            <ItemsControl Grid.Column="0" ItemsSource="{Binding Chips}" VerticalAlignment="Center">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel Orientation="Horizontal" />
@@ -70,6 +63,8 @@
             </ItemsControl>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="{Binding ToolVersion}" Style="{StaticResource MonoText}" FontSize="11"
+                           Opacity="0.45" Margin="0,2,12,0" VerticalAlignment="Center" />
                 <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Lang" Content="中文"
                              IsChecked="{Binding Loc.IsChinese, Mode=TwoWay}" />
                 <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Lang" Content="EN"
