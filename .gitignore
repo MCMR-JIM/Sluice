@@ -15,6 +15,10 @@ coverage*.xml
 .scratch/
 downloads/
 
+# Published output
+out/
+publish/
+
 # Editors
 .vs/
 .idea/
