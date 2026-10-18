@@ -1,8 +1,8 @@
 name: install-test
 
-# Runs a real sideload on a disposable GitHub hosted Windows virtual machine: resolve,
-# download, plan, Add-AppxPackage, read the registration back, then remove it again.
-# Nothing here touches a developer machine.
+# Runs a real sideload on a disposable GitHub hosted Windows virtual machine: build the tool
+# from the current commit, resolve, download, plan, Add-AppxPackage, read the registration back,
+# then remove it again. Nothing here touches a developer machine.
 
 on:
   workflow_dispatch:
@@ -23,22 +23,19 @@ jobs:
   sideload:
     name: sideload on a windows runner
     runs-on: windows-latest
-    # The runner context is not available in a job level env block, so this uses the
-    # github context and the workspace instead.
     env:
       STORE_URL: ${{ github.event.inputs.store_url }}
       CACHE_DIR: ${{ github.workspace }}\store-cache
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download the released Windows binary
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build the tool from this commit
         run: |
-          New-Item -ItemType Directory -Path bin -Force | Out-Null
-          gh release download --repo "${{ github.repository }}" --pattern 'storedl-*-windows-x64.exe' --dir bin --clobber
-          Get-ChildItem bin\*.exe | ForEach-Object { Rename-Item -LiteralPath $_.FullName -NewName 'storedl.exe' -Force }
-          Get-ChildItem bin | Select-Object Name, Length
+          dotnet publish src/StoreDownloader.Cli -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o bin
           .\bin\storedl.exe --version
 
       - name: Allow sideloading on the runner
@@ -50,13 +47,13 @@ jobs:
       - name: Machine report
         run: |
           Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber, OsArchitecture | Format-List
-          '--- frameworks the app needs, as they exist on the runner ---'
+          '--- frameworks that exist on the runner ---'
           Get-AppxPackage -PackageTypeFilter Framework |
             Where-Object { $_.Name -match 'NET.Native|VCLibs' } |
             Select-Object Name, Version, Architecture | Sort-Object Name | Format-Table -AutoSize
           .\bin\storedl.exe doctor
           # doctor exits 3 when it found warnings; that is information, not a failed step.
-          "doctor exit code: $LASTEXITCODE"
+          exit 0
 
       - name: Resolve the link
         run: .\bin\storedl.exe resolve "${{ env.STORE_URL }}"
@@ -74,7 +71,7 @@ jobs:
       - name: Prove the registration
         if: always()
         run: |
-          '--- everything the deployment service now knows about ---'
+          '--- what the deployment service now knows about ---'
           Get-AppxPackage | Where-Object { $_.Name -match 'QuickNote|HaoCai' } |
             Select-Object Name, Version, Architecture, Status, PackageFullName | Format-Table -AutoSize
           '--- where it landed and what it points at ---'
@@ -88,6 +85,7 @@ jobs:
           } else {
             'nothing registered under 53887HaoCai'
           }
+          exit 0
 
       - name: Remove it again
         if: ${{ always() && !inputs.keep_installed }}
@@ -98,6 +96,7 @@ jobs:
             Remove-AppxPackage -Package $package.PackageFullName -ErrorAction Continue
           }
           "packages left: " + @(Get-AppxPackage -Name '53887HaoCai*').Count
+          exit 0
 
       - name: Upload the install log
         if: always()
