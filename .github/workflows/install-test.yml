@@ -55,6 +55,8 @@ jobs:
             Where-Object { $_.Name -match 'NET.Native|VCLibs' } |
             Select-Object Name, Version, Architecture | Sort-Object Name | Format-Table -AutoSize
           .\bin\storedl.exe doctor
+          # doctor exits 3 when it found warnings; that is information, not a failed step.
+          "doctor exit code: $LASTEXITCODE"
 
       - name: Resolve the link
         run: .\bin\storedl.exe resolve "${{ env.STORE_URL }}"
