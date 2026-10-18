@@ -84,9 +84,12 @@
 
             <!-- source + options: one pane, hairline groups, no card chrome -->
             <Border CornerRadius="8" Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Padding="12,10"
+                    BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1" Padding="12,10,0,10"
                     Margin="0,2,0,2">
-            <ScrollViewer Style="{StaticResource OverlayScrollViewer}" VerticalScrollBarVisibility="Auto">
+            <!-- The bar hangs on the pane's right edge; the padding here is what keeps the text out
+                 from under it, so the pane loses nothing to a scrollbar column. -->
+            <ScrollViewer Style="{StaticResource OverlayScrollViewer}" Padding="0,0,10,0"
+                          VerticalScrollBarVisibility="Auto">
                 <StackPanel>
                     <TextBlock Text="{Binding Loc[Source]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
                     <Grid>
