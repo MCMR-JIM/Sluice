@@ -30,6 +30,11 @@ internal static class Program
             {
                 "resolve" => await ResolveCommand.RunAsync(rest).ConfigureAwait(false),
                 "download" => await DownloadCommand.RunAsync(rest).ConfigureAwait(false),
+                "analyze" => await AnalyzeCommand.RunAsync(rest).ConfigureAwait(false),
+                "plan" => await PlanCommand.RunAsync(rest).ConfigureAwait(false),
+                "install" => await InstallCommand.RunAsync(rest).ConfigureAwait(false),
+                "doctor" => await DoctorCommand.RunAsync(rest).ConfigureAwait(false),
+                "explain" => ExplainCommand.RunAsync(rest),
                 _ => UnknownCommand(command),
             };
         }

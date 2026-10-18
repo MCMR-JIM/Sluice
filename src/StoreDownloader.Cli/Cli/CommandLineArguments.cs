@@ -6,6 +6,17 @@ namespace StoreDownloader.Cli.Cli;
 /// </summary>
 public sealed class CommandLineArguments
 {
+    /// <summary>
+    /// Switches that never take a value. Listing them keeps <c>storedl resolve --json 9NKS...</c>
+    /// from reading the product id as the value of <c>--json</c>.
+    /// </summary>
+    private static readonly HashSet<string> ValueLessOptions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "json", "yes", "dry-run", "force", "quiet", "verbose", "list", "help", "h",
+        "all-arch", "all-architectures", "deps-only", "dependencies-only", "overwrite",
+        "no-verify", "skip-download", "all-users", "no-register", "no-force-shutdown",
+    };
+
     private readonly Dictionary<string, string?> _options = new(StringComparer.OrdinalIgnoreCase);
 
     private CommandLineArguments(IReadOnlyList<string> positionals) => Positionals = positionals;
@@ -22,25 +33,17 @@ public sealed class CommandLineArguments
     {
         ArgumentNullException.ThrowIfNull(args);
 
+        var tokens = args.Where(token => token is not null).ToList();
         var positionals = new List<string>();
         var parsed = new CommandLineArguments(positionals);
-        using var enumerator = args.GetEnumerator();
 
-        while (enumerator.MoveNext())
+        for (var index = 0; index < tokens.Count; index++)
         {
-            var current = enumerator.Current;
-            if (current is null)
-            {
-                continue;
-            }
+            var current = tokens[index];
 
             if (current == "--")
             {
-                while (enumerator.MoveNext())
-                {
-                    positionals.Add(enumerator.Current);
-                }
-
+                positionals.AddRange(tokens.Skip(index + 1));
                 break;
             }
 
@@ -54,17 +57,12 @@ public sealed class CommandLineArguments
                     continue;
                 }
 
-                if (enumerator.MoveNext())
+                if (!ValueLessOptions.Contains(body)
+                    && index + 1 < tokens.Count
+                    && !tokens[index + 1].StartsWith("--", StringComparison.Ordinal))
                 {
-                    var next = enumerator.Current;
-                    if (next is not null && !next.StartsWith("--", StringComparison.Ordinal))
-                    {
-                        parsed._options[body] = next;
-                        continue;
-                    }
-
-                    parsed._options[body] = null;
-                    positionals.Add(next!);
+                    parsed._options[body] = tokens[index + 1];
+                    index++;
                     continue;
                 }
 
@@ -72,7 +70,7 @@ public sealed class CommandLineArguments
                 continue;
             }
 
-            if (current.StartsWith('-') && current.Length == 2)
+            if (current.Length == 2 && current[0] == '-')
             {
                 parsed._options[current[1..]] = null;
                 continue;
