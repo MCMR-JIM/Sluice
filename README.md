@@ -10,7 +10,13 @@ Store link in, running app out. The tool resolves the real package URLs, downloa
 the dependency packages its manifest actually declares, installs the frameworks first with
 `Add-AppxPackage`, then reads the registration back to prove it worked.
 
-[![ci](https://github.com/MCMR-JIM/Sluice/actions/workflows/ci.yml/badge.svg)](https://github.com/MCMR-JIM/Sluice/actions/workflows/ci.yml)
+<p align="center">
+  <a href="https://github.com/MCMR-JIM/Sluice/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/MCMR-JIM/Sluice/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/MCMR-JIM/Sluice/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/MCMR-JIM/Sluice?label=release&color=60cdff"></a>
+  <img alt="platform" src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6?logo=windows11&logoColor=white">
+  <img alt=".NET" src="https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white">
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/MCMR-JIM/Sluice?color=60cdff"></a>
+</p>
 
 ## Contents
 

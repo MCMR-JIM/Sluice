@@ -4,15 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2026-10-19
 
 ### Changed
 
 * **Renamed to Sluice.** Product, assemblies (`Sluice.exe`, `Sluice.UI.exe`), namespaces, project
   folders, the download manifest and the release archives all carry the new name.
 * The real mark is in: `assets/logo.png` at the top of the readme, with `app.ico` and `app.png`
-  generated from it for the taskbar, the exe and the window header. Repository artwork lives under
-  `assets/`, not `docs/`.
+  generated from it for the taskbar and the exe. Repository artwork lives under `assets/`, not
+  `docs/`.
+* The window no longer repeats the mark and the name inside its content: the caption bar already
+  shows both, so the row starts with the machine chips and the version sits next to the language
+  switch on the right.
+* The readme badges sit centred under the pitch, and there are more of them: CI, latest release,
+  platform, .NET and licence.
+* Header chips are rebuilt when the language changes, so a switch cannot leave half the header in
+  the previous language.
 
 ### Added
 
