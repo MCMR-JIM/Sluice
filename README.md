@@ -54,6 +54,10 @@ be compared against a flat canvas on the same machine.
 
 ![StoreDownloader window](docs/ui-window.png)
 
+The screenshot is rendered from the window itself, so the backdrop DWM composites behind it
+cannot appear in it; on a real desktop the glass is visible, and the 背景 switch in the header lets
+you compare acrylic, Mica and a plain canvas side by side.
+
 What the window gives you that the command line cannot:
 
 * the resolved package list as a table (role, file, architecture, size, whether a URL was issued)
