@@ -8,12 +8,12 @@ the release assets.
 
 | Surface | Value |
 | --- | --- |
-| Window title | `Sluice` |
-| Header wordmark | `Sluice`, Segoe UI Variable Display, SemiBold |
-| Version chip | `0.x.y`, Cascadia Mono, 45% opacity |
+| Window title | `Sluice` — the caption bar, no wordmark repeated inside the window |
+| Version | `0.x.y`, Cascadia Mono at 45% opacity, right of the machine chips |
 | Accent | `#60CDFF` on dark, ink `#04121A` on the accent |
-| Surfaces | translucent black at 17% and 22% over the acrylic, hairlines white at 12% |
-| Backdrop | Windows acrylic, always; a solid canvas only as the fallback when the compositor refuses |
+| Plane | one flat semi transparent black, `#85000000` (52%), no gradient and no tint |
+| Components | opaque: panels `#1E1E1E`, inputs `#151515`, raised `#2A2A2A`, hairlines white at 12% |
+| Backdrop | Windows acrylic (`DWMSBT_TRANSIENTWINDOW`) only in the gaps and at the window edge; a solid canvas when the compositor refuses |
 
 ## The mark
 
@@ -24,14 +24,16 @@ in an `assets` folder rather than next to the documentation:
 | --- | --- |
 | `assets/logo.png` | the readme, at 140 px wide |
 | `src/Sluice.Desktop/Assets/app.ico` | the window title bar, the taskbar and the exe itself |
-| `src/Sluice.Desktop/Assets/app.png` | the 16 px mark in the window header |
+| `src/Sluice.Desktop/Assets/app.png` | the window icon, loaded as a pack resource in `MainWindow` |
 
 The ICO carries 16, 24, 32, 48, 64, 128 and 256 pixel frames, PNG compressed, with the white
 background keyed out so the mark reads on a dark taskbar.
 
-Replacing the artwork means regenerating those three files from the new PNG; the project picks them
-up through `<ApplicationIcon>Assets\app.ico</ApplicationIcon>`, `Icon="Assets/app.ico"` on the window
-and `<Image Source="Assets/app.png">` in the header.
+Replacing the artwork means regenerating those three files from the new PNG. The project picks them up
+through `<ApplicationIcon>Assets\app.ico</ApplicationIcon>` for the executable and through
+`Icon = new BitmapImage(pack://application:,,,/Assets/app.png)` in `MainWindow`; the process also claims
+the AppUserModelID `MCMR-JIM.Sluice` so the shell keeps the mark on the taskbar instead of caching one
+per executable path.
 
 ## Naming rules
 
