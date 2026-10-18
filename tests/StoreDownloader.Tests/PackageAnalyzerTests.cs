@@ -6,7 +6,7 @@ namespace StoreDownloader.Tests;
 
 public sealed class PackageAnalyzerTests : IDisposable
 {
-    private readonly string _directory = Path.Combine(Path.GetTempPath(), "storedl-tests-" + Guid.NewGuid().ToString("N"));
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "StoreDownloader-tests-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {

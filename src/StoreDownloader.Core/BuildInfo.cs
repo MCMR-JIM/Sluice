@@ -5,8 +5,8 @@ namespace StoreDownloader;
 /// <summary>Static metadata about the tool.</summary>
 public static class BuildInfo
 {
-    /// <summary>Command name installed with the tool.</summary>
-    public const string ToolName = "storedl";
+    /// <summary>Name of the tool, used everywhere it is shown to a person.</summary>
+    public const string ToolName = "StoreDownloader";
 
     /// <summary>Product name shown in help output.</summary>
     public const string ProductName = "StoreDownloader";

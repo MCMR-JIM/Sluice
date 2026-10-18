@@ -62,7 +62,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _ = RefreshEnvironmentAsync();
     }
 
-    public string ToolVersion { get; } = $"{BuildInfo.ToolName} {BuildInfo.Version}";
+    public string ToolVersion { get; } = BuildInfo.Version;
 
     public ObservableCollection<PackageRow> Packages { get; } = [];
 

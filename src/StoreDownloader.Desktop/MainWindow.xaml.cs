@@ -12,9 +12,10 @@ public partial class MainWindow : Window, IDisposable
     public MainWindow()
     {
         InitializeComponent();
+        _viewModel = new MainViewModel();
+
         SourceInitialized += (_, _) => WindowChrome.Apply(this);
 
-        _viewModel = new MainViewModel();
         DataContext = _viewModel;
         _viewModel.Log.CollectionChanged += OnLogChanged;
         Closed += (_, _) =>

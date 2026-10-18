@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>StoreDownloader.Cli</RootNamespace>
-    <AssemblyName>storedl</AssemblyName>
+    <AssemblyName>StoreDownloader</AssemblyName>
     <RollForward>LatestMajor</RollForward>
   </PropertyGroup>
 

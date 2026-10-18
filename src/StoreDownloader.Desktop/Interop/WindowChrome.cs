@@ -6,17 +6,17 @@ using System.Windows.Media;
 namespace StoreDownloader.Desktop.Interop;
 
 /// <summary>
-/// Gives the window the treatment Windows 11 apps have: the Mica backdrop (the blurred surface the
-/// desktop shows through), a dark title bar and rounded corners. Every call is best effort, and if
-/// the system does not support the backdrop the window falls back to a solid dark canvas.
+/// Gives the window what Windows 11 apps look like: an acrylic backdrop (the desktop behind it is
+/// blurred, not hidden), a dark title bar and rounded corners. If the compositor refuses, the window
+/// falls back to a solid canvas instead of showing a hole.
 /// </summary>
 internal static class WindowChrome
 {
     private const int DwmwaUseImmersiveDarkMode = 20;
     private const int DwmwaWindowCornerPreference = 33;
     private const int DwmwaSystemBackdropType = 38;
-    private const int DWM_WINDOW_CORNER_PREFERENCE_ROUND = 2;
-    private const int DWM_SYSTEMBACKDROP_TYPE_MAINWINDOW = 2; // Mica
+    private const int CornerRound = 2;
+    private const int BackdropAcrylic = 3;
 
     public static void Apply(Window window)
     {
@@ -29,18 +29,19 @@ internal static class WindowChrome
         var enabled = 1;
         _ = DwmSetWindowAttribute(handle, DwmwaUseImmersiveDarkMode, ref enabled, sizeof(int));
 
-        var corners = DWM_WINDOW_CORNER_PREFERENCE_ROUND;
+        var corners = CornerRound;
         _ = DwmSetWindowAttribute(handle, DwmwaWindowCornerPreference, ref corners, sizeof(int));
 
-        var backdrop = DWM_SYSTEMBACKDROP_TYPE_MAINWINDOW;
-        var backdropResult = DwmSetWindowAttribute(handle, DwmwaSystemBackdropType, ref backdrop, sizeof(int));
+        var backdrop = BackdropAcrylic;
+        var result = DwmSetWindowAttribute(handle, DwmwaSystemBackdropType, ref backdrop, sizeof(int));
 
-        if (backdropResult != 0)
+        if (result != 0)
         {
-            // Pre Windows 11 22H2: no Mica, so paint the canvas ourselves instead of showing nothing.
             window.Background = window.TryFindResource("SolidCanvasBrush") as Brush ?? Brushes.Black;
             return;
         }
+
+        window.Background = Brushes.Transparent;
 
         // Let the backdrop cover the whole client area instead of only the frame.
         var margins = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };

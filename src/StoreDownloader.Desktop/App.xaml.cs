@@ -16,12 +16,12 @@ public partial class App : Application
     {
         // A binding mistake must never be silent: it goes to a file next to the temp folder so it
         // can be read without a debugger, and the user sees a short message.
-        var path = Path.Combine(Path.GetTempPath(), "storedl-ui-crash.txt");
+        var path = Path.Combine(Path.GetTempPath(), "StoreDownloader-UI-crash.txt");
         File.WriteAllText(path, e.Exception.ToString());
 
         MessageBox.Show(
             $"{e.Exception.Message}{Environment.NewLine}{Environment.NewLine}详细信息：{path}",
-            "storedl",
+            "StoreDownloader",
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
         e.Handled = true;

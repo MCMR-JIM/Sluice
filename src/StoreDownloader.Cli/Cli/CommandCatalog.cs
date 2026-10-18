@@ -29,7 +29,7 @@ internal sealed record CommandHelp(
 
 /// <summary>
 /// The manual that ships inside the binary. Every command is described here, so
-/// <c>storedl help install</c> works on a machine with no network and no docs folder.
+/// <c>StoreDownloader help install</c> works on a machine with no network and no docs folder.
 /// </summary>
 internal static class CommandCatalog
 {
@@ -57,8 +57,8 @@ internal static class CommandCatalog
             "install",
             "Resolve, download, install and verify in one go",
             [
-                "storedl install <store-reference> [options]",
-                "storedl install --dir <folder> [options]",
+                "StoreDownloader install <store-reference> [options]",
+                "StoreDownloader install --dir <folder> [options]",
             ],
             [
                 "1. Resolves the reference into packages and picks the ones for this architecture.",
@@ -87,21 +87,21 @@ internal static class CommandCatalog
                 new CommandOption("--no-register", "Disable the loose-file registration fallback."),
             ],
             [
-                "storedl install https://apps.microsoft.com/detail/9nksqgp7f2nh",
-                "storedl install 9NKSQGP7F2NH --dry-run",
-                "storedl install --dir D:\\StoreCache --skip-download --yes",
+                "StoreDownloader install https://apps.microsoft.com/detail/9nksqgp7f2nh",
+                "StoreDownloader install 9NKSQGP7F2NH --dry-run",
+                "StoreDownloader install --dir D:\\StoreCache --skip-download --yes",
             ],
             [
                 "Needs Windows and PowerShell: deployment goes through Add-AppxPackage.",
                 "Encrypted Store packages (.eappx, .emsix) are refused; they need a Store licence.",
                 "When the plan reports a missing dependency, nothing is installed at all.",
             ],
-            ["storedl help download", "storedl help plan", "storedl help doctor"]),
+            ["StoreDownloader help download", "StoreDownloader help plan", "StoreDownloader help doctor"]),
 
         new CommandHelp(
             "resolve",
             "Resolve a Store link into downloadable packages",
-            ["storedl resolve <store-reference> [options]"],
+            ["StoreDownloader resolve <store-reference> [options]"],
             [
                 "Looks the product up in the Store catalog, expands its Windows Update category,",
                 "and prints every package with its architecture, size and whether a URL was issued.",
@@ -113,19 +113,19 @@ internal static class CommandCatalog
                 new CommandOption("--locale <tag>", "Locale used for resource packages.", "Windows display language"),
             ],
             [
-                "storedl resolve https://apps.microsoft.com/detail/9nksqgp7f2nh",
-                "storedl resolve 9MSMLRH6LZF3 --json",
+                "StoreDownloader resolve https://apps.microsoft.com/detail/9nksqgp7f2nh",
+                "StoreDownloader resolve 9MSMLRH6LZF3 --json",
             ],
             [
                 "URLs in the output expire within hours; resolve right before downloading.",
                 "Frameworks for every architecture and runtime generation are listed, not just the ones this app needs.",
             ],
-            ["storedl help download", "storedl help install"]),
+            ["StoreDownloader help download", "StoreDownloader help install"]),
 
         new CommandHelp(
             "download",
             "Download the app, its dependencies and its resources",
-            ["storedl download <store-reference> [options]"],
+            ["StoreDownloader download <store-reference> [options]"],
             [
                 "Resolves the reference, picks the main package plus the newest compatible framework",
                 "per dependency, downloads them with resume support, verifies the published SHA-1,",
@@ -146,20 +146,20 @@ internal static class CommandCatalog
                 new CommandOption("--no-verify", "Skip digest verification."),
             ],
             [
-                "storedl download 9NKSQGP7F2NH",
-                "storedl download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\\StoreCache",
-                "storedl download 9NKSQGP7F2NH --deps-only --only VCLibs",
+                "StoreDownloader download 9NKSQGP7F2NH",
+                "StoreDownloader download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\\StoreCache",
+                "StoreDownloader download 9NKSQGP7F2NH --deps-only --only VCLibs",
             ],
             [
                 "Downloads only the declared dependencies of install; this command keeps every candidate.",
                 "Existing files are reused when their digest still matches, so re-running is cheap.",
             ],
-            ["storedl help install", "storedl help analyze"]),
+            ["StoreDownloader help install", "StoreDownloader help analyze"]),
 
         new CommandHelp(
             "analyze",
             "Show what is inside appx, msix and bundle files",
-            ["storedl analyze <file-or-folder> [options]"],
+            ["StoreDownloader analyze <file-or-folder> [options]"],
             [
                 "Opens the container (an appx is a zip), reads AppxManifest.xml or the bundle manifest,",
                 "and prints identity, publisher, target device family, dependencies and bundle children,",
@@ -170,16 +170,16 @@ internal static class CommandCatalog
                 new CommandOption("--arch <arch>", "Architecture used for the bundle selection preview.", "this machine"),
             ],
             [
-                "storedl analyze .\\downloads",
-                "storedl analyze .\\downloads\\App_1.0.0.0_x64.msix --json",
+                "StoreDownloader analyze .\\downloads",
+                "StoreDownloader analyze .\\downloads\\App_1.0.0.0_x64.msix --json",
             ],
             ["Never installs anything and never needs network access."],
-            ["storedl help plan", "storedl help install"]),
+            ["StoreDownloader help plan", "StoreDownloader help install"]),
 
         new CommandHelp(
             "plan",
             "Show the install plan without touching the machine",
-            ["storedl plan <folder> [options]"],
+            ["StoreDownloader plan <folder> [options]"],
             [
                 "Analyses every package in the folder, reads the dependencies out of the application",
                 "manifest (including the manifest inside a bundle), compares them with what",
@@ -191,19 +191,19 @@ internal static class CommandCatalog
                 new CommandOption("--locale <tag>", "Locale used to pick resource packages.", "Windows display language"),
             ],
             [
-                "storedl plan .\\downloads",
-                "storedl plan D:\\StoreCache --arch arm64 --json",
+                "StoreDownloader plan .\\downloads",
+                "StoreDownloader plan D:\\StoreCache --arch arm64 --json",
             ],
             [
                 "Blocking issues (a declared dependency with no package in the folder) make it exit 1.",
                 "Reads the installed inventory, so the answer depends on this machine.",
             ],
-            ["storedl help install", "storedl help analyze"]),
+            ["StoreDownloader help install", "StoreDownloader help analyze"]),
 
         new CommandHelp(
             "doctor",
             "Check whether this machine can install sideloaded packages",
-            ["storedl doctor [--json]"],
+            ["StoreDownloader doctor [--json]"],
             [
                 "Reports the Windows build, architecture, sideloading policy, Developer Mode,",
                 "the deployment services, free disk space and the PowerShell that would be used.",
@@ -211,17 +211,17 @@ internal static class CommandCatalog
             ],
             [],
             [],
-            ["storedl doctor", "storedl doctor --json"],
+            ["StoreDownloader doctor", "StoreDownloader doctor --json"],
             [
                 "Exit code 3 means warnings were found; the machine is not ready to deploy packages.",
                 "ClipSVC starting on demand is expected and is not reported as a problem.",
             ],
-            ["storedl help explain", "storedl help install"]),
+            ["StoreDownloader help explain", "StoreDownloader help install"]),
 
         new CommandHelp(
             "explain",
             "Explain a deployment error code and how to get past it",
-            ["storedl explain <hresult>", "storedl explain --list"],
+            ["StoreDownloader explain <hresult>", "StoreDownloader explain --list"],
             [
                 "Looks the HRESULT up in the built-in catalogue and prints what Windows means, why it",
                 "happens with Store packages, what the tool retries automatically, and the manual fix.",
@@ -233,12 +233,12 @@ internal static class CommandCatalog
                 new CommandOption("--list", "List every catalogued code with its meaning."),
             ],
             [
-                "storedl explain 0x80073CF3",
-                "storedl explain 0x80073CFF --json",
-                "storedl explain --list",
+                "StoreDownloader explain 0x80073CF3",
+                "StoreDownloader explain 0x80073CFF --json",
+                "StoreDownloader explain --list",
             ],
             ["Unknown but well formed codes still parse; the command then says it is not catalogued."],
-            ["storedl help doctor"]),
+            ["StoreDownloader help doctor"]),
     ];
 
     /// <summary>Finds a command by name.</summary>
