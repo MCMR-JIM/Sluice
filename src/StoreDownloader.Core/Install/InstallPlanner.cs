@@ -75,9 +75,13 @@ public sealed class InstallPlanner
         var mainIdentity = application.Identity;
         var dependencies = application.Dependencies;
 
+        var locale = string.IsNullOrWhiteSpace(options.Locale)
+            ? System.Globalization.CultureInfo.CurrentUICulture.Name
+            : options.Locale;
+
         if (application.Kind == PackageKind.Bundle)
         {
-            var selection = BundlePackageSelector.Select(application, targetArchitecture, options.Locale is null ? null : [options.Locale]);
+            var selection = BundlePackageSelector.Select(application, targetArchitecture, string.IsNullOrWhiteSpace(locale) ? null : [locale]);
             foreach (var note in selection.Notes)
             {
                 issues.Add(new PlanIssue(PlanIssueSeverity.Info, note));
@@ -170,12 +174,26 @@ public sealed class InstallPlanner
 
         var resources = candidates
             .Where(analysis => analysis.Kind == PackageKind.Resource)
-            .Where(analysis => options.Locale is null
-                || string.Equals(analysis.Identity!.ResourceId?.Split('-')[0], options.Locale.Split('-')[0], StringComparison.OrdinalIgnoreCase))
+            .Where(analysis => string.IsNullOrWhiteSpace(locale)
+                || string.Equals(analysis.Identity!.ResourceId?.Split('-')[0], locale.Split('-')[0], StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        // Files that were already accounted for (planned or deliberately skipped) should not be
+        // reported again as unused.
+        var considered = steps
+            .Select(step => step.FilePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Candidates that exist for a declared dependency were evaluated, even when an installed
+        // version made installing them unnecessary.
+        var declaredNames = dependencies.Select(dependency => dependency.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var evaluated in candidates.Where(analysis => analysis.Identity is not null && declaredNames.Contains(analysis.Identity.Name)))
+        {
+            considered.Add(evaluated.FilePath);
+        }
+
         foreach (var unused in candidates.Where(analysis => analysis.Kind != PackageKind.Resource
-            && !steps.Any(step => string.Equals(step.FilePath, analysis.FilePath, StringComparison.OrdinalIgnoreCase))))
+            && !considered.Contains(analysis.FilePath)))
         {
             issues.Add(new PlanIssue(
                 PlanIssueSeverity.Info,
