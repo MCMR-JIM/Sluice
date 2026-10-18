@@ -163,7 +163,7 @@ internal static class InstallCommand
                 AllowRegisterFallback: !arguments.Has("no-register"),
                 VerifyRegistration: !arguments.Has("no-verify")));
 
-        var outcome = await installer.InstallAsync(plan, CancellationToken.None).ConfigureAwait(false);
+        var outcome = await installer.InstallAsync(plan, progress: null, CancellationToken.None).ConfigureAwait(false);
 
         if (json)
         {
