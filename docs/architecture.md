@@ -2,57 +2,95 @@
 
 Five layers, each usable on its own, so the tool can be scripted in pieces.
 
-`@
-Store URL  ->  Store        product metadata, WuCategoryId
-               Fe3          packages + signed urls
-               Packages     manifests, architecture/resource choice
-               Download     bytes on disk
-               Install      plan, deploy, verify
-               Diagnostics  what Windows actually said
-`@
+## Contents
 
-## Design decisions worth knowing
+* [Layers](#layers)
+* [Design decisions](#design-decisions)
+* [Testing](#testing)
+* [Repository conventions](#repository-conventions)
 
-**No runtime dependencies.** Everything is BCL: `System.Text.Json`, `System.IO.Compression`
-(an appx *is* a zip), `XDocument` for manifests and SOAP, `HttpClient` for everything else. The
-result is a single small assembly that can be dropped anywhere.
+## Layers
 
-**Windows APIs are driven, not reimplemented.** Deployment goes through PowerShell and
-`Add-AppxPackage`, never through undocumented COM. Consequences: real HRESULTs, real behaviour,
-and the exact command is printed in the plan so an operator can reproduce or amend it by hand.
-Scripts are passed with `-EncodedCommand` to avoid quoting games, child output is pinned to UTF-8
-so localized Windows messages survive, and PowerShell's CLIXML noise is cleaned before it reaches
-the user.
+| Layer | Namespace | Responsibility |
+| --- | --- | --- |
+| Store | `StoreDownloader.Store` | Parse input, resolve product metadata and `WuCategoryId` |
+| Delivery | `StoreDownloader.Fe3` | Expand a category into packages with signed URLs |
+| Packages | `StoreDownloader.Packages` | Read manifests, choose architecture and resources |
+| Download | `StoreDownloader.Download` | Get bytes on disk, verify them, record a manifest |
+| Install | `StoreDownloader.Install` | Plan, deploy, escalate remedies, verify registration |
+| Windows | `StoreDownloader.Windows` | PowerShell host, installed inventory, environment probe |
+| Diagnostics | `StoreDownloader.Diagnostics` | The deployment HRESULT catalogue |
 
-**Everything that touches the machine is behind an interface.**
+`StoreDownloader.Cli` only wires them together: it contains command parsing, table rendering and
+JSON output, no protocol knowledge.
+
+## Design decisions
+
+### No runtime dependencies
+
+Everything comes from the BCL. `System.Text.Json` for the catalog, `System.IO.Compression` for
+package containers (an appx is a zip), `XDocument` for manifests and SOAP, `HttpClient` for the
+rest. The result is one small assembly that can be dropped anywhere and cannot break because a
+third-party package changed.
+
+### Windows APIs are driven, not reimplemented
+
+Deployment goes through PowerShell and `Add-AppxPackage`, never through undocumented COM.
+Consequences:
+
+* failures are real HRESULTs, not guesses;
+* the exact command is printed in the plan, so an operator can reproduce or amend it by hand;
+* scripts are passed with `-EncodedCommand` to avoid quoting problems;
+* child output is pinned to UTF-8, so localized Windows messages survive;
+* PowerShell's CLIXML and ANSI noise is cleaned before it reaches the user.
+
+One subtlety worth keeping: `Add-AppxPackage` reports the interesting deployment HRESULT inside the
+message text, while `$_.Exception.HResult` carries a generic wrapper code. The installer parses the
+message first and only falls back to the exception.
+
+### Everything that touches the machine is behind an interface
+
 `IInstalledPackageInventory` is implemented by `AppxInventory` (PowerShell) and by a fake in the
-tests, so planning logic is tested without a Windows machine.
+tests, so planning logic is tested without a Windows machine. The planner, the installer and the
+probe all fail softly: a missing PowerShell or a broken cmdlet becomes a warning in the plan, not an
+exception in the user's face.
 
-**Protocol behaviour is data, not code.** The device profile the delivery service expects lives in
-`WuDeviceProfile` with a comment on why each part matters; the deployment error catalogue is a
-table. When Microsoft changes something there is one obvious place to edit.
+### Protocol behaviour is data, not code
 
-**URLs are treated as short lived.** A resolution is valid for minutes, so the CLI resolves,
-selects, downloads and installs in one process, and writes `storedl-manifest.json` next to the
-files so a later offline install knows what it is looking at.
+The device profile the delivery service expects lives in `WuDeviceProfile`, with a comment on why
+each part matters. The deployment error catalogue is a table. When Microsoft changes something there
+is exactly one obvious place to edit, and a fixture test that says whether the parser still
+understands the shape.
+
+### Selection follows the manifest, not the catalog
+
+A Store category advertises framework packages for every architecture and runtime generation; a
+20 MiB app can be surrounded by hundreds of megabytes of them. `install` therefore downloads the
+application first, reads the dependencies out of its (possibly bundled) manifest, and fetches only
+those. `--all-deps` restores the "download everything" behaviour for offline archives.
 
 ## Testing
 
-`dotnet test` runs entirely offline:
+`dotnet test` runs offline and needs neither network nor a deployment stack:
 
-* URL and deep link parsing,
-* the delivery service parser against a checked-in fixture of the real answer shape (including
-  block map side files and duplicate update entries),
-* package identifier edge cases (`~` resource ids, underscores and dots in names, versions),
-* manifest reading and bundle child selection, using appx/msix/bundle containers built by the tests,
-* dependency planning against a fake inventory: ordering, missing dependencies, already installed,
-  unreadable inventory,
-* HRESULT parsing and the error catalogue,
-* download file naming and manifest round-trips.
+| Area | What is covered |
+| --- | --- |
+| Input | Store URLs, deep links, bare ids, market and locale hints |
+| Delivery parser | A checked-in `SyncUpdates` fixture: numeric join, block map filtering, duplicate collapsing, digest and flag mapping |
+| Identifiers | `~` resource ids, dots and underscores in names, version parsing, comparison |
+| Manifests | Identity, dependencies, device family, resource packages, bundle children, encrypted rejection |
+| Selection | Architecture scoring, resource language matching, main versus dependency choice, skipped-file explanations |
+| Planning | Framework ordering, missing dependencies, already installed, unreadable inventory, bundle inner manifests |
+| Downloads | File name sanitising, digest verification paths, manifest round-trips |
+| Errors | HRESULT parsing in hex, decimal and signed form; catalogue completeness |
+| CLI | Argument parsing, value-less switches, help completeness, version reporting |
+
+Fixtures build real appx, msix and bundle containers into a temporary folder at test time, so
+manifest reading is exercised against actual ZIP archives rather than mocks.
 
 ## Repository conventions
 
 * Conventional commits, one intent per commit, English.
 * `main` only receives merge commits from feature branches.
-* `feat/*` per capability, `test/*` and `fix/*` for their own work.
-* Analyzers run as part of the build; warnings are review items, not noise.
+* `feat/*` per capability, `test/*` and `docs/*` for their own work.
+* The build runs analyzers at `latest-recommended`; warnings are review items, not noise.
