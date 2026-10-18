@@ -123,8 +123,23 @@ jobs:
 
           ```
           .\storedl-<version>-windows-x64.exe doctor
-          .\storedl-<version>-windows-x64.exe install https://apps.microsoft.com/detail/9nksqgp7f2nh
+          .\storedl-<version>-windows-x64.exe install <store-link>
           ```
+
+          ### Verified on a virtual machine
+
+          The `install-test` workflow builds the tool from the commit under test and runs a real
+          sideload on a disposable hosted Windows runner: it enables sideloading, prints `doctor`,
+          resolves the link, plans, installs the framework packages the app is missing, then the
+          application bundle, reads the registration back, and removes the package again. Run it
+          from Actions, or from a shell:
+
+          ```
+          gh workflow run install-test.yml -f store_url='<store-link>'
+          gh run watch
+          ```
+
+          Nothing in that run touches a developer machine.
 
           ### History
           EOF
