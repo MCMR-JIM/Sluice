@@ -96,8 +96,10 @@ manifest reading is exercised against actual ZIP archives rather than mocks.
 * Merged head branches are deleted automatically (`delete_branch_on_merge`). Branches that were
   merged before that setting existed are swept by the `cleanup` workflow:
   `gh workflow run cleanup.yml`.
-* CI runs on Linux and Windows for every pull request and cross publishes all seven runtime
-  identifiers, so a platform assumption cannot land unnoticed.
+* CI runs the build and the test suite on Windows and on Linux: the protocol, manifest and
+  planning layers are platform neutral, and running them under both operating systems keeps
+  them that way. Packaging is Windows only, because deployment needs `Add-AppxPackage`.
+* The release matrix is the three Windows architectures (`win-x64`, `win-x86`, `win-arm64`).
 * Releases are tagged on `main`: `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`. The
   `release` workflow publishes the binaries, updates a release when it is re-run, and appends
   generated notes to the preamble it carries.

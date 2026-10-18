@@ -16,8 +16,9 @@ All notable changes to this project are documented here. The format follows
   behaviour for offline archives.
 * Cross-platform CI: build and test on Linux and Windows, plus a publish check for every target
   runtime identifier.
-* Release pipeline: tagging `v*` publishes self-contained single-file binaries for Windows
-  (x64, x86, arm64), Linux (x64, arm64) and macOS (x64, arm64) with checksums.
+* Release pipeline: tagging `v*` publishes self-contained single-file Windows binaries
+  (x64, x86, arm64) with `SHA256SUMS.txt`. Only Windows is packaged: deployment needs
+  `Add-AppxPackage` and PowerShell, so a binary for another platform would only half work.
 * Exit code 3 from `doctor` when the machine cannot deploy packages yet.
 
 ### Changed

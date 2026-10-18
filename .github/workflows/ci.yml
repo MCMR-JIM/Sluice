@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        rid: [win-x64, win-x86, win-arm64, linux-x64, linux-arm64, osx-x64, osx-arm64]
+        rid: [win-x64, win-x86, win-arm64]
     steps:
       - uses: actions/checkout@v4
 
@@ -60,22 +60,13 @@ jobs:
           -p:DebugType=none
           -o dist/${{ matrix.rid }}
 
-      # A cross published binary cannot run on the runner unless the architecture and the
-      # platform match, so only linux-x64 is actually executed; everything else is checked
-      # for shape: the file exists and carries a plausible amount of data.
-      - name: Check the artifact, execute it when the runner can
+      # The runner is Linux, so the Windows binary can be built here but not executed: the check
+      # is that it exists, starts with a PE header and carries a plausible amount of data.
+      - name: Check the artifact
         run: |
-          if [ -f "dist/${{ matrix.rid }}/storedl.exe" ]; then
-            BIN="dist/${{ matrix.rid }}/storedl.exe"
-          else
-            BIN="dist/${{ matrix.rid }}/storedl"
-          fi
+          BIN="dist/${{ matrix.rid }}/storedl.exe"
           test -f "${BIN}"
           SIZE=$(stat -c%s "${BIN}")
           echo "${BIN}: ${SIZE} bytes"
           test "${SIZE}" -gt 1000000
-          if [ "${{ matrix.rid }}" = "linux-x64" ]; then
-            chmod +x "${BIN}"
-            "${BIN}" --version
-            "${BIN}" --help | head -n 5
-          fi
+          head -c 2 "${BIN}" | od -An -tx1 | grep -qi '4d 5a' && echo "PE image (MZ header) confirmed"

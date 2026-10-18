@@ -31,14 +31,6 @@ jobs:
             asset: windows-x86.exe
           - rid: win-arm64
             asset: windows-arm64.exe
-          - rid: linux-x64
-            asset: linux-x64
-          - rid: linux-arm64
-            asset: linux-arm64
-          - rid: osx-x64
-            asset: macos-x64
-          - rid: osx-arm64
-            asset: macos-arm64
     steps:
       - uses: actions/checkout@v4
 
@@ -73,10 +65,8 @@ jobs:
       - name: Name the binary for the release
         run: |
           mkdir -p assets
-          if [ -f dist/storedl.exe ]; then SRC="dist/storedl.exe"; else SRC="dist/storedl"; fi
           ASSET="assets/storedl-${{ steps.version.outputs.version }}-${{ matrix.asset }}"
-          cp "${SRC}" "${ASSET}"
-          chmod +x "${ASSET}" || true
+          cp dist/storedl.exe "${ASSET}"
           ls -l "${ASSET}"
 
       - uses: actions/upload-artifact@v4
@@ -118,27 +108,22 @@ jobs:
       - name: Write the notes preamble
         run: |
           cat > notes.md <<'EOF'
-          ## storedl, one binary per platform
+          ## storedl, a Windows tool
 
-          Download the file for your platform, make it executable on macOS and Linux, and run it.
-          Every asset is self-contained: no .NET runtime has to be installed.
+          This tool deploys Store packages with `Add-AppxPackage` through PowerShell, so the builds are
+          Windows only. Every asset is self-contained: no .NET runtime has to be installed.
 
-          | Platform | Asset |
+          | Machine | Asset |
           | --- | --- |
-          | Windows x64 / x86 / arm64 | `storedl-<version>-windows-<arch>.exe` |
-          | Linux x64 / arm64 | `storedl-<version>-linux-<arch>` |
-          | macOS x64 / arm64 | `storedl-<version>-macos-<arch>` |
+          | Windows x64 | `storedl-<version>-windows-x64.exe` |
+          | Windows x86 | `storedl-<version>-windows-x86.exe` |
+          | Windows arm64 | `storedl-<version>-windows-arm64.exe` |
 
-          Verify the download against `SHA256SUMS.txt` before running it.
-
-          ### What works where
-
-          Installing packages needs Windows: deployment is driven through `Add-AppxPackage` and
-          PowerShell. On macOS and Linux the same binary resolves, downloads, analyses and plans,
-          which is how an offline package cache is built:
+          Verify the download against `SHA256SUMS.txt` before running it, then:
 
           ```
-          storedl download <store-link> --all-arch --dir ./StoreCache
+          .\storedl-<version>-windows-x64.exe doctor
+          .\storedl-<version>-windows-x64.exe install https://apps.microsoft.com/detail/9nksqgp7f2nh
           ```
 
           ### History
@@ -156,10 +141,11 @@ jobs:
             gh release upload "${TAG}" assets/* --clobber
             gh release edit "${TAG}" --title "${TITLE}" --notes-file notes.md
           else
+            # No --target here: the tag already exists when a release is rebuilt, and the API
+            # rejects a target for a tag that is already there.
             gh release create "${TAG}" \
               assets/* \
               --title "${TITLE}" \
-              --target "${{ github.sha }}" \
               --notes-file notes.md \
               --generate-notes
           fi
