@@ -420,7 +420,7 @@
                                                    Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding Time}" />
                                         <TextBlock Grid.Column="1" Style="{StaticResource RowText}" FontSize="10.5"
                                                    Foreground="{Binding Level, Converter={StaticResource LogLevelToBrush}}"
-                                                   Text="{Binding Level}" />
+                                                   Text="{Binding LevelText}" />
                                         <TextBlock Grid.Column="2" Style="{StaticResource RowText}" FontSize="11"
                                                    TextWrapping="Wrap" TextTrimming="None" Text="{Binding Text}" />
                                     </Grid>

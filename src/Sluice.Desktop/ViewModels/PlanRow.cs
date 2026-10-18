@@ -22,7 +22,7 @@ public sealed class PlanRow(Localization loc) : ObservableObject
 
     public string FileName => Step.FileName;
 
-    public string Reason => Step.Reason;
+    public string Reason => loc.Text(Step.Reason);
 
     public string State
     {
@@ -61,5 +61,6 @@ public sealed class PlanRow(Localization loc) : ObservableObject
     {
         Raise(nameof(KindLabel));
         Raise(nameof(StateLabel));
+        Raise(nameof(Reason));
     }
 }

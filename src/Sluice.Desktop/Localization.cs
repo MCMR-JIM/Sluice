@@ -132,6 +132,42 @@ public sealed class Localization : ObservableObject
         ["ChipDevUnknown"] = "开发者模式未知",
         ["EnvCheckFailed"] = "环境检查失败：{0}",
         ["CrashDetails"] = "{0}{1}{1}崩溃详情已写入：{2}",
+        // diagnostics the core layer emits
+        ["Diag_EnvNotWindows"] = "当前不是 Windows：可以解析和下载，但无法安装。",
+        ["Diag_EnvProbeFailed"] = "读取 Windows 环境失败：{0}",
+        ["Diag_EnvSideloadingOff"] = "侧载已禁用：部署会以 0x80073CFF 失败。请打开开发者模式，或把 HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock\\AllowAllTrustedApps 设为 1。",
+        ["Diag_EnvDevModeOff"] = "开发者模式已关闭：注册失败时的 -Register 兜底用不了。",
+        ["Diag_EnvServiceDown"] = "{0} 服务当前是 {1}；部署需要它处于运行状态（Start-Service {0}）。",
+        ["Diag_EnvLowDisk"] = "系统盘只剩 {0} GiB；大的安装包可能在预置阶段失败。",
+        ["Diag_BundleNoApplication"] = "这个 bundle 不含应用程序包，可能只带资源。",
+        ["Diag_BundleSelected"] = "已为 {1} 选中 {0}。",
+        ["Diag_BundleKeptResources"] = "为 {1} 保留了 {0} 个资源包。",
+        ["Diag_PrepareNoApplication"] = "bundle {0} 没有适用于 {1} 的应用程序包。",
+        ["Diag_PrepareInnerPackage"] = "{0} 内含 {2} 用的 {1}。",
+        ["Diag_PrepareUnreadableBundle"] = "读不出 {0} 内部的清单：{1}",
+        ["Diag_PrepareNotDeclared"] = "{0} 没有被应用清单声明，不下载。",
+        ["Diag_PlanSkippedFile"] = "跳过「{0}」：它不是可读的 appx/msix 包。",
+        ["Diag_PlanBundleNoApplication"] = "bundle「{0}」没有适用于 {1} 的应用程序包。",
+        ["Diag_PlanBundleNoApplicationHint"] = "重新下载这个产品；后端可能不提供这个架构。",
+        ["Diag_PlanBundleManifestUnreadable"] = "读不出 bundle 内部的清单（{0}）；改用文件夹里的文件。",
+        ["Diag_PlanDependencyInstalled"] = "{0} {1} 已安装，不需要再装包。",
+        ["Diag_PlanDependencySkipped"] = "{0} {1} 已安装，跳过 {2}。",
+        ["Diag_PlanMissingDependency"] = "{1} 声明的依赖「{0}」缺失。",
+        ["Diag_PlanMissingDependencyHint"] = "重新下载时不要带 --only/--deps-only，让框架包一起下来；或直接从 Microsoft Store 装这个框架。",
+        ["Diag_PlanUnusedFile"] = "{0} 不是这个应用需要的，不会安装。",
+        ["Diag_PlanMainAlreadyInstalled"] = "{0} {1} 已经装过；要重装加 --force。",
+        ["Diag_PlanStepFramework"] = "{0} 需要：{1}",
+        ["Diag_PlanStepMain"] = "应用程序包",
+        ["Diag_PlanStepMainBundle"] = "应用 bundle；架构和资源由 Windows 自行选择",
+        ["Diag_PlanStepResource"] = "{0} 的资源包",
+        ["Diag_PlanStepVerify"] = "回读注册，确认真的装上了",
+        ["Diag_PlanInventoryUnreadable"] = "读取已安装清单失败（{0}）；文件夹里的依赖都会被安装。",
+        ["Diag_PlanInventoryCheckFailed"] = "无法确认 {0} 是否已安装（{1}）。",
+        ["LogLevelInfo"] = "信息",
+        ["LogLevelSuccess"] = "完成",
+        ["LogLevelWarning"] = "提示",
+        ["LogLevelError"] = "错误",
+        ["LogLevelCommand"] = "命令",
         ["ExplainUnknownCode"] = "这个错误码还不在目录里。",
         ["ExplainUnparsable"] = "输入形如 0x80073CF3、80073CF3、2147958003 的错误码。",
     };
@@ -242,6 +278,11 @@ public sealed class Localization : ObservableObject
         ["ChipDevUnknown"] = "developer mode unknown",
         ["EnvCheckFailed"] = "Environment check failed: {0}",
         ["CrashDetails"] = "{0}{1}{1}Crash details written to {2}",
+        ["LogLevelInfo"] = "info",
+        ["LogLevelSuccess"] = "done",
+        ["LogLevelWarning"] = "warn",
+        ["LogLevelError"] = "error",
+        ["LogLevelCommand"] = "cmd",
         ["ExplainUnknownCode"] = "That code is not in the catalogue yet.",
         ["ExplainUnparsable"] = "Enter a code such as 0x80073CF3, 80073CF3 or 2147958003.",
     };
@@ -287,6 +328,23 @@ public sealed class Localization : ObservableObject
     {
         var dictionary = Language == UiLanguage.English ? EnglishText : ChineseText;
         return dictionary.TryGetValue(key, out var text) ? text : key;
+    }
+
+    /// <summary>True when a key exists in the current language.</summary>
+    /// <param name="key">Message key.</param>
+    public bool Has(string key) => (Language == UiLanguage.English ? EnglishText : ChineseText).ContainsKey(key);
+
+    /// <summary>
+    /// Renders a diagnostic the core layer produced. Codes that have a Diag_ key come out in the
+    /// chosen language; anything else keeps the text the core already formatted.
+    /// </summary>
+    /// <param name="message">Diagnostic from the core layer.</param>
+    public string Text(Diagnostics.DiagnosticMessage message)
+    {
+        var key = "Diag_" + message.Code;
+        return Has(key)
+            ? string.Format(CultureInfo.CurrentCulture, Get(key), message.Arguments.ToArray())
+            : message.Text;
     }
 
     /// <summary>Formatted text for a key.</summary>
