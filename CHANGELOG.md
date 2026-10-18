@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* The window speaks Chinese and English, switchable in the header (中文 / EN). One dictionary feeds
+  the XAML through an indexer binding, so every label, the plan rows, the package roles, the stage
+  and the status line flip at once.
+
+### Changed
+
+* The readme opens with the mark centred in HTML instead of a screenshot; screenshots are gone from
+  the documentation entirely, the steps and the output are written out instead.
+* `docs/logo.png` is a drawn placeholder until real artwork lands; [docs/brand.md](docs/brand.md)
+  lists the palette, the swap in procedure and a prompt for generating an icon.
+
 ## [0.3.0] - 2026-10-19
 
 ### Changed

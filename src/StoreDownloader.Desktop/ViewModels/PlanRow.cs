@@ -3,7 +3,7 @@ using StoreDownloader.Install;
 namespace StoreDownloader.Desktop.ViewModels;
 
 /// <summary>One step of the install plan as the list shows it.</summary>
-public sealed class PlanRow : ObservableObject
+public sealed class PlanRow(Localization loc) : ObservableObject
 {
     private string _state = "pending";
     private string? _detail;
@@ -12,13 +12,13 @@ public sealed class PlanRow : ObservableObject
 
     public required InstallStep Step { get; init; }
 
-    public string KindLabel => Step.Kind switch
+    public string KindLabel => loc.Get(Step.Kind switch
     {
-        InstallStepKind.InstallFramework => "框架",
-        InstallStepKind.InstallMain => "主程序",
-        InstallStepKind.InstallResource => "资源包",
-        _ => "校验",
-    };
+        InstallStepKind.InstallFramework => "KindFramework",
+        InstallStepKind.InstallMain => "KindMain",
+        InstallStepKind.InstallResource => "KindResource",
+        _ => "KindVerify",
+    });
 
     public string FileName => Step.FileName;
 
@@ -38,13 +38,13 @@ public sealed class PlanRow : ObservableObject
         }
     }
 
-    public string StateLabel => State switch
+    public string StateLabel => loc.Get(State switch
     {
-        "ok" => "完成",
-        "failed" => "失败",
-        "running" => "进行中",
-        _ => "等待",
-    };
+        "ok" => "StateOk",
+        "failed" => "StateFailed",
+        "running" => "StateRunning",
+        _ => "StatePending",
+    });
 
     public string? Detail
     {
@@ -55,4 +55,11 @@ public sealed class PlanRow : ObservableObject
     public bool IsDone => State == "ok";
 
     public bool IsFailed => State == "failed";
+
+    /// <summary>Re-reads the label after the language changed.</summary>
+    public void RefreshLanguage()
+    {
+        Raise(nameof(KindLabel));
+        Raise(nameof(StateLabel));
+    }
 }

@@ -1,6 +1,10 @@
-# StoreDownloader
+<p align="center">
+  <img src="docs/logo.png" alt="StoreDownloader" width="140">
+</p>
 
-**One command that turns a Microsoft Store link into a working install.**
+<h1 align="center">StoreDownloader</h1>
+
+<p align="center"><strong>One command that turns a Microsoft Store link into a working install.</strong></p>
 
 Store link in, running app out. The tool resolves the real package URLs, downloads the app and
 the dependency packages its manifest actually declares, installs the frameworks first with
@@ -53,11 +57,6 @@ corners and Task Manager density. The look has three rules: one flat semi transp
 (52% black) over the acrylic, every component inside it opaque, and only the gaps and the window
 edge show the blur behind. Over a dark background dark acrylic stays dark, exactly like Settings or Terminal; drag
 it over a bright window to see the glass move.
-
-![StoreDownloader window](docs/ui-window.png)
-
-The screenshot is rendered from the window itself, so the backdrop the compositor draws behind it
-cannot appear in it; on a real desktop the acrylic blur is visible through every panel.
 
 What the window gives you that the command line cannot:
 

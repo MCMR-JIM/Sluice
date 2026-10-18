@@ -29,11 +29,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private bool _allArchitectures;
     private bool _allUsers;
     private bool _busy;
-    private string _stage = "空闲";
+    private string _stageKey = "StageIdle";
     private double _progress;
     private bool _progressIndeterminate;
-    private string _statusLine = "粘贴一个 Store 链接，或直接输入产品 ID。";
-    private string _productTitle = "还没有解析任何产品";
+    private string _statusLine = string.Empty;
+    private string _productTitle = string.Empty;
     private string _productDetail = string.Empty;
     private string _resultHeadline = string.Empty;
     private string _resultDetail = string.Empty;
@@ -59,10 +59,44 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         PasteCommand = new RelayCommand(Paste);
         RefreshEnvironmentCommand = new RelayCommand(() => RefreshEnvironmentAsync());
 
+        Packages.CollectionChanged += (_, _) => Raise(nameof(PackageCountText));
+        ProductTitle = Loc.Get("DetailNothingParsed");
+        StatusLine = Loc.Get("StatusReady");
+        Loc.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName != nameof(Localization.Language))
+            {
+                return;
+            }
+
+            Raise(nameof(Stage));
+            Raise(nameof(PackageCountText));
+            foreach (var row in PlanRows)
+            {
+                row.RefreshLanguage();
+            }
+
+            RefreshPackageRows();
+        };
+
         _ = RefreshEnvironmentAsync();
     }
 
     public string ToolVersion { get; } = BuildInfo.Version;
+
+    /// <summary>Everything the window says, in the language the user picked.</summary>
+    public Localization Loc { get; } = new();
+
+    private void SetStage(string key)
+    {
+        if (_stageKey == key)
+        {
+            return;
+        }
+
+        _stageKey = key;
+        Raise(nameof(Stage));
+    }
 
     public ObservableCollection<PackageRow> Packages { get; } = [];
 
@@ -71,6 +105,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<LogEntry> Log { get; } = [];
 
     public ObservableCollection<EnvironmentChip> Chips { get; } = [];
+
+    /// <summary>The package counter in the list header, in the current language.</summary>
+    public string PackageCountText => Loc.Format("PackageCount", Packages.Count);
 
     public RelayCommand ResolveCommand { get; }
 
@@ -195,11 +232,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public bool CanRun => !Busy;
 
-    public string Stage
-    {
-        get => _stage;
-        private set => SetProperty(ref _stage, value);
-    }
+    public string Stage => Loc.Get(_stageKey);
 
     public double Progress
     {
@@ -283,8 +316,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (!StoreUrlParser.TryParse(Reference, out var request, out var error))
         {
-            AddLog(LogLevel.Error, error ?? "无法识别的链接。");
-            StatusLine = error ?? "无法识别的链接。";
+            AddLog(LogLevel.Error, error ?? Loc.Get("LogUnrecognised"));
+            StatusLine = error ?? Loc.Get("LogUnrecognised");
             return;
         }
 
@@ -303,14 +336,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
-            AddLog(LogLevel.Warning, "已取消。");
-            StatusLine = "已取消。";
+            AddLog(LogLevel.Warning, Loc.Get("LogCancelled"));
+            StatusLine = Loc.Get("StatusCancelled");
         }
         catch (StoreDownloaderException ex)
         {
             AddLog(LogLevel.Error, ex.Message);
             StatusLine = ex.Message;
-            ResultHeadline = "未完成";
+            ResultHeadline = Loc.Get("ResultUnfinished");
             ResultDetail = ex.Message;
         }
         catch (Exception ex)
@@ -322,7 +355,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             Busy = false;
             ProgressIndeterminate = false;
-            Stage = "空闲";
+            SetStage("StageIdle");
             _cancellation?.Dispose();
             _cancellation = null;
         }
@@ -330,15 +363,15 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private async Task ExecuteAsync(PipelineMode mode, StoreRequest request, CancellationToken token)
     {
-        Stage = "解析";
-        StatusLine = $"正在解析 {request.ProductId}…";
+        SetStage("StageResolve");
+        StatusLine = Loc.Format("StatusResolving", request.ProductId);
         AddLog(LogLevel.Command, $"{ModeLabel(mode)} · {Reference}");
 
         using var resolver = new StorePackageResolver();
         var resolution = await resolver.ResolveAsync(request, Locale, token).ConfigureAwait(true);
 
         ProductTitle = resolution.Product.Title;
-        ProductDetail = $"{resolution.Product.ProductId} · {resolution.Product.Publisher ?? "未知发布者"} · "
+        ProductDetail = $"{resolution.Product.ProductId} · {resolution.Product.Publisher ?? Loc.Get("UnknownPublisher")} · "
             + $"{resolution.Product.Market}/{resolution.Product.Locale} · {resolution.Product.WuCategoryIds.Count} 个分类";
 
         foreach (var package in resolution.Packages)
@@ -346,29 +379,30 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             var identity = Fe3.PackageIdentifier.TryParse(package.Package.InstallerSpecificIdentifier, out var parsed)
                 ? parsed
                 : null;
-            Packages.Add(new PackageRow
+            Packages.Add(new PackageRow(Loc, identity?.ResourceId is not null
+                ? PackageRole.Resource
+                : package.Package.IsFramework ? PackageRole.Framework : PackageRole.Main)
             {
                 FileName = package.Package.ReadableFileName,
                 Architecture = package.Package.Architecture ?? "neutral",
                 Size = UiFormat.Size(package.Package.SizeInBytes),
-                Role = identity?.ResourceId is not null ? "资源包" : package.Package.IsFramework ? "框架" : "主程序",
-                Link = package.IsDownloadable ? "url" : "无链接",
+                Link = package.IsDownloadable ? "url" : Loc.Get("LinkNone"),
             });
         }
 
-        AddLog(LogLevel.Info, $"解析到 {resolution.Packages.Count} 个包，合计 {UiFormat.Size(resolution.TotalSizeInBytes)}。");
+        AddLog(LogLevel.Info, Loc.Format("LogParsed", resolution.Packages.Count, UiFormat.Size(resolution.TotalSizeInBytes)));
 
         if (mode == PipelineMode.Resolve)
         {
-            StatusLine = "解析完成。";
-            ResultHeadline = "解析完成";
-            ResultDetail = $"{resolution.Product.Title} · {resolution.Packages.Count} 个包";
+            StatusLine = Loc.Get("StatusResolved");
+            ResultHeadline = Loc.Get("ResultResolved");
+            ResultDetail = $"{resolution.Product.Title} · {Loc.Format("DetailPackageCount", resolution.Packages.Count)}";
             return;
         }
 
         if (!OperatingSystem.IsWindows() && mode == PipelineMode.Install)
         {
-            throw new StoreDownloaderException("安装需要 Windows。");
+            throw new StoreDownloaderException(Loc.Get("LogNeedsWindows"));
         }
 
         var selection = PackageSelector.Select(
@@ -384,7 +418,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         List<string> files;
         if (mode is PipelineMode.Plan or PipelineMode.Install)
         {
-            Stage = "下载";
+            SetStage("StageDownload");
             ProgressIndeterminate = false;
             Progress = 0;
             var preparation = await new PackagePreparer(downloader)
@@ -402,7 +436,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
         else
         {
-            Stage = "下载";
+            SetStage("StageDownload");
             ProgressIndeterminate = false;
             Progress = 0;
             var results = await downloader
@@ -414,7 +448,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 $"已下载 {results.Count} 个包，{UiFormat.Size(results.Sum(r => r.SizeInBytes))}。");
         }
 
-        Stage = "规划";
+        SetStage("StagePlan");
         ProgressIndeterminate = true;
         var planner = _shell.IsAvailable ? new InstallPlanner(_inventory) : new InstallPlanner();
         var plan = await planner
@@ -425,7 +459,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var order = 1;
         foreach (var step in plan.Steps)
         {
-            PlanRows.Add(new PlanRow { Order = order++, Step = step });
+            PlanRows.Add(new PlanRow(Loc) { Order = order++, Step = step });
         }
 
         foreach (var issue in plan.Issues)
@@ -441,29 +475,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (mode == PipelineMode.Download)
         {
-            StatusLine = "下载完成。";
-            ResultHeadline = "下载完成";
-            ResultDetail = $"{files.Count} 个包在 {CacheDirectory}";
+            StatusLine = Loc.Get("StatusDownloaded");
+            ResultHeadline = Loc.Get("ResultDownloaded");
+            ResultDetail = Loc.Format("DetailFilesIn", files.Count, CacheDirectory);
             return;
         }
 
         if (!plan.CanProceed)
         {
-            StatusLine = "计划有阻断问题，未安装。";
-            ResultHeadline = "计划被阻断";
-            ResultDetail = "查看日志里的 error 项，通常是缺依赖。";
+            StatusLine = Loc.Get("StatusPlanBlocked");
+            ResultHeadline = Loc.Get("ResultBlocked");
+            ResultDetail = Loc.Get("DetailBlocked");
             return;
         }
 
         if (mode == PipelineMode.Plan)
         {
-            StatusLine = "计划已生成，未做任何更改。";
-            ResultHeadline = "计划预览";
-            ResultDetail = $"{plan.Steps.Count} 步，主程序 {plan.MainPackageName} {plan.MainVersion}";
+            StatusLine = Loc.Get("StatusPlanned");
+            ResultHeadline = Loc.Get("ResultPlanned");
+            ResultDetail = Loc.Format("DetailPlanSteps", plan.Steps.Count, plan.MainPackageName, plan.MainVersion);
             return;
         }
 
-        Stage = "安装";
+        SetStage("StageInstall");
         ProgressIndeterminate = true;
         var installer = new AppxInstaller(
             _shell,
@@ -475,33 +509,33 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         if (outcome.Succeeded)
         {
-            Stage = "完成";
+            SetStage("StageDone");
             ProgressIndeterminate = false;
             Progress = 100;
-            ResultHeadline = "安装完成";
+            ResultHeadline = Loc.Get("ResultInstalled");
             ResultDetail = outcome.Registered is null
-                ? $"{plan.MainPackageName} 已安装。"
+                ? Loc.Format("DetailInstalled", plan.MainPackageName)
                 : $"{outcome.Registered.PackageFullName} · 状态 {outcome.Registered.Status}";
             AddLog(LogLevel.Success, ResultDetail);
-            StatusLine = "安装完成，可以从开始菜单启动。";
+            StatusLine = Loc.Get("StatusInstalled");
         }
         else
         {
-            Stage = "失败";
+            SetStage("StageFailed");
             ProgressIndeterminate = false;
             var failure = outcome.StepResults.FirstOrDefault(result => !result.Succeeded);
-            ResultHeadline = "安装失败";
+            ResultHeadline = Loc.Get("ResultInstallFailed");
             ResultDetail = failure?.Error is null
-                ? failure?.Message ?? "未知错误。"
+                ? failure?.Message ?? Loc.Get("UnknownError")
                 : $"{failure.Error.FormattedCode} {failure.Error.Name} · {failure.Error.Meaning}";
             AddLog(LogLevel.Error, ResultDetail);
             if (failure?.Error is not null)
             {
-                AddLog(LogLevel.Info, $"原因：{failure.Error.TypicalCause}");
-                AddLog(LogLevel.Info, $"处理：{failure.Error.ManualSteps}");
+                AddLog(LogLevel.Info, $"{Loc.Get("ExplainWhy")}: {failure.Error.TypicalCause}");
+                AddLog(LogLevel.Info, $"{Loc.Get("ExplainHow")}: {failure.Error.ManualSteps}");
             }
 
-            StatusLine = "安装失败，日志里有错误码解释。";
+            StatusLine = Loc.Get("StatusInstallFailed");
         }
     }
 
@@ -510,7 +544,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         void Apply()
         {
             Progress = Math.Round(progress.Fraction * 100, 1);
-            StatusLine = $"正在下载 {progress.FileName} · {UiFormat.Size(progress.BytesReceived)} / {UiFormat.Size(progress.TotalBytes)}";
+            StatusLine = Loc.Format("StatusDownloading", progress.FileName, UiFormat.Size(progress.BytesReceived), UiFormat.Size(progress.TotalBytes));
         }
 
         Dispatcher(Apply);
@@ -552,10 +586,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 report.ProductName is null ? "Windows" : $"{report.ProductName} {report.Build}",
                 "neutral"));
             Chips.Add(new EnvironmentChip(
-                report.SideloadingEnabled switch { true => "侧载已开启", false => "侧载已关闭", null => "侧载未知" },
+                Loc.Get(report.SideloadingEnabled switch { true => "ChipSideloadOn", false => "ChipSideloadOff", null => "ChipSideloadUnknown" }),
                 report.SideloadingEnabled switch { true => "ok", false => "bad", null => "warn" }));
             Chips.Add(new EnvironmentChip(
-                report.DeveloperModeEnabled switch { true => "开发者模式开", false => "开发者模式关", null => "开发者模式未知" },
+                Loc.Get(report.DeveloperModeEnabled switch { true => "ChipDevOn", false => "ChipDevOff", null => "ChipDevUnknown" }),
                 report.DeveloperModeEnabled switch { true => "ok", false => "warn", null => "neutral" }));
 
             foreach (var warning in report.Warnings)
@@ -564,12 +598,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             StatusLine = report.Warnings.Count == 0
-                ? "环境就绪：可以安装。"
-                : $"环境有 {report.Warnings.Count} 条提示，见日志。";
+                ? Loc.Get("StatusEnvironment")
+                : Loc.Format("StatusEnvironmentWarnings", report.Warnings.Count);
         }
         catch (Exception ex)
         {
-            AddLog(LogLevel.Warning, $"环境检查失败：{ex.Message}");
+            AddLog(LogLevel.Warning, Loc.Format("EnvCheckFailed", ex.Message));
         }
     }
 
@@ -580,12 +614,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             if (AppxErrorCatalog.TryParse(ExplainInput, out var code))
             {
                 ExplainTitle = AppxErrorCatalog.Format(code);
-                ExplainBody = "这个错误码还不在目录里。";
+                ExplainBody = Loc.Get("ExplainUnknownCode");
             }
             else
             {
-                ExplainTitle = "无法解析";
-                ExplainBody = "输入形如 0x80073CF3、80073CF3、2147958003 的错误码。";
+                ExplainTitle = Loc.Get("ExplainUnparsableTitle");
+                ExplainBody = Loc.Get("ExplainUnparsable");
             }
 
             ExplainVisible = true;
@@ -593,7 +627,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
 
         ExplainTitle = $"{info.FormattedCode} · {info.Name}";
-        ExplainBody = $"是什么：{info.Meaning}\n\n为什么：{info.TypicalCause}\n\n怎么办：{info.ManualSteps}";
+        ExplainBody = Loc.Format("ExplainBody", info.Meaning, info.TypicalCause, info.ManualSteps);
         ExplainVisible = true;
     }
 
@@ -618,7 +652,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (!string.IsNullOrEmpty(text))
         {
             Clipboard.SetText(text);
-            StatusLine = "日志已复制。";
+            StatusLine = Loc.Get("StatusCopied");
         }
     }
 
@@ -627,6 +661,22 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (Clipboard.ContainsText())
         {
             Reference = Clipboard.GetText().Trim();
+        }
+    }
+
+    /// <summary>Re-reads the link state of every row after the language changed.</summary>
+    private void RefreshPackageRows()
+    {
+        for (var index = 0; index < Packages.Count; index++)
+        {
+            var row = Packages[index];
+            Packages[index] = new PackageRow(Loc, row.Role)
+            {
+                FileName = row.FileName,
+                Architecture = row.Architecture,
+                Size = row.Size,
+                Link = row.Link,
+            };
         }
     }
 
@@ -646,13 +696,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private static string ModeLabel(PipelineMode mode) => mode switch
+    private string ModeLabel(PipelineMode mode) => Loc.Get(mode switch
     {
-        PipelineMode.Resolve => "解析",
-        PipelineMode.Download => "下载",
-        PipelineMode.Plan => "计划",
-        _ => "安装",
-    };
+        PipelineMode.Resolve => "StageResolve",
+        PipelineMode.Download => "StageDownload",
+        PipelineMode.Plan => "StagePlan",
+        _ => "StageInstall",
+    });
 
     private void RaiseCommands()
     {
