@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+* Scrollbars look like the ones in Task Manager: no track, no arrows, a thin rounded grip that rests
+  almost invisible and comes up when the pointer reaches the gutter.
+
 ## [0.4.1] - 2026-10-19
 
 ### Fixed
