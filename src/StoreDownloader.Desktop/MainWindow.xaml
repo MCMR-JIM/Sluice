@@ -1,0 +1,427 @@
+<Window x:Class="StoreDownloader.Desktop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:StoreDownloader.Desktop.Converters"
+        Title="storedl"
+        Height="760" Width="1180" MinHeight="560" MinWidth="900"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        FontFamily="{StaticResource UiFont}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+    <Window.Resources>
+        <conv:LogLevelToBrushConverter x:Key="LogLevelToBrush" />
+        <conv:ToneToBrushConverter x:Key="ToneToBrush" />
+        <conv:ZeroToVisibleConverter x:Key="ZeroToVisibleConverter" />
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}" />
+
+        <Style x:Key="RowText" TargetType="TextBlock" BasedOn="{StaticResource MonoText}">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{StaticResource WindowVeilBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ================= title bar area ================= -->
+        <Grid Grid.Row="0" Margin="14,12,14,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="24" Height="24" CornerRadius="6" Background="{StaticResource AccentBrush}">
+                    <TextBlock Text="S" Foreground="{StaticResource AccentInkBrush}" FontSize="13" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <TextBlock Text="{Binding ToolVersion}" Style="{StaticResource MonoText}" FontSize="11"
+                           Opacity="0.5" Margin="8,1,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <ItemsControl Grid.Column="1" ItemsSource="{Binding Chips}" Margin="16,0,8,0" VerticalAlignment="Center">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,12,0">
+                            <Ellipse Width="5" Height="5" Margin="0,0,5,0" VerticalAlignment="Center"
+                                     Fill="{Binding Tone, Converter={StaticResource ToneToBrush}}" />
+                            <TextBlock Text="{Binding Text}" FontSize="11"
+                                       Foreground="{StaticResource TextTertiaryBrush}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Button Grid.Column="2" Content="重新检查环境" Style="{StaticResource GhostButton}"
+                    Command="{Binding RefreshEnvironmentCommand}" VerticalAlignment="Center" />
+        </Grid>
+
+        <!-- ================= body ================= -->
+        <Grid Grid.Row="1" Margin="14,0,14,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="272" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- source + options, flat groups separated by hairlines -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel>
+                    <TextBlock Text="来源" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Style="{StaticResource FluentTextBox}"
+                                 Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"
+                                 IsEnabled="{Binding CanRun}" />
+                        <Button Grid.Column="1" Content="粘贴" Style="{StaticResource GhostButton}" Margin="4,0,0,0"
+                                Command="{Binding PasteCommand}" IsEnabled="{Binding CanRun}" />
+                    </Grid>
+
+                    <TextBlock Text="架构" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="x64"
+                                     IsChecked="{Binding IsX64, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="x86"
+                                     IsChecked="{Binding IsX86, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="arm64"
+                                     IsChecked="{Binding IsArm64, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
+                    </StackPanel>
+
+                    <TextBlock Text="资源语言" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
+                    <TextBox Style="{StaticResource FluentTextBox}" Text="{Binding Locale}"
+                             IsEnabled="{Binding CanRun}" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="含全部架构"
+                                  IsChecked="{Binding AllArchitectures}" IsEnabled="{Binding CanRun}" />
+                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="为所有用户"
+                                  Margin="14,0,0,0" IsChecked="{Binding AllUsers}" IsEnabled="{Binding CanRun}" />
+                    </StackPanel>
+
+                    <Button Content="安装到本机" Style="{StaticResource PrimaryButton}" Margin="0,12,0,0"
+                            Command="{Binding InstallCommand}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="6" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Content="解析" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ResolveCommand}" />
+                        <Button Grid.Column="2" Content="下载" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding DownloadCommand}" />
+                        <Button Grid.Column="4" Content="计划" Style="{StaticResource SecondaryButton}"
+                                Command="{Binding PlanCommand}" />
+                    </Grid>
+                    <Button Content="取消当前任务" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
+                            HorizontalAlignment="Left" Command="{Binding CancelCommand}" />
+
+                    <Border Height="1" Background="{StaticResource HairlineBrush}" Margin="0,14" />
+
+                    <TextBlock Text="存放位置" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <TextBlock Style="{StaticResource MonoText}" FontSize="11" TextWrapping="Wrap"
+                               Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding CacheDirectory}" />
+                    <Button Content="打开文件夹" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
+                            HorizontalAlignment="Left" Command="{Binding OpenFolderCommand}" />
+
+                    <Border Height="1" Background="{StaticResource HairlineBrush}" Margin="0,14" />
+
+                    <TextBlock Text="错误码速查" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Style="{StaticResource FluentTextBox}"
+                                 Text="{Binding ExplainInput, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Grid.Column="1" Content="查询" Style="{StaticResource SecondaryButton}" Margin="4,0,0,0"
+                                Command="{Binding ExplainCommand}" />
+                    </Grid>
+
+                    <Border Margin="0,8,0,0" CornerRadius="4" Padding="10"
+                            Background="{StaticResource SurfaceSunkenBrush}"
+                            BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
+                            Visibility="{Binding ExplainVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource MonoText}" FontSize="11" TextWrapping="Wrap"
+                                       Foreground="{StaticResource AccentBrush}" Text="{Binding ExplainTitle}" />
+                            <TextBlock Style="{StaticResource BodyText}" FontSize="11.5" Margin="0,6,0,0"
+                                       Text="{Binding ExplainBody}" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- data -->
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- product strip -->
+                <Grid Grid.Row="0" Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Style="{StaticResource DisplayText}" FontSize="13.5" TextTrimming="CharacterEllipsis"
+                                   Text="{Binding ProductTitle}" />
+                        <TextBlock Style="{StaticResource CaptionText}" FontSize="11" Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis" Text="{Binding ProductDetail}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource SectionTitle}" FontSize="11.5" HorizontalAlignment="Right"
+                                   Foreground="{StaticResource AccentBrush}" Text="{Binding ResultHeadline}" />
+                        <TextBlock Style="{StaticResource CaptionText}" FontSize="10.5" HorizontalAlignment="Right"
+                                   MaxWidth="320" TextAlignment="Right" TextTrimming="CharacterEllipsis"
+                                   Text="{Binding ResultDetail}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- tabs + counters -->
+                <Grid Grid.Row="1" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="包与计划"
+                                     IsChecked="{Binding ShowPackages, Mode=TwoWay}" />
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="活动日志"
+                                     IsChecked="{Binding ShowLog, Mode=TwoWay}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <TextBlock Style="{StaticResource CaptionText}" FontSize="11" VerticalAlignment="Center"
+                                   Margin="0,0,10,0" Text="{Binding Packages.Count, StringFormat={}{0} 个包}" />
+                        <Button Content="复制日志" Style="{StaticResource GhostButton}"
+                                Command="{Binding CopyLogCommand}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- packages -->
+                <Border Grid.Row="2" CornerRadius="6" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
+                        Visibility="{Binding ShowPackages, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- column header, full bleed -->
+                            <Border Grid.Row="0" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1"
+                                    Padding="12,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="76" />
+                                        <ColumnDefinition Width="44" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="角色" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="1" Text="文件" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" />
+                                    <TextBlock Grid.Column="2" Text="架构" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="3" Text="大小" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                    <TextBlock Grid.Column="4" Text="链接" Style="{StaticResource GroupLabel}"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
+                                </Grid>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Packages}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,0,0,1"
+                                                    Padding="12,5">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="64" />
+                                                        <ColumnDefinition Width="76" />
+                                                        <ColumnDefinition Width="44" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                               Text="{Binding Role}" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource RowText}"
+                                                               Text="{Binding FileName}" />
+                                                    <TextBlock Grid.Column="2" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" HorizontalAlignment="Right"
+                                                               Foreground="{StaticResource TextTertiaryBrush}"
+                                                               Text="{Binding Architecture}" />
+                                                    <TextBlock Grid.Column="3" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" HorizontalAlignment="Right"
+                                                               Text="{Binding Size}" />
+                                                    <TextBlock Grid.Column="4" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" HorizontalAlignment="Right"
+                                                               Foreground="{StaticResource SuccessBrush}"
+                                                               Text="{Binding Link}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <StackPanel Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                        Visibility="{Binding Packages.Count, Converter={StaticResource ZeroToVisibleConverter}}">
+                                <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Text="粘贴 Store 链接，按「解析」看后端真实包列表。" />
+                                <TextBlock Style="{StaticResource CaptionText}" HorizontalAlignment="Center"
+                                           Margin="0,4,0,0"
+                                           Text="或者直接「安装到本机」：解析 → 只下需要的依赖 → 框架先行 → 装主体 → 回读注册。" />
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- plan, flat list under the packages -->
+                        <Border Grid.Row="1" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0"
+                                Height="150">
+                            <StackPanel>
+                                <Grid Margin="12,6,12,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="安装计划" Style="{StaticResource GroupLabel}"
+                                               VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Style="{StaticResource CaptionText}" FontSize="10.5"
+                                               HorizontalAlignment="Right" Text="框架 → 主程序 → 校验" />
+                                </Grid>
+
+                                <TextBlock Style="{StaticResource CaptionText}" FontSize="11" Margin="12,0,12,8"
+                                           Text="点「计划」或「安装到本机」后，这里列出依赖顺序与每一步结果。"
+                                           Visibility="{Binding PlanRows.Count, Converter={StaticResource ZeroToVisibleConverter}}" />
+
+                                <ScrollViewer MaxHeight="104" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding PlanRows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="12,2">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="18" />
+                                                        <ColumnDefinition Width="48" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="44" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                                               Text="{Binding Order}" />
+                                                    <TextBlock Grid.Column="1" Style="{StaticResource RowText}"
+                                                               FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"
+                                                               Text="{Binding KindLabel}" />
+                                                    <TextBlock Grid.Column="2" Style="{StaticResource RowText}"
+                                                               FontSize="11" Text="{Binding FileName}" Margin="4,0,8,0" />
+                                                    <TextBlock Grid.Column="3" FontSize="10.5" HorizontalAlignment="Right"
+                                                               VerticalAlignment="Center" Text="{Binding StateLabel}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+                                                                <Setter Property="Foreground" Value="{StaticResource TextTertiaryBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDone}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsFailed}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{StaticResource DangerBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- log -->
+                <Border Grid.Row="2" CornerRadius="6" Background="{StaticResource SurfaceBrush}"
+                        BorderBrush="{StaticResource HairlineBrush}" BorderThickness="1"
+                        Visibility="{Binding ShowLog, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <ScrollViewer x:Name="LogScroll" VerticalScrollBarVisibility="Auto" Margin="0,6">
+                        <ItemsControl ItemsSource="{Binding Log}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="12,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="58" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Style="{StaticResource RowText}" FontSize="10.5"
+                                                   Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding Time}" />
+                                        <TextBlock Grid.Column="1" Style="{StaticResource RowText}" FontSize="10.5"
+                                                   Foreground="{Binding Level, Converter={StaticResource LogLevelToBrush}}"
+                                                   Text="{Binding Level}" />
+                                        <TextBlock Grid.Column="2" Style="{StaticResource RowText}" FontSize="11"
+                                                   TextWrapping="Wrap" TextTrimming="None" Text="{Binding Text}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+
+                <!-- status -->
+                <Border Grid.Row="3" BorderBrush="{StaticResource HairlineBrush}" BorderThickness="0,1,0,0"
+                        Padding="0,8,0,2">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="170" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Style="{StaticResource GroupLabel}" VerticalAlignment="Center"
+                               Foreground="{StaticResource AccentBrush}" Text="{Binding Stage}" Margin="0,0,10,0" />
+                    <ProgressBar Grid.Column="1" Style="{StaticResource FluentProgress}" VerticalAlignment="Center"
+                                 Margin="0,0,12,0" Minimum="0" Maximum="100"
+                                 Value="{Binding Progress, Mode=OneWay}"
+                                 IsIndeterminate="{Binding ProgressIndeterminate, Mode=OneWay}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource RowText}" FontSize="11"
+                               Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding StatusLine}" />
+                </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
