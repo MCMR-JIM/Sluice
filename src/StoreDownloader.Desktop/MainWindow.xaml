@@ -81,8 +81,14 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <Button Grid.Column="2" Content="重新检查环境" Style="{StaticResource GhostButton}"
-                    Command="{Binding RefreshEnvironmentCommand}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Lang" Content="中文"
+                             IsChecked="{Binding Loc.IsChinese, Mode=TwoWay}" />
+                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Lang" Content="EN"
+                             IsChecked="{Binding Loc.IsEnglish, Mode=TwoWay}" Margin="0,0,10,0" />
+                <Button Content="{Binding Loc[RefreshEnvironment]}" Style="{StaticResource GhostButton}"
+                        Command="{Binding RefreshEnvironmentCommand}" />
+            </StackPanel>
         </Grid>
 
         <!-- ================= body ================= -->
@@ -99,7 +105,7 @@
                     Margin="0,2,0,2">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel>
-                    <TextBlock Text="来源" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <TextBlock Text="{Binding Loc[Source]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -108,11 +114,11 @@
                         <TextBox Grid.Column="0" Style="{StaticResource FluentTextBox}"
                                  Text="{Binding Reference, UpdateSourceTrigger=PropertyChanged}"
                                  IsEnabled="{Binding CanRun}" />
-                        <Button Grid.Column="1" Content="粘贴" Style="{StaticResource GhostButton}" Margin="4,0,0,0"
+                        <Button Grid.Column="1" Content="{Binding Loc[Paste]}" Style="{StaticResource GhostButton}" Margin="4,0,0,0"
                                 Command="{Binding PasteCommand}" IsEnabled="{Binding CanRun}" />
                     </Grid>
 
-                    <TextBlock Text="架构" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
+                    <TextBlock Text="{Binding Loc[Arch]}" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
                     <StackPanel Orientation="Horizontal">
                         <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="x64"
                                      IsChecked="{Binding IsX64, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
@@ -122,18 +128,18 @@
                                      IsChecked="{Binding IsArm64, Mode=TwoWay}" IsEnabled="{Binding CanRun}" />
                     </StackPanel>
 
-                    <TextBlock Text="资源语言" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
+                    <TextBlock Text="{Binding Loc[Locale]}" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
                     <TextBox Style="{StaticResource FluentTextBox}" Text="{Binding Locale}"
                              IsEnabled="{Binding CanRun}" />
 
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="含全部架构"
+                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="{Binding Loc[IncludeAllArch]}"
                                   IsChecked="{Binding AllArchitectures}" IsEnabled="{Binding CanRun}" />
-                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="为所有用户"
+                        <CheckBox Style="{StaticResource FluentCheckBox}" Content="{Binding Loc[AllUsers]}"
                                   Margin="14,0,0,0" IsChecked="{Binding AllUsers}" IsEnabled="{Binding CanRun}" />
                     </StackPanel>
 
-                    <Button Content="安装到本机" Style="{StaticResource PrimaryButton}" Margin="0,12,0,0"
+                    <Button Content="{Binding Loc[InstallToMachine]}" Style="{StaticResource PrimaryButton}" Margin="0,12,0,0"
                             Command="{Binding InstallCommand}" />
                     <Grid Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
@@ -143,27 +149,27 @@
                             <ColumnDefinition Width="6" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="解析" Style="{StaticResource SecondaryButton}"
+                        <Button Grid.Column="0" Content="{Binding Loc[Resolve]}" Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ResolveCommand}" />
-                        <Button Grid.Column="2" Content="下载" Style="{StaticResource SecondaryButton}"
+                        <Button Grid.Column="2" Content="{Binding Loc[Download]}" Style="{StaticResource SecondaryButton}"
                                 Command="{Binding DownloadCommand}" />
-                        <Button Grid.Column="4" Content="计划" Style="{StaticResource SecondaryButton}"
+                        <Button Grid.Column="4" Content="{Binding Loc[Plan]}" Style="{StaticResource SecondaryButton}"
                                 Command="{Binding PlanCommand}" />
                     </Grid>
-                    <Button Content="取消当前任务" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
+                    <Button Content="{Binding Loc[CancelTask]}" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
                             HorizontalAlignment="Left" Command="{Binding CancelCommand}" />
 
                     <Border Height="1" Background="{StaticResource HairlineBrush}" Margin="0,14" />
 
-                    <TextBlock Text="存放位置" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <TextBlock Text="{Binding Loc[Cache]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
                     <TextBlock Style="{StaticResource MonoText}" FontSize="11" TextWrapping="Wrap"
                                Foreground="{StaticResource TextTertiaryBrush}" Text="{Binding CacheDirectory}" />
-                    <Button Content="打开文件夹" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
+                    <Button Content="{Binding Loc[OpenFolder]}" Style="{StaticResource GhostButton}" Margin="0,6,0,0"
                             HorizontalAlignment="Left" Command="{Binding OpenFolderCommand}" />
 
                     <Border Height="1" Background="{StaticResource HairlineBrush}" Margin="0,14" />
 
-                    <TextBlock Text="错误码速查" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
+                    <TextBlock Text="{Binding Loc[Explain]}" Style="{StaticResource GroupLabel}" Margin="0,0,0,6" />
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -171,7 +177,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" Style="{StaticResource FluentTextBox}"
                                  Text="{Binding ExplainInput, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Grid.Column="1" Content="查询" Style="{StaticResource SecondaryButton}" Margin="4,0,0,0"
+                        <Button Grid.Column="1" Content="{Binding Loc[Query]}" Style="{StaticResource SecondaryButton}" Margin="4,0,0,0"
                                 Command="{Binding ExplainCommand}" />
                     </Grid>
 
@@ -227,15 +233,15 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="包与计划"
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="{Binding Loc[TabPackages]}"
                                      IsChecked="{Binding ShowPackages, Mode=TwoWay}" />
-                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="活动日志"
+                        <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Pane" Content="{Binding Loc[TabLog]}"
                                      IsChecked="{Binding ShowLog, Mode=TwoWay}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                         <TextBlock Style="{StaticResource CaptionText}" FontSize="11" VerticalAlignment="Center"
-                                   Margin="0,0,10,0" Text="{Binding Packages.Count, StringFormat={}{0} 个包}" />
-                        <Button Content="复制日志" Style="{StaticResource GhostButton}"
+                                   Margin="0,0,10,0" Text="{Binding PackageCountText}" />
+                        <Button Content="{Binding Loc[CopyLog]}" Style="{StaticResource GhostButton}"
                                 Command="{Binding CopyLogCommand}" />
                     </StackPanel>
                 </Grid>
@@ -268,15 +274,15 @@
                                         <ColumnDefinition Width="76" />
                                         <ColumnDefinition Width="44" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="角色" Style="{StaticResource GroupLabel}"
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[ColumnRole]}" Style="{StaticResource GroupLabel}"
                                                Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Grid.Column="1" Text="文件" Style="{StaticResource GroupLabel}"
+                                    <TextBlock Grid.Column="1" Text="{Binding Loc[ColumnFile]}" Style="{StaticResource GroupLabel}"
                                                Foreground="{StaticResource TextSecondaryBrush}" />
-                                    <TextBlock Grid.Column="2" Text="架构" Style="{StaticResource GroupLabel}"
+                                    <TextBlock Grid.Column="2" Text="{Binding Loc[ColumnArch]}" Style="{StaticResource GroupLabel}"
                                                Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
-                                    <TextBlock Grid.Column="3" Text="大小" Style="{StaticResource GroupLabel}"
+                                    <TextBlock Grid.Column="3" Text="{Binding Loc[ColumnSize]}" Style="{StaticResource GroupLabel}"
                                                Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
-                                    <TextBlock Grid.Column="4" Text="链接" Style="{StaticResource GroupLabel}"
+                                    <TextBlock Grid.Column="4" Text="{Binding Loc[ColumnLink]}" Style="{StaticResource GroupLabel}"
                                                Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Right" />
                                 </Grid>
                             </Border>
@@ -306,7 +312,7 @@
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0" Style="{StaticResource RowText}"
                                                                FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
-                                                               Text="{Binding Role}" />
+                                                               Text="{Binding RoleText}" />
                                                     <TextBlock Grid.Column="1" Style="{StaticResource RowText}"
                                                                Text="{Binding FileName}" />
                                                     <TextBlock Grid.Column="2" Style="{StaticResource RowText}"
@@ -339,13 +345,13 @@
                                     </Canvas>
                                 </Viewbox>
                                 <TextBlock Style="{StaticResource DisplayText}" FontSize="13" Margin="0,10,0,0"
-                                           Text="还没有解析任何链接" />
+                                           Text="{Binding Loc[EmptyTitle]}" />
                                 <TextBlock Style="{StaticResource BodyText}" Margin="0,6,0,0" MaxWidth="460"
                                            HorizontalAlignment="Left"
-                                           Text="粘贴一个 Store 链接后点「解析」：会列出后端真实的下发包、架构、大小，以及每个包的签名下载地址是否可用。" />
+                                           Text="{Binding Loc[EmptyBody]}" />
                                 <TextBlock Style="{StaticResource CaptionText}" Margin="0,10,0,0" MaxWidth="460"
                                            HorizontalAlignment="Left"
-                                           Text="也可以直接「安装到本机」：只下载清单里声明的依赖，框架先行，装完回读注册再报结果。" />
+                                           Text="{Binding Loc[EmptyHint]}" />
                             </StackPanel>
                         </Grid>
 
@@ -358,14 +364,14 @@
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="安装计划" Style="{StaticResource GroupLabel}"
+                                    <TextBlock Grid.Column="0" Text="{Binding Loc[PlanSection]}" Style="{StaticResource GroupLabel}"
                                                VerticalAlignment="Center" />
                                     <TextBlock Grid.Column="1" Style="{StaticResource CaptionText}" FontSize="10.5"
-                                               HorizontalAlignment="Right" Text="框架 → 主程序 → 校验" />
+                                               HorizontalAlignment="Right" Text="{Binding Loc[PlanFormula]}" />
                                 </Grid>
 
                                 <TextBlock Style="{StaticResource CaptionText}" FontSize="11" Margin="12,0,12,8"
-                                           Text="点「计划」或「安装到本机」后，这里列出依赖顺序与每一步结果。"
+                                           Text="{Binding Loc[PlanEmpty]}"
                                            Visibility="{Binding PlanRows.Count, Converter={StaticResource ZeroToVisibleConverter}}" />
 
                                 <ScrollViewer MaxHeight="104" VerticalScrollBarVisibility="Auto">
