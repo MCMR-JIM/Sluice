@@ -74,21 +74,31 @@ public sealed class DownloadException : StoreDownloaderException
 }
 
 /// <summary>Makes package file names safe for the file system.</summary>
+/// <remarks>
+/// The Windows character set is applied on every platform on purpose: these are appx packages
+/// that end up in a Windows deployment, and a name that is legal on Linux but illegal on Windows
+/// produces a confusing failure much later instead of here.
+/// </remarks>
 public static class FileNameSanitizer
 {
+    private const string InvalidCharacters = "<>:\"|?*/\\";
+
     /// <summary>Replaces characters that are invalid in Windows file names.</summary>
     /// <param name="fileName">Candidate file name.</param>
     public static string Sanitize(string fileName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
-        var invalid = Path.GetInvalidFileNameChars();
         var builder = new System.Text.StringBuilder(fileName.Length);
         foreach (var character in fileName)
         {
-            builder.Append(Array.IndexOf(invalid, character) >= 0 ? '_' : character);
+            var invalid = InvalidCharacters.Contains(character, StringComparison.Ordinal) || char.IsControl(character);
+            builder.Append(invalid ? '_' : character);
         }
 
-        return builder.ToString();
+        // Windows silently drops trailing dots and spaces, which would desynchronise the file name
+        // from the digest the manifest recorded for it.
+        var sanitized = builder.ToString().TrimEnd('.', ' ');
+        return sanitized.Length == 0 ? "_" : sanitized;
     }
 }
