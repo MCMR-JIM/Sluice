@@ -1,78 +1,130 @@
 # Troubleshooting
 
-Start with `storedl doctor`: it checks the four things that decide most sideload failures
-(sideloading policy, Developer Mode, the deployment services, free space).
+Most sideload failures come down to four things: the policy that allows sideloading, Developer
+Mode, the deployment services, and disk space. `storedl doctor` checks all four and tells you what
+to change.
 
-`storedl explain <hresult>` prints the catalogue entry for any code below, including the manual fix.
+```console
+storedl doctor
+storedl explain 0x80073CF3
+```
+
+## Contents
+
+* [Error codes](#error-codes)
+* [Symptoms](#symptoms)
+* [Diagnostics worth running](#diagnostics-worth-running)
+* [Reporting a problem](#reporting-a-problem)
 
 ## Error codes
 
-| Code | Meaning | Automatic remedy | What to do when it still fails |
-| --- | --- | --- | --- |
-| `0x80073CF3` | Package conflicts with something already installed | retries with `-DependencyPath` | A framework is missing or too old: `storedl download <id> --deps-only` into the same folder, install again |
-| `0x80073CF6` | Staged but could not be registered | extracts and registers loose files | Enable Developer Mode, or remove the stale registration and install again |
-| `0x80073CF9` | Deployment service failed | none | Start `AppXSvc`/`StateRepository`, then `wsreset.exe` or a DISM repair |
-| `0x80073D02` | Package in use | retries with `-ForceApplicationShutdown` | Close the app and any process holding it |
-| `0x80073CFB` | Already installed | retries with `-ForceUpdateFromAnyVersion` | Uninstall the existing package, or ignore it |
-| `0x80073CFF` | Deployment policy blocked it | none | Settings > System > For developers > Developer Mode, or set `AllowAllTrustedApps=1` |
-| `0x800B0100` | Package not signed | none | Use the original signed package; the tool only downloads those |
-| `0x800B0109` | Untrusted root certificate | none | Trust the signing certificate, or use the Microsoft-signed build |
-| `0x80070005` | Access denied | none | Elevate, or install per user instead of `--all-users` |
-| `0x80073CF0` | Package could not be opened | none | Truncated or wrong file: check the digest reported by the download |
-| `0x80073CFD` | Not applicable to this device | none | Wrong architecture or device family; update Windows |
-| `0x80070490` | Component not found | none | Corrupt deployment state: DISM repair, then reinstall |
+Deployment failures report an HRESULT. `storedl explain <code>` prints the entry below, including
+whether the tool retries automatically.
 
-## Scenarios people actually hit
+| Code | Name | Meaning | Automatic remedy | Manual fix |
+| --- | --- | --- | --- | --- |
+| `0x80073CF3` | ERROR_PACKAGE_UPDATE_POLICY_VIOLATION | Conflicts with something already installed | retries with `-DependencyPath` | A framework is missing or too old: download it with `--deps-only` into the same folder, then install again |
+| `0x80073CF6` | ERROR_PACKAGE_COULD_NOT_BE_REGISTERED | Staged, but registration failed | extracts and registers loose files | Enable Developer Mode, or remove the stale registration and install again |
+| `0x80073CF9` | ERROR_DEPLOYMENT_FAILED | The deployment service could not complete | none | Start `AppXSvc` and `StateRepository`, then `wsreset.exe` or a DISM repair |
+| `0x80073D02` | ERROR_PACKAGES_IN_USE | A package being replaced is in use | retries with `-ForceApplicationShutdown` | Close the app and any process holding it |
+| `0x80073CFB` | ERROR_PACKAGE_ALREADY_INSTALLED | Same or newer version already present | retries with `-ForceUpdateFromAnyVersion` | Uninstall the existing package, or accept it |
+| `0x80073CFF` | ERROR_INSTALL_POLICY_FAILURE | Policy blocked the deployment | none | Settings > System > For developers > Developer Mode, or set `AllowAllTrustedApps` to 1 |
+| `0x800B0100` | TRUST_E_NOSIGNATURE | The package is not signed | none | Use the original signed package; the tool only downloads those |
+| `0x800B0109` | CERT_E_UNTRUSTEDROOT | Signature chains to an untrusted root | none | Trust the signing certificate, or use the Microsoft-signed build |
+| `0x800B010A` | CERT_E_CHAINING | Invalid certificate chain | none | Verify the digest, then download again |
+| `0x80070005` | E_ACCESSDENIED | Access denied during deployment | none | Elevate, or install per user instead of `--all-users` |
+| `0x80073CF0` | ERROR_PACKAGE_OPEN_FAILED | The package could not be opened | none | Truncated or wrong file: check the digest the download reported |
+| `0x80073CF1` | ERROR_PACKAGE_NOT_FOUND | The file was not where it was expected | none | Re-run the install with the same `--dir` used for the download |
+| `0x80073CFD` | ERROR_PACKAGE_NOT_SUPPORTED_ON_THIS_DEVICE | Not applicable to this machine | none | Wrong architecture or device family; update Windows |
+| `0x80070490` | ERROR_NOT_FOUND | A component deployment needs is missing | none | Corrupt deployment state: DISM repair, then reinstall |
+| `0x8007000B` | ERROR_BAD_FORMAT | The payload is not a valid image | none | Install the architecture this machine runs; let the digest check pass |
 
-### "App Installer opens and skips the dependencies"
+## Symptoms
 
-That is App Installer's behaviour: it deploys the single file you clicked. Use
-`storedl install` (or `Add-AppxPackage -Path ... -DependencyPath ...`) so the frameworks go in
-first. That is the entire reason this tool exists.
+### Symptom: App Installer opens and skips the dependencies
 
-### "It installed, but there is no Start menu entry, or it crashes immediately"
+That is App Installer's behaviour: it deploys the single file you clicked. Use `storedl install`,
+or `Add-AppxPackage -Path ... -DependencyPath ...` by hand, so the frameworks go in first. This is
+the reason the tool exists.
 
-Usually one of: a child package of a bundle was registered instead of the bundle; a required
-framework is missing; or loose files were registered without their assets. Run
-`storedl analyze <file>` to see identity and dependencies, then `storedl plan <dir>` to see what
-should be installed, and reinstall with `storedl install --dir <dir> --force`.
+### Symptom: it installed, but there is no Start menu entry, or it crashes on launch
 
-### "0x80073CF3 even though the dependencies are right there"
+Usual causes: a child package of a bundle was registered instead of the bundle, a required framework
+is missing, or loose files were registered without their assets.
+
+```console
+storedl analyze .\downloads
+storedl plan .\downloads --arch x64
+storedl install --dir .\downloads --force --yes
+```
+
+`storedl analyze` shows the identity and dependencies of each file, `storedl plan` shows what the
+tool thinks should be installed, and the install then verifies the registration.
+
+### Symptom: 0x80073CF3 even though the dependencies are right there
 
 Two common causes:
 
-1. the dependency is for the wrong architecture (x86 package on an x64-only manifest, or the
-   reverse): `storedl download --arch x64` picks the right one;
-2. an older version of the dependency is installed and the manifest requires a newer one: the plan
-   compares the installed version and decides.
+1. **Wrong architecture.** An x86 framework cannot satisfy an x64 manifest, and the reverse. Let the
+   tool pick with `--arch`, or use `--all-arch` for an archive.
+2. **Installed version too old.** The manifest requires a minimum version. `storedl plan` compares
+   the installed version and decides whether to install or skip; if it says "already installed", the
+   requirement is satisfied by a newer version and the error comes from somewhere else.
 
-### "The link from the generator expired"
+### Symptom: the generated link stopped working
 
 CDN URLs are signed and expire within hours. Re-run `storedl download` (resolution is cheap), or
-keep the files from the first run and use `storedl install --dir <folder>` offline.
+keep the files from the first run and install offline with `--skip-download`.
 
-### "Encrypted package" / "this app needs a licence"
+### Symptom: "encrypted package", or the app demands a licence
 
-`.eappx` / `.emsix` payloads are encrypted for entitled accounts. `Add-AppxPackage` cannot
-install them without the licence the Store issues; the tool detects them and refuses with an
-explanation instead of failing later with a cryptic HRESULT.
+`.eappx` and `.emsix` payloads are encrypted for entitled accounts. `Add-AppxPackage` cannot
+install them without the licence the Store issues for that account. The tool detects them and
+refuses with an explanation instead of failing later with a cryptic HRESULT.
 
-### "doctor says sideloading is disabled"
+### Symptom: doctor says sideloading is disabled
 
-* Windows 10: Settings > Update & Security > For developers > Sideload apps.
 * Windows 11: Settings > System > For developers > Developer Mode.
-* Scripted: `Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock -Name AllowAllTrustedApps -Value 1`
-  (add `AllowDevelopmentWithoutDevLicense` if you also want the `-Register` fallback), then reboot.
+* Windows 10: Settings > Update & Security > For developers > Sideload apps.
+* Scripted, in an elevated shell:
 
-### "Nothing is registered after a successful install"
+```powershell
+Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock -Name AllowAllTrustedApps -Value 1
+# only needed for the -Register fallback:
+Set-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock -Name AllowDevelopmentWithoutDevLicense -Value 1
+```
 
-The tool compares `Get-AppxPackage -Name <identity>` with the plan. If it comes back empty, the
-deployment went to a different user (try `--all-users` with elevation) or it was rolled back. Check
-Event Viewer > Applications and Services Logs > Microsoft > Windows > AppXDeployment-Server for the
-activity id printed in the error detail.
+Reboot afterwards, then re-run `storedl doctor`.
 
-## Reporting a resolution problem
+### Symptom: nothing is registered after a successful install
 
-`storedl resolve <url> --json` captures everything the tool saw: product, category id, package
-identities, architectures and URLs. It contains no personal data, which makes it a good thing to
-attach to an issue.
+The tool compares `Get-AppxPackage -Name <identity>` with the plan and treats an empty answer as a
+failure. If it happens anyway, the deployment went to a different user (try `--all-users` with
+elevation) or was rolled back. Event Viewer > Applications and Services Logs > Microsoft > Windows >
+AppXDeployment-Server holds the activity id printed in the error detail.
+
+## Diagnostics worth running
+
+| Command | What it answers |
+| --- | --- |
+| `storedl doctor` | Can this machine install sideloaded packages at all? |
+| `storedl doctor --json` | The same, for scripting |
+| `storedl resolve <url>` | What does the Store actually offer for this id? |
+| `storedl analyze <file>` | What identity, architecture and dependencies does this file carry? |
+| `storedl plan <dir>` | What would be installed, in what order, and what is blocking it? |
+| `storedl explain <code>` | What does this HRESULT mean and what fixes it? |
+
+PowerShell equivalents, when you want to see the raw state:
+
+```powershell
+Get-AppxPackage -Name <name> | Select-Object Name, Version, Status, PackageFullName
+Get-AppxPackage -PackageTypeFilter Framework | Select-Object Name, Version, Architecture
+Get-AppxPackageLog -ActivityID <activity id from the error>
+Get-Service AppXSvc, StateRepository, ClipSVC
+```
+
+## Reporting a problem
+
+`storedl resolve <url> --json` and `storedl plan <dir> --json` capture what the tool saw: product,
+category id, package identities, architectures, URLs and the plan. Neither contains personal data,
+which makes them safe to attach to an issue.
