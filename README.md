@@ -39,16 +39,17 @@ release ships Windows binaries only. They are self-contained single files, no .N
 
 | Machine | Asset |
 | --- | --- |
-| Windows x64 | `Sluice-<version>-windows-x64.exe` |
-| Windows x86 | `Sluice-<version>-windows-x86.exe` |
-| Windows arm64 | `Sluice-<version>-windows-arm64.exe` |
+| Windows x64 | `Sluice-<version>-windows-x64.zip` |
+| Windows x86 | `Sluice-<version>-windows-x86.zip` |
+| Windows arm64 | `Sluice-<version>-windows-arm64.zip` |
 
 Grab the one for your machine from the [latest release](https://github.com/MCMR-JIM/Sluice/releases/latest),
-verify it against the published `SHA256SUMS.txt`, and run it:
+check it against the published `SHA256SUMS.txt`, unpack it and run it:
 
 ```powershell
-Get-FileHash .\Sluice-0.2.0-windows-x64.exe -Algorithm SHA256   # compare with SHA256SUMS.txt
-.\Sluice-0.2.0-windows-x64.exe doctor
+Expand-Archive .\Sluice-<version>-windows-x64.zip -DestinationPath .\sluice
+Get-FileHash .\Sluice-<version>-windows-x64.zip -Algorithm SHA256   # compare with SHA256SUMS.txt
+.\sluice\Sluice.exe doctor
 ```
 
 Both faces ship in the same archive: `Sluice.exe` on the command line and `Sluice.UI.exe`
@@ -69,7 +70,7 @@ What the window gives you that the command line cannot:
 * the resolved package list as a table (role, file, architecture, size, whether a URL was issued)
 * the install plan as ordered steps, each one turning green or red while it runs
 * live download progress and a colour-coded activity log with a copy button
-* inline @doctor` chips in the title bar (sideloading, Developer Mode) and an HRESULT lookup
+* inline environment chips in the header (sideloading policy, Developer Mode) and an HRESULT lookup
 * a cancel button that actually cancels the running stage
 
 ## Quick start
@@ -231,10 +232,13 @@ dotnet test
 dotnet run --project src/Sluice.Cli -- doctor
 ```
 
-Single-file build for distribution:
+Single-file builds for distribution, the same way the release workflow does it:
 
 ```console
-dotnet publish src/Sluice.Cli -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -o out
+dotnet publish src/Sluice.Cli -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o dist
+dotnet publish src/Sluice.Desktop -c Release -r win-x64 --self-contained true \
+  -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o dist-ui
 ```
 
 The test suite runs offline. It reads the delivery service parser through a checked-in fixture,
@@ -262,6 +266,7 @@ src/Sluice.Core
   Diagnostics/  deployment HRESULT catalogue
   Windows/      PowerShell host, installed package inventory, environment probe
 src/Sluice.Cli        the Sluice command line
+src/Sluice.Desktop    the WPF window: XAML, view models, localization, Fluent theme
 tests/Sluice.Tests    offline tests with synthetic package fixtures
 docs/                          protocol notes, troubleshooting, architecture
 ```
@@ -273,7 +278,7 @@ docs/                          protocol notes, troubleshooting, architecture
 | [docs/protocol.md](docs/protocol.md) | Link to package: catalog, delivery service, bundles, installing |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Error codes, symptom to fix, how to collect a report |
 | [docs/architecture.md](docs/architecture.md) | Layering, design decisions, testing, conventions |
-| [docs/brand.md](docs/brand.md) | Name, palette, the placeholder mark and the prompt for a real icon |
+| [docs/brand.md](docs/brand.md) | Name, palette, the mark and where it is used |
 | [CHANGELOG.md](CHANGELOG.md) | What changed in each release |
 
 ## License
