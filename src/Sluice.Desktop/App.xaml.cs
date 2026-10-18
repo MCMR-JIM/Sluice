@@ -19,8 +19,9 @@ public partial class App : Application
         var path = Path.Combine(Path.GetTempPath(), "Sluice-UI-crash.txt");
         File.WriteAllText(path, e.Exception.ToString());
 
+        var text = new Localization().Format("CrashDetails", e.Exception.Message, path);
         MessageBox.Show(
-            $"{e.Exception.Message}{Environment.NewLine}{Environment.NewLine}详细信息：{path}",
+            text,
             "Sluice",
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
