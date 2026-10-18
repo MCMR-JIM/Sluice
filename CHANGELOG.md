@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* An `install-test` workflow that sideloads a Store app on a disposable hosted Windows runner:
+  build from the commit under test, enable sideloading, doctor, resolve, plan, install, read the
+  registration back, remove it again, upload the log.
+
+### Fixed
+
+* `doctor` reported the sideloading policy and Developer Mode as `unknown` on every machine
+  where they were actually configured, because the registry returns DWORDs and the probe only
+  understood JSON booleans. A disabled sideloading policy therefore produced no warning at all.
+* The install-test workflow no longer treats doctor's warning exit code as a step failure.
+
 ## [0.2.0] - 2026-10-18
 
 ### Added
