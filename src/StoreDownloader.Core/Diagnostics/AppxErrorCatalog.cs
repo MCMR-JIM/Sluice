@@ -97,6 +97,14 @@ public static class AppxErrorCatalog
             return uint.TryParse(trimmed[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out code);
         }
 
+        // Bare eight digit hex values appear in event logs without the 0x prefix.
+        if (trimmed.Length == 8
+            && uint.TryParse(trimmed, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out code)
+            && trimmed.Any(character => character is 'A' or 'B' or 'C' or 'D' or 'E' or 'F' or 'a' or 'b' or 'c' or 'd' or 'e' or 'f'))
+        {
+            return true;
+        }
+
         if (uint.TryParse(trimmed, NumberStyles.Integer, CultureInfo.InvariantCulture, out code))
         {
             return true;
