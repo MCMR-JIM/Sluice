@@ -6,6 +6,8 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Sluice.Desktop</RootNamespace>
     <AssemblyName>Sluice.UI</AssemblyName>
+    <!-- The exe keeps its technical name; the shell shows the product name instead. -->
+    <AssemblyTitle>Sluice</AssemblyTitle>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <RollForward>LatestMajor</RollForward>

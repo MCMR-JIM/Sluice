@@ -36,6 +36,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _statusLine = string.Empty;
     private string _productTitle = string.Empty;
     private string _productDetail = string.Empty;
+    private StoreProduct? _product;
+    private InstalledPackage? _registered;
+    private string? _installedMainName;
+    private bool _installSucceeded;
     private string _resultHeadline = string.Empty;
     private string _resultDetail = string.Empty;
     private string _explainInput = "0x80073CF3";
@@ -73,6 +77,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Raise(nameof(Stage));
             Raise(nameof(PackageCountText));
             RebuildChips();
+            RebuildProductDetail();
+            RebuildRegisteredDetail();
+            RebuildStatusLine();
             foreach (var row in PlanRows)
             {
                 row.RefreshLanguage();
@@ -372,9 +379,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         using var resolver = new StorePackageResolver();
         var resolution = await resolver.ResolveAsync(request, Locale, token).ConfigureAwait(true);
 
+        _product = resolution.Product;
         ProductTitle = resolution.Product.Title;
-        ProductDetail = $"{resolution.Product.ProductId} · {resolution.Product.Publisher ?? Loc.Get("UnknownPublisher")} · "
-            + $"{resolution.Product.Market}/{resolution.Product.Locale} · {resolution.Product.WuCategoryIds.Count} 个分类";
+        RebuildProductDetail();
 
         foreach (var package in resolution.Packages)
         {
@@ -433,8 +440,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             }
 
             files = preparation.Downloaded.Select(result => result.Path).ToList();
-            AddLog(LogLevel.Success,
-                $"已下载 {files.Count} 个包，{UiFormat.Size(preparation.Downloaded.Sum(r => r.SizeInBytes))}。");
+            AddLog(LogLevel.Success, Loc.Format(
+                "DownloadedPackages", files.Count, UiFormat.Size(preparation.Downloaded.Sum(r => r.SizeInBytes))));
         }
         else
         {
@@ -446,8 +453,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 .ConfigureAwait(true);
 
             files = results.Select(result => result.Path).ToList();
-            AddLog(LogLevel.Success,
-                $"已下载 {results.Count} 个包，{UiFormat.Size(results.Sum(r => r.SizeInBytes))}。");
+            AddLog(LogLevel.Success, Loc.Format(
+                "DownloadedPackages", files.Count, UiFormat.Size(results.Sum(r => r.SizeInBytes))));
         }
 
         SetStage("StagePlan");
@@ -515,9 +522,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ProgressIndeterminate = false;
             Progress = 100;
             ResultHeadline = Loc.Get("ResultInstalled");
-            ResultDetail = outcome.Registered is null
-                ? Loc.Format("DetailInstalled", plan.MainPackageName)
-                : $"{outcome.Registered.PackageFullName} · 状态 {outcome.Registered.Status}";
+            _registered = outcome.Registered;
+            _installedMainName = plan.MainPackageName;
+            _installSucceeded = true;
+            RebuildRegisteredDetail();
             AddLog(LogLevel.Success, ResultDetail);
             StatusLine = Loc.Get("StatusInstalled");
         }
@@ -525,6 +533,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             SetStage("StageFailed");
             ProgressIndeterminate = false;
+            _installSucceeded = false;
             var failure = outcome.StepResults.FirstOrDefault(result => !result.Succeeded);
             ResultHeadline = Loc.Get("ResultInstallFailed");
             ResultDetail = failure?.Error is null
@@ -599,7 +608,52 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Rebuilds the header chips in the current language.</summary>
+    /// <summary>Re-renders the product subtitle in the current language.</summary>
+    private void RebuildProductDetail()
+    {
+        if (_product is not { } product)
+        {
+            ProductTitle = Loc.Get("DetailNothingParsed");
+            return;
+        }
+
+        ProductDetail = $"{product.ProductId} · {product.Publisher ?? Loc.Get("UnknownPublisher")} · "
+            + $"{product.Market}/{product.Locale} · {Loc.Format("ProductCategories", product.WuCategoryIds.Count)}";
+    }
+
+    /// <summary>Re-renders the idle status line in the current language.</summary>
+    private void RebuildStatusLine()
+    {
+        if (Busy)
+        {
+            return;
+        }
+
+        StatusLine = _environment is { } report
+            ? report.Warnings.Count == 0
+                ? Loc.Get("StatusEnvironment")
+                : Loc.Format("StatusEnvironmentWarnings", report.Warnings.Count)
+            : Loc.Get("StatusReady");
+    }
+
+    /// <summary>Re-renders the install verdict in the current language.</summary>
+    private void RebuildRegisteredDetail()
+    {
+        if (!_installSucceeded)
+        {
+            return;
+        }
+
+        ResultDetail = _registered is null
+            ? Loc.Format("DetailInstalled", _installedMainName ?? string.Empty)
+            : Loc.Format("RegisteredStatus", _registered.PackageFullName, _registered.Status);
+    }
+
+    /// <summary>
+    /// Refreshes the header chips in the current language. The four chips are created once and
+    /// updated in place: clearing and repopulating the collection in a single pass makes WPF drop
+    /// the first containers, which is why the machine name used to disappear after a language flip.
+    /// </summary>
     private void RebuildChips()
     {
         if (_environment is not { } report)
@@ -607,17 +661,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        Chips.Clear();
-        Chips.Add(new EnvironmentChip(report.Architecture, "neutral"));
-        Chips.Add(new EnvironmentChip(
-            report.ProductName is null ? "Windows" : $"{report.ProductName} {report.Build}",
-            "neutral"));
-        Chips.Add(new EnvironmentChip(
-            Loc.Get(report.SideloadingEnabled switch { true => "ChipSideloadOn", false => "ChipSideloadOff", null => "ChipSideloadUnknown" }),
-            report.SideloadingEnabled switch { true => "ok", false => "bad", null => "warn" }));
-        Chips.Add(new EnvironmentChip(
-            Loc.Get(report.DeveloperModeEnabled switch { true => "ChipDevOn", false => "ChipDevOff", null => "ChipDevUnknown" }),
-            report.DeveloperModeEnabled switch { true => "ok", false => "warn", null => "neutral" }));
+        while (Chips.Count < 4)
+        {
+            Chips.Add(new EnvironmentChip(string.Empty, "neutral"));
+        }
+
+        Chips[0].Text = report.Architecture;
+        Chips[0].Tone = "neutral";
+        Chips[1].Text = report.ProductName is null ? "Windows" : $"{report.ProductName} {report.Build}";
+        Chips[1].Tone = "neutral";
+        Chips[2].Text = Loc.Get(report.SideloadingEnabled switch { true => "ChipSideloadOn", false => "ChipSideloadOff", null => "ChipSideloadUnknown" });
+        Chips[2].Tone = report.SideloadingEnabled switch { true => "ok", false => "bad", null => "warn" };
+        Chips[3].Text = Loc.Get(report.DeveloperModeEnabled switch { true => "ChipDevOn", false => "ChipDevOff", null => "ChipDevUnknown" });
+        Chips[3].Tone = report.DeveloperModeEnabled switch { true => "ok", false => "warn", null => "neutral" };
     }
 
     private void Explain()
@@ -729,7 +785,29 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 }
 
 /// <summary>A short status token shown in the header.</summary>
-public sealed record EnvironmentChip(string Text, string Tone);
+public sealed class EnvironmentChip : ObservableObject
+{
+    private string _text;
+    private string _tone;
+
+    public EnvironmentChip(string text, string tone)
+    {
+        _text = text;
+        _tone = tone;
+    }
+
+    public string Text
+    {
+        get => _text;
+        set => SetProperty(ref _text, value);
+    }
+
+    public string Tone
+    {
+        get => _tone;
+        set => SetProperty(ref _tone, value);
+    }
+}
 
 internal enum PipelineMode
 {
