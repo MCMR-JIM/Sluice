@@ -44,7 +44,7 @@ public sealed class InstallPlannerTests : IDisposable
 
         Assert.False(plan.CanProceed);
         var issue = Assert.Single(plan.Issues, candidate => candidate.Severity == PlanIssueSeverity.Error);
-        Assert.Contains("Microsoft.WindowsAppRuntime.2", issue.Message, StringComparison.Ordinal);
+        Assert.Contains("Microsoft.WindowsAppRuntime.2", issue.Message.Text, StringComparison.Ordinal);
         Assert.NotNull(issue.Remediation);
     }
 
@@ -59,7 +59,7 @@ public sealed class InstallPlannerTests : IDisposable
 
         Assert.True(plan.CanProceed);
         Assert.DoesNotContain(plan.Steps, step => step.Kind == InstallStepKind.InstallFramework);
-        Assert.Contains(plan.Issues, issue => issue.Message.Contains("already installed", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(plan.Issues, issue => issue.Message.Text.Contains("already installed", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public sealed class InstallPlannerTests : IDisposable
 
         Assert.True(plan.CanProceed);
         Assert.Empty(plan.DependencyPaths);
-        Assert.Contains(plan.Issues, issue => issue.Message.Contains("skipping", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(plan.Issues, issue => issue.Message.Text.Contains("skipping", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public sealed class InstallPlannerTests : IDisposable
 
         var plan = await new InstallPlanner().CreatePlanAsync([app, unrelated], new InstallPlannerOptions("x64"));
 
-        Assert.Contains(plan.Issues, issue => issue.Message.Contains("not required", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(plan.Issues, issue => issue.Message.Text.Contains("not required", StringComparison.OrdinalIgnoreCase));
     }
 
     private string CreateFramework(string name, string version, string architecture) =>

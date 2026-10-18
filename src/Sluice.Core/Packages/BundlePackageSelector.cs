@@ -7,7 +7,7 @@ namespace Sluice.Packages;
 public sealed record BundleSelection(
     BundleChildPackage? Application,
     IReadOnlyList<BundleChildPackage> Resources,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<Diagnostics.DiagnosticMessage> Notes);
 
 /// <summary>
 /// Chooses which child packages of a bundle apply to a machine.
@@ -30,11 +30,11 @@ public static class BundlePackageSelector
     {
         ArgumentNullException.ThrowIfNull(analysis);
 
-        var notes = new List<string>();
+        var notes = new List<Diagnostics.DiagnosticMessage>();
         var applications = analysis.Children.Where(child => child.IsApplication).ToList();
         if (applications.Count == 0)
         {
-            notes.Add("The bundle contains no application package; it may only carry resources.");
+            notes.Add(Diagnostics.DiagnosticMessage.Of("BundleNoApplication"));
         }
 
         var application = applications
@@ -44,7 +44,7 @@ public static class BundlePackageSelector
 
         if (application is not null)
         {
-            notes.Add($"Selected {application.FileName} for {targetArchitecture}.");
+            notes.Add(Diagnostics.DiagnosticMessage.Of("BundleSelected", application.FileName, targetArchitecture));
         }
 
         var locales = (preferredLocales ?? [])
@@ -61,7 +61,7 @@ public static class BundlePackageSelector
 
         if (resources.Count > 0)
         {
-            notes.Add($"Kept {resources.Count} resource package(s) for {string.Join(", ", locales)}.");
+            notes.Add(Diagnostics.DiagnosticMessage.Of("BundleKeptResources", resources.Count, string.Join(", ", locales)));
         }
 
         return new BundleSelection(application, resources, notes);

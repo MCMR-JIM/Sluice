@@ -29,7 +29,7 @@ public sealed record InstallStep(
     string? PackageName,
     string? Version,
     string? Architecture,
-    string Reason)
+    Diagnostics.DiagnosticMessage Reason)
 {
     /// <summary>File name of the package.</summary>
     public string FileName => Path.GetFileName(FilePath);
@@ -55,7 +55,10 @@ public enum PlanIssueSeverity
 /// <param name="Severity">How serious it is.</param>
 /// <param name="Message">What was noticed.</param>
 /// <param name="Remediation">What to do about it.</param>
-public sealed record PlanIssue(PlanIssueSeverity Severity, string Message, string? Remediation = null);
+public sealed record PlanIssue(
+    PlanIssueSeverity Severity,
+    Diagnostics.DiagnosticMessage Message,
+    Diagnostics.DiagnosticMessage? Remediation = null);
 
 /// <summary>A complete, ordered installation plan.</summary>
 /// <param name="MainPackageName">Identity name of the application being installed.</param>

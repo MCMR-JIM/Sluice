@@ -27,7 +27,7 @@ public sealed record EnvironmentReport(
     bool? IsElevated,
     string? PowerShellPath,
     long FreeDiskBytes,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<Diagnostics.DiagnosticMessage> Warnings);
 
 /// <summary>
 /// Checks the parts of Windows that actually decide whether an appx install will succeed:
@@ -61,7 +61,7 @@ public static class WindowsEnvironmentProbe
                 null,
                 shell.Executable,
                 0,
-                ["Not running on Windows: packages can be resolved and downloaded, but not installed."]);
+                [Diagnostics.DiagnosticMessage.Of("EnvNotWindows")]);
         }
 
         var script = """
@@ -107,7 +107,7 @@ public static class WindowsEnvironmentProbe
                 null,
                 shell.Executable,
                 0,
-                [$"Could not read the Windows environment: {result.StandardError}"]);
+                [Diagnostics.DiagnosticMessage.Of("EnvProbeFailed", result.StandardError)]);
         }
 
         using var document = JsonDocument.Parse(result.StandardOutput);
@@ -139,17 +139,15 @@ public static class WindowsEnvironmentProbe
             ? space
             : 0;
 
-        var warnings = new List<string>();
+        var warnings = new List<Diagnostics.DiagnosticMessage>();
         if (sideloading == false && developerMode != true)
         {
-            warnings.Add(
-                "Sideloading is disabled: packaging deployment will fail with 0x80073CFF. Enable Developer Mode "
-                + "or set HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock\\AllowAllTrustedApps to 1.");
+            warnings.Add(Diagnostics.DiagnosticMessage.Of("EnvSideloadingOff"));
         }
 
         if (developerMode == false)
         {
-            warnings.Add("Developer Mode is disabled: the -Register fallback for registration failures will not work.");
+            warnings.Add(Diagnostics.DiagnosticMessage.Of("EnvDevModeOff"));
         }
 
         foreach (var (name, status) in services)
@@ -165,12 +163,13 @@ public static class WindowsEnvironmentProbe
                 continue;
             }
 
-            warnings.Add($"The {name} service is {status}; deployment needs it running (Start-Service {name}).");
+            warnings.Add(Diagnostics.DiagnosticMessage.Of("EnvServiceDown", name, status));
         }
 
         if (freeSpace > 0 && freeSpace < 2L * 1024 * 1024 * 1024)
         {
-            warnings.Add($"Only {freeSpace / 1024d / 1024d / 1024d:F1} GiB free on the system drive; large packages may fail to stage.");
+            warnings.Add(Diagnostics.DiagnosticMessage.Of(
+                "EnvLowDisk", (freeSpace / 1024d / 1024d / 1024d).ToString("F1", System.Globalization.CultureInfo.InvariantCulture)));
         }
 
         return new EnvironmentReport(

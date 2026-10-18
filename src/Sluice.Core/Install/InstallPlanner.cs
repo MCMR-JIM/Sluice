@@ -53,7 +53,9 @@ public sealed class InstallPlanner
             var analysis = PackageAnalyzer.TryAnalyze(file);
             if (analysis is null)
             {
-                issues.Add(new PlanIssue(PlanIssueSeverity.Warning, $"Skipped '{Path.GetFileName(file)}': it is not a readable appx/msix package."));
+                issues.Add(new PlanIssue(
+                    PlanIssueSeverity.Warning,
+                    Diagnostics.DiagnosticMessage.Of("PlanSkippedFile", Path.GetFileName(file))));
                 continue;
             }
 
@@ -91,8 +93,8 @@ public sealed class InstallPlanner
             {
                 issues.Add(new PlanIssue(
                     PlanIssueSeverity.Error,
-                    $"Bundle '{application.FileName}' has no application package for {targetArchitecture}.",
-                    "Download the product again; the delivery service may not offer this architecture."));
+                    Diagnostics.DiagnosticMessage.Of("PlanBundleNoApplication", application.FileName, targetArchitecture),
+                    Diagnostics.DiagnosticMessage.Of("PlanBundleNoApplicationHint")));
             }
             else
             {
@@ -106,7 +108,7 @@ public sealed class InstallPlanner
                 {
                     issues.Add(new PlanIssue(
                         PlanIssueSeverity.Warning,
-                        $"Could not read the manifest inside the bundle ({ex.Message}); falling back to the files in the folder."));
+                        Diagnostics.DiagnosticMessage.Of("PlanBundleManifestUnreadable", ex.Message)));
                 }
             }
         }
@@ -139,15 +141,15 @@ public sealed class InstallPlanner
                 {
                     issues.Add(new PlanIssue(
                         PlanIssueSeverity.Info,
-                        $"{dependency.Name} {installedMatch.Version} is already installed; no package needed."));
+                        Diagnostics.DiagnosticMessage.Of("PlanDependencyInstalled", dependency.Name, installedMatch.Version)));
                     continue;
                 }
 
                 issues.Add(new PlanIssue(
                     PlanIssueSeverity.Error,
-                    $"Missing dependency '{dependency}' declared by {mainIdentity?.Name ?? application.FileName}.",
-                    "Download the product again without --only/--deps-only so the framework packages are fetched, "
-                    + "or install that framework from the Microsoft Store."));
+                    Diagnostics.DiagnosticMessage.Of(
+                        "PlanMissingDependency", dependency, mainIdentity?.Name ?? application.FileName),
+                    Diagnostics.DiagnosticMessage.Of("PlanMissingDependencyHint")));
                 continue;
             }
 
@@ -159,7 +161,8 @@ public sealed class InstallPlanner
             {
                 issues.Add(new PlanIssue(
                     PlanIssueSeverity.Info,
-                    $"{chosen.Identity.Name} {installedMatch.Version} is already installed; skipping {chosen.FileName}."));
+                    Diagnostics.DiagnosticMessage.Of(
+                        "PlanDependencySkipped", chosen.Identity.Name, installedMatch.Version, chosen.FileName)));
                 continue;
             }
 
@@ -169,7 +172,8 @@ public sealed class InstallPlanner
                 chosen.Identity.Name,
                 chosen.Identity.Version,
                 chosen.Identity.Architecture,
-                $"Required by {mainIdentity?.Name ?? application.FileName}: {dependency}"));
+                Diagnostics.DiagnosticMessage.Of(
+                    "PlanStepFramework", mainIdentity?.Name ?? application.FileName, dependency)));
         }
 
         var resources = candidates
@@ -197,7 +201,7 @@ public sealed class InstallPlanner
         {
             issues.Add(new PlanIssue(
                 PlanIssueSeverity.Info,
-                $"{unused.FileName} is not required by this app and will not be installed."));
+                Diagnostics.DiagnosticMessage.Of("PlanUnusedFile", unused.FileName)));
         }
 
         var mainInstalled = installed is not null && mainIdentity is not null
@@ -209,7 +213,7 @@ public sealed class InstallPlanner
         {
             issues.Add(new PlanIssue(
                 PlanIssueSeverity.Info,
-                $"{mainIdentity!.Name} {mainInstalled.Version} is already installed. Use --force to install anyway."));
+                Diagnostics.DiagnosticMessage.Of("PlanMainAlreadyInstalled", mainIdentity!.Name, mainInstalled.Version)));
         }
 
         steps.Add(new InstallStep(
@@ -218,9 +222,8 @@ public sealed class InstallPlanner
             mainIdentity?.Name,
             mainIdentity?.Version,
             mainIdentity?.Architecture,
-            application.Kind == PackageKind.Bundle
-                ? "Application bundle; Windows selects the matching architecture and resources"
-                : "Application package"));
+            Diagnostics.DiagnosticMessage.Of(
+                application.Kind == PackageKind.Bundle ? "PlanStepMainBundle" : "PlanStepMain")));
 
         foreach (var resource in resources)
         {
@@ -230,7 +233,7 @@ public sealed class InstallPlanner
                 resource.Identity!.Name,
                 resource.Identity.Version,
                 resource.Identity.Architecture,
-                $"Resource package for {resource.Identity.ResourceId}"));
+                Diagnostics.DiagnosticMessage.Of("PlanStepResource", resource.Identity.ResourceId)));
         }
 
         if (mainIdentity is not null)
@@ -241,7 +244,7 @@ public sealed class InstallPlanner
                 mainIdentity.Name,
                 mainIdentity.Version,
                 mainIdentity.Architecture,
-                "Read the registration back to prove the install worked"));
+                Diagnostics.DiagnosticMessage.Of("PlanStepVerify")));
         }
 
         return new InstallPlan(mainIdentity?.Name, mainIdentity?.Version, targetArchitecture, steps, issues);
@@ -262,7 +265,7 @@ public sealed class InstallPlanner
         {
             issues.Add(new PlanIssue(
                 PlanIssueSeverity.Warning,
-                $"Could not read the installed package inventory ({ex.Message}); every dependency in the folder will be installed."));
+                Diagnostics.DiagnosticMessage.Of("PlanInventoryUnreadable", ex.Message)));
             return null;
         }
     }
@@ -280,7 +283,9 @@ public sealed class InstallPlanner
         }
         catch (PowerShellUnavailableException ex)
         {
-            issues.Add(new PlanIssue(PlanIssueSeverity.Warning, $"Could not check whether {name} is installed ({ex.Message})."));
+            issues.Add(new PlanIssue(
+                PlanIssueSeverity.Warning,
+                Diagnostics.DiagnosticMessage.Of("PlanInventoryCheckFailed", name, ex.Message)));
             return null;
         }
     }
