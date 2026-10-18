@@ -83,18 +83,8 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="背景" Style="{StaticResource GroupLabel}" VerticalAlignment="Center"
-                           Margin="0,0,6,0" />
-                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Backdrop" Content="亚克力"
-                             IsChecked="{Binding IsBackdropAcrylic, Mode=TwoWay}" />
-                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Backdrop" Content="Mica"
-                             IsChecked="{Binding IsBackdropMica, Mode=TwoWay}" />
-                <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Backdrop" Content="纯色"
-                             IsChecked="{Binding IsBackdropSolid, Mode=TwoWay}" Margin="0,0,10,0" />
-                <Button Content="重新检查环境" Style="{StaticResource GhostButton}"
-                        Command="{Binding RefreshEnvironmentCommand}" />
-            </StackPanel>
+            <Button Grid.Column="2" Content="重新检查环境" Style="{StaticResource GhostButton}"
+                    Command="{Binding RefreshEnvironmentCommand}" VerticalAlignment="Center" />
         </Grid>
 
         <!-- ================= body ================= -->

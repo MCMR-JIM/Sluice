@@ -14,8 +14,7 @@ public partial class MainWindow : Window, IDisposable
         InitializeComponent();
         _viewModel = new MainViewModel();
 
-        SourceInitialized += (_, _) => WindowChrome.Apply(this, _viewModel.Backdrop);
-        _viewModel.BackdropChanged += (_, kind) => WindowChrome.Apply(this, kind);
+        SourceInitialized += (_, _) => WindowChrome.Apply(this);
 
         DataContext = _viewModel;
         _viewModel.Log.CollectionChanged += OnLogChanged;

@@ -5,23 +5,10 @@ using System.Windows.Media;
 
 namespace StoreDownloader.Desktop.Interop;
 
-/// <summary>Which kind of see-through background the window asks DWM for.</summary>
-public enum BackdropKind
-{
-    /// <summary>Mica: the desktop wallpaper, blurred and tinted. Subtle by design.</summary>
-    Mica,
-
-    /// <summary>Acrylic: a stronger blur of whatever is behind the window right now.</summary>
-    Acrylic,
-
-    /// <summary>No backdrop at all, a plain dark canvas.</summary>
-    Solid,
-}
-
 /// <summary>
-/// Gives the window the treatment Windows 11 apps have: a backdrop, a dark title bar and rounded
-/// corners. Every call is best effort, and if the system cannot do it the window falls back to a
-/// solid canvas instead of showing nothing.
+/// Gives the window what Windows 11 apps look like: an acrylic backdrop (the desktop behind it is
+/// blurred, not hidden), a dark title bar and rounded corners. If the compositor refuses, the window
+/// falls back to a solid canvas instead of showing a hole.
 /// </summary>
 internal static class WindowChrome
 {
@@ -29,12 +16,9 @@ internal static class WindowChrome
     private const int DwmwaWindowCornerPreference = 33;
     private const int DwmwaSystemBackdropType = 38;
     private const int CornerRound = 2;
-
-    private const int BackdropNone = 1;
-    private const int BackdropMica = 2;
     private const int BackdropAcrylic = 3;
 
-    public static void Apply(Window window, BackdropKind kind)
+    public static void Apply(Window window)
     {
         var handle = new WindowInteropHelper(window).Handle;
         if (handle == IntPtr.Zero)
@@ -48,18 +32,11 @@ internal static class WindowChrome
         var corners = CornerRound;
         _ = DwmSetWindowAttribute(handle, DwmwaWindowCornerPreference, ref corners, sizeof(int));
 
-        var backdrop = kind switch
-        {
-            BackdropKind.Mica => BackdropMica,
-            BackdropKind.Acrylic => BackdropAcrylic,
-            _ => BackdropNone,
-        };
-
+        var backdrop = BackdropAcrylic;
         var result = DwmSetWindowAttribute(handle, DwmwaSystemBackdropType, ref backdrop, sizeof(int));
 
-        if (result != 0 || kind == BackdropKind.Solid)
+        if (result != 0)
         {
-            // No compositor support: paint the canvas instead of leaving a hole behind the content.
             window.Background = window.TryFindResource("SolidCanvasBrush") as Brush ?? Brushes.Black;
             return;
         }

@@ -12,8 +12,8 @@ the release assets.
 | Header wordmark | `StoreDownloader`, Segoe UI Variable Display, SemiBold |
 | Version chip | `0.x.y`, Cascadia Mono, 45% opacity |
 | Accent | `#60CDFF` on dark, ink `#04121A` on the accent |
-| Surfaces | white at 8% and 20% over the backdrop, hairlines at 12% |
-| Backdrop | acrylic by default, Mica and solid selectable in the header |
+| Surfaces | translucent black at 17% and 22% over the acrylic, hairlines white at 12% |
+| Backdrop | Windows acrylic, always; a solid canvas only as the fallback when the compositor refuses |
 
 ## The current mark is a placeholder
 

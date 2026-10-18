@@ -14,9 +14,10 @@ All notable changes to this project are documented here. The format follows
 * The header no longer shows a letter in a rounded square. A vector parcel mark stands in until a
   real icon exists; [docs/brand.md](docs/brand.md) documents the palette, the swap in procedure and
   a prompt for generating the artwork.
-* The window paints nothing over its own background any more, so the backdrop is visible: acrylic
-  (`DWMSBT_TRANSIENTWINDOW`) by default, with Mica and a solid canvas selectable from the header.
-  Panels are white at 8% over the blur, separators hairline, rows highlight on hover.
+* The window sits on the Windows acrylic backdrop (`DWMSBT_TRANSIENTWINDOW`) and paints translucent
+  black over it, so the glass is what the panels are made of. No appearance switch to fiddle with;
+  a solid canvas is used only when the compositor has no backdrop. Rows highlight on hover,
+  separators are hairline.
 
 ### Added
 

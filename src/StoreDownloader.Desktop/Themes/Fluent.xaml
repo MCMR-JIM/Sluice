@@ -17,16 +17,17 @@
     -->
     <SolidColorBrush x:Key="WindowVeilBrush" Color="#00FFFFFF" />
     <SolidColorBrush x:Key="SolidCanvasBrush" Color="#FF1F1F1F" />
-    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#0AFFFFFF" />
-    <SolidColorBrush x:Key="SurfaceBrush" Color="#14FFFFFF" />
-    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#33FFFFFF" />
-    <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#26000000" />
+    <!-- translucent black over the acrylic: darker where it matters, the blur still reads -->
+    <SolidColorBrush x:Key="SurfaceBaseBrush" Color="#38000000" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#2B000000" />
+    <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="#1FFFFFFF" />
+    <SolidColorBrush x:Key="SurfaceSunkenBrush" Color="#59000000" />
     <SolidColorBrush x:Key="HairlineBrush" Color="#1FFFFFFF" />
-    <SolidColorBrush x:Key="HairlineStrongBrush" Color="#38FFFFFF" />
-    <SolidColorBrush x:Key="HoverBrush" Color="#1AFFFFFF" />
+    <SolidColorBrush x:Key="HairlineStrongBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="HoverBrush" Color="#1FFFFFFF" />
     <LinearGradientBrush x:Key="SheenBrush" StartPoint="0,0" EndPoint="0,1">
-        <GradientStop Color="#12FFFFFF" Offset="0" />
-        <GradientStop Color="#00FFFFFF" Offset="0.35" />
+        <GradientStop Color="#0EFFFFFF" Offset="0" />
+        <GradientStop Color="#00FFFFFF" Offset="0.4" />
     </LinearGradientBrush>
 
     <SolidColorBrush x:Key="TextBrush" Color="#FFF7F7F7" />

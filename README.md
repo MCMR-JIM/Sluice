@@ -47,16 +47,15 @@ for the window below. Prefer to build it? See [build and test](#build-and-test).
 ## Desktop window
 
 `StoreDownloader.UI.exe` is the same pipeline with a mouse: paste a link, pick an architecture, and
-watch the plan resolve, download and install step by step. It is a WPF window with a real Windows 11
-backdrop — acrylic by default, Mica or a plain canvas on demand — a dark title bar, rounded corners
-and Task Manager density. The header switch labelled 背景 changes the backdrop live, so the glass can
-be compared against a flat canvas on the same machine.
+watch the plan resolve, download and install step by step. It is a WPF window on the Windows 11
+acrylic backdrop — the desktop behind it is blurred, not hidden — with a dark title bar, rounded
+corners and Task Manager density. The window paints translucent black over the acrylic, so panels
+darken the glass instead of covering it.
 
 ![StoreDownloader window](docs/ui-window.png)
 
-The screenshot is rendered from the window itself, so the backdrop DWM composites behind it
-cannot appear in it; on a real desktop the glass is visible, and the 背景 switch in the header lets
-you compare acrylic, Mica and a plain canvas side by side.
+The screenshot is rendered from the window itself, so the backdrop the compositor draws behind it
+cannot appear in it; on a real desktop the acrylic blur is visible through every panel.
 
 What the window gives you that the command line cannot:
 
