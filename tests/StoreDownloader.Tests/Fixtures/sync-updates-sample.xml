@@ -1,0 +1,53 @@
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:a="http://www.w3.org/2005/08/addressing">
+  <s:Body>
+    <SyncUpdatesResponse xmlns="http://www.microsoft.com/SoftwareDistribution/Server/ClientWebService">
+      <SyncUpdatesResult>
+        <NewUpdates>
+          <UpdateInfo>
+            <ID>1001</ID>
+            <Deployment>
+              <ID>9001</ID>
+              <Action>Bundle</Action>
+            </Deployment>
+            <IsLeaf>true</IsLeaf>
+            <Xml>&lt;UpdateIdentity UpdateID="11111111-1111-1111-1111-111111111111" RevisionNumber="1" /&gt;&lt;Properties UpdateType="Software" IsAppxFramework="false" PackageRank="100"&gt;&lt;SecuredFragment&gt;FileUrl&lt;/SecuredFragment&gt;&lt;/Properties&gt;</Xml>
+          </UpdateInfo>
+          <UpdateInfo>
+            <ID>1002</ID>
+            <Deployment>
+              <ID>9002</ID>
+              <Action>Bundle</Action>
+            </Deployment>
+            <IsLeaf>true</IsLeaf>
+            <Xml>&lt;UpdateIdentity UpdateID="22222222-2222-2222-2222-222222222222" RevisionNumber="4" /&gt;&lt;Properties UpdateType="Software" IsAppxFramework="true"&gt;&lt;SecuredFragment&gt;FileUrl&lt;/SecuredFragment&gt;&lt;/Properties&gt;</Xml>
+          </UpdateInfo>
+          <UpdateInfo>
+            <ID>1003</ID>
+            <Deployment>
+              <ID>9003</ID>
+              <Action>Bundle</Action>
+            </Deployment>
+            <IsLeaf>true</IsLeaf>
+            <Xml>&lt;UpdateIdentity UpdateID="33333333-3333-3333-3333-333333333333" RevisionNumber="1" /&gt;&lt;Properties UpdateType="Software" IsAppxFramework="true" /&gt;</Xml>
+          </UpdateInfo>
+        </NewUpdates>
+        <ExtendedUpdateInfo>
+          <Updates>
+            <Update>
+              <ID>1001</ID>
+              <Xml>&lt;ExtendedProperties Handler="http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/AppxPackage" DefaultPropertiesLanguage="en" MaxDownloadSize="4096" FromStoreService="true" ContentType="Application" IsAppxFramework="false" PackageIdentityName="Contoso.Notes" /&gt;&lt;Files&gt;&lt;File FileName="c0ffee00-0000-4000-8000-000000000001.appx" Digest="AAAAAAAAAAAAAAAAAAAAAAAAAAA=" DigestAlgorithm="SHA1" Size="4096" Modified="2024-05-01T00:00:00.0000000Z" InstallerSpecificIdentifier="Contoso.Notes_1.2.3.4_x64__abcdefghij"&gt;&lt;AdditionalDigest Algorithm="SHA256"&gt;BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=&lt;/AdditionalDigest&gt;&lt;BlockMapDigest Algorithm="SHA256"&gt;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC=&lt;/BlockMapDigest&gt;&lt;/File&gt;&lt;File FileName="Abm_c0ffee00-0000-4000-8000-000000000001.cab" Digest="DDDDDDDDDDDDDDDDDDDDDDDDDDD=" DigestAlgorithm="SHA1" Size="512" PatchingType="DynamicMetadata" /&gt;&lt;/Files&gt;&lt;HandlerSpecificData type="appx:AppxInstaller"&gt;&lt;AppxPackageInstallData PackageFileName="c0ffee00-0000-4000-8000-000000000001.appx" MainPackage="true" /&gt;&lt;/HandlerSpecificData&gt;</Xml>
+            </Update>
+            <Update>
+              <ID>1002</ID>
+              <Xml>&lt;ExtendedProperties Handler="http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/AppxPackage" DefaultPropertiesLanguage="en" FromStoreService="true" ContentType="Application" IsAppxFramework="true" PackageIdentityName="Microsoft.VCLibs.140.00" /&gt;&lt;Files&gt;&lt;File FileName="c0ffee00-0000-4000-8000-000000000002.appx" Digest="EEEEEEEEEEEEEEEEEEEEEEEEEEE=" DigestAlgorithm="SHA1" Size="8192" InstallerSpecificIdentifier="Microsoft.VCLibs.140.00_14.0.33728.0_x64__8wekyb3d8bbwe"&gt;&lt;AdditionalDigest Algorithm="SHA256"&gt;FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF=&lt;/AdditionalDigest&gt;&lt;/File&gt;&lt;/Files&gt;&lt;HandlerSpecificData type="appx:AppxInstaller"&gt;&lt;AppxPackageInstallData PackageFileName="c0ffee00-0000-4000-8000-000000000002.appx" MainPackage="false" /&gt;&lt;/HandlerSpecificData&gt;</Xml>
+            </Update>
+            <Update>
+              <ID>1003</ID>
+              <Xml>&lt;ExtendedProperties Handler="http://schemas.microsoft.com/msus/2002/12/UpdateHandlers/AppxPackage" DefaultPropertiesLanguage="en" FromStoreService="true" ContentType="Application" IsAppxFramework="true" PackageIdentityName="Microsoft.VCLibs.140.00" /&gt;&lt;Files&gt;&lt;File FileName="c0ffee00-0000-4000-8000-000000000002.appx" Digest="EEEEEEEEEEEEEEEEEEEEEEEEEEE=" DigestAlgorithm="SHA1" Size="8192" InstallerSpecificIdentifier="Microsoft.VCLibs.140.00_14.0.33728.0_x64__8wekyb3d8bbwe" /&gt;&lt;/Files&gt;</Xml>
+            </Update>
+          </Updates>
+        </ExtendedUpdateInfo>
+      </SyncUpdatesResult>
+    </SyncUpdatesResponse>
+  </s:Body>
+</s:Envelope>
