@@ -79,7 +79,7 @@ jobs:
       # is that it exists, starts with a PE header and carries a plausible amount of data.
       - name: Check both artifacts
         run: |
-          for BIN in "dist/${{ matrix.rid }}/storedl.exe" "dist/${{ matrix.rid }}-ui/storedl-ui.exe"; do
+          for BIN in "dist/${{ matrix.rid }}/StoreDownloader.exe" "dist/${{ matrix.rid }}-ui/StoreDownloader.UI.exe"; do
             test -f "${BIN}"
             SIZE=$(stat -c%s "${BIN}")
             echo "${BIN}: ${SIZE} bytes"
