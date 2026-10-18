@@ -130,7 +130,7 @@ jobs:
           carries both faces of the tool:
 
           - `StoreDownloader.exe`, the command line tool
-          - `StoreDownloader.UI.exe`, the desktop window (Fluent dark, acrylic or Mica backdrop)
+          - `StoreDownloader.UI.exe`, the desktop window (acrylic backdrop, opaque panels)
 
           | Machine | Asset |
           | --- | --- |
