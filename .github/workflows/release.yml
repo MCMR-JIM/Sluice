@@ -78,8 +78,8 @@ jobs:
 
       - name: Pack both binaries for this architecture
         run: |
-          mkdir -p assets
-          ASSET="assets/Sluice-${{ steps.version.outputs.version }}-${{ matrix.asset }}.zip"
+          mkdir -p release-assets
+          ASSET="release-assets/Sluice-${{ steps.version.outputs.version }}-${{ matrix.asset }}.zip"
           cd dist && zip -q "${OLDPWD}/${ASSET}" Sluice.exe
           cd .. && cd dist-ui && zip -q "${OLDPWD}/${ASSET}" Sluice.UI.exe
           cd .. && unzip -l "${ASSET}"
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.rid }}
-          path: assets/*
+          path: release-assets/*
           if-no-files-found: error
 
   release:
@@ -110,12 +110,12 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          path: assets
+          path: release-assets
           merge-multiple: true
 
       - name: Checksums
         run: |
-          cd assets
+          cd release-assets
           ls -l
           sha256sum ./* > SHA256SUMS.txt
           cat SHA256SUMS.txt
@@ -173,13 +173,13 @@ jobs:
           TITLE="Sluice ${{ steps.version.outputs.version }}"
           if gh release view "${TAG}" > /dev/null 2>&1; then
             echo "release ${TAG} exists, replacing its assets and notes"
-            gh release upload "${TAG}" assets/* --clobber
+            gh release upload "${TAG}" release-assets/* --clobber
             gh release edit "${TAG}" --title "${TITLE}" --notes-file notes.md
           else
             # No --target here: the tag already exists when a release is rebuilt, and the API
             # rejects a target for a tag that is already there.
             gh release create "${TAG}" \
-              assets/* \
+              release-assets/* \
               --title "${TITLE}" \
               --notes-file notes.md \
               --generate-notes
