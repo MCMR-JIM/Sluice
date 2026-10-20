@@ -110,15 +110,13 @@
                         opt-in that reveals the picker for offline archives and other devices.
                     -->
                     <TextBlock Text="{Binding Loc[Arch]}" Style="{StaticResource GroupLabel}" Margin="0,12,0,4" />
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding MachineArchitectureText}" Style="{StaticResource MonoText}"
-                                   FontSize="12" VerticalAlignment="Center"
-                                   Foreground="{StaticResource TextSecondaryBrush}" />
-                        <CheckBox Style="{StaticResource FluentCheckBox}" Margin="14,0,0,0"
-                                  Content="{Binding Loc[PrepareOtherArch]}"
-                                  IsChecked="{Binding ForAnotherMachine, Mode=TwoWay}"
-                                  IsEnabled="{Binding CanRun}" />
-                    </StackPanel>
+                    <TextBlock Text="{Binding MachineArchitectureText}" Style="{StaticResource MonoText}"
+                               FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" />
+                    <!-- Its own row: the sentence does not fit beside the architecture in a 272 dip pane. -->
+                    <CheckBox Style="{StaticResource FluentCheckBox}" Margin="0,7,0,0"
+                              Content="{Binding Loc[PrepareOtherArch]}"
+                              IsChecked="{Binding ForAnotherMachine, Mode=TwoWay}"
+                              IsEnabled="{Binding CanRun}" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
                                 Visibility="{Binding ForAnotherMachine, Converter={StaticResource BooleanToVisibilityConverter}}">
                         <RadioButton Style="{StaticResource SegmentToggle}" GroupName="Arch" Content="x64"
