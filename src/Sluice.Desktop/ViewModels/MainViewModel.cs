@@ -27,6 +27,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string _architecture = WindowsArchitecture.Current;
     private string _locale = string.IsNullOrWhiteSpace(CultureInfo.CurrentUICulture.Name) ? "en-US" : CultureInfo.CurrentUICulture.Name;
     private bool _allArchitectures;
+    private bool _forAnotherMachine;
     private bool _allUsers;
     private bool _busy;
     private string _stageKey = "StageIdle";
@@ -81,6 +82,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             Raise(nameof(Stage));
             Raise(nameof(PackageCountText));
             RebuildChips();
+            Raise(nameof(MachineArchitectureText));
             RebuildProductDetail();
             RebuildRegisteredDetail();
             RebuildStatusLine();
@@ -179,7 +181,35 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public RelayCommand RefreshEnvironmentCommand { get; }
 
-    public IReadOnlyList<string> Architectures { get; } = ["x64", "x86", "arm64"];
+    /// <summary>Architecture of the machine the window runs on.</summary>
+    public string MachineArchitecture { get; } = WindowsArchitecture.Current;
+
+    /// <summary>The machine architecture, worded for the current language.</summary>
+    public string MachineArchitectureText => Loc.Format("ArchThisMachine", MachineArchitecture);
+
+    /// <summary>
+    /// False by default: the pipeline targets this machine, exactly like the command line does when
+    /// --arch is left out. Turning it on is the only way to reach the x64/x86/arm64 picker, which is
+    /// what an offline archive for another machine needs.
+    /// </summary>
+    public bool ForAnotherMachine
+    {
+        get => _forAnotherMachine;
+        set
+        {
+            if (!SetProperty(ref _forAnotherMachine, value))
+            {
+                return;
+            }
+
+            if (!value)
+            {
+                Architecture = MachineArchitecture;
+            }
+
+            Raise(nameof(MachineArchitectureText));
+        }
+    }
 
     public string Reference
     {
