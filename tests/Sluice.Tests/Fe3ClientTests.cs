@@ -81,6 +81,36 @@ public sealed class Fe3ClientTests
         Assert.Equal(2, handler.CookieRequests);
     }
 
+    [Fact]
+    public async Task ReportsAnHtmlAnswerAsADeliveryFailure()
+    {
+        // A proxy, a captive portal or an outage page answers 200 with HTML. The parser threw XmlException,
+        // which nothing on the way up caught: the command line died with a stack trace instead of saying
+        // what actually arrived.
+        var handler = new GatewayHandler();
+        using var client = new Fe3Client(new HttpClient(handler));
+
+        var error = await Assert.ThrowsAsync<Fe3Exception>(
+            () => client.GetPackagesAsync("11111111-1111-1111-1111-111111111111"));
+
+        Assert.Contains("not XML", error.Message, StringComparison.Ordinal);
+        Assert.Contains("Sign in", error.Message, StringComparison.Ordinal);
+        Assert.IsType<System.Xml.XmlException>(error.InnerException);
+    }
+
+    [Fact]
+    public void QuotesAnUnparsableAnswerOnOneBoundedLine()
+    {
+        // The excerpt is what tells an operator which page answered; it must not become a wall of markup.
+        var body = "<html><body><br>Sign in to continue " + new string('x', 500);
+
+        var error = Assert.Throws<Fe3Exception>(() => WuSoap.ParseDocument(body));
+
+        Assert.IsType<System.Xml.XmlException>(error.InnerException);
+        Assert.DoesNotContain('\n', error.Message);
+        Assert.True(error.Message.Length < 400, $"the excerpt was not bounded ({error.Message.Length} characters).");
+    }
+
     /// <summary>Answers with the listed statuses in order, repeating the last one.</summary>
     private sealed class ScriptedHandler(params HttpStatusCode[] statuses) : HttpMessageHandler
     {
@@ -130,5 +160,26 @@ public sealed class Fe3ClientTests
 
         private static HttpResponseMessage Xml(HttpStatusCode status, string body) =>
             new(status) { Content = new StringContent(body, Encoding.UTF8, "application/soap+xml") };
+    }
+
+    /// <summary>Serves a cookie, then answers every other request with an HTML sign-in page.</summary>
+    private sealed class GatewayHandler : HttpMessageHandler
+    {
+        private const string SignInPage = """
+            <html><head><title>Sign in</title></head><body><br>Sign in to continue</body></html>
+            """;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var body = request.Content is null
+                ? string.Empty
+                : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+            var payload = body.Contains("<GetCookie", StringComparison.Ordinal) ? CookieResponse : SignInPage;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(payload, Encoding.UTF8, "text/html"),
+            };
+        }
     }
 }
