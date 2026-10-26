@@ -129,7 +129,7 @@ public sealed class PackageDownloader : IDisposable
                     return new DownloadResult(package.Package, targetPath, size, verification, Reused: false);
                 }
             }
-            catch (Exception ex) when (ex is HttpRequestException or IOException && !cancellationToken.IsCancellationRequested)
+            catch (Exception ex) when (!cancellationToken.IsCancellationRequested && IsTransient(ex))
             {
                 lastError = ex;
             }
@@ -141,7 +141,8 @@ public sealed class PackageDownloader : IDisposable
         }
 
         throw new DownloadException(
-            $"Failed to download '{package.Package.ReadableFileName}' after {Attempts} attempts.",
+            $"Failed to download '{package.Package.ReadableFileName}' after {Attempts} attempts"
+            + (lastError is null ? "." : $": {lastError.Message}"),
             lastError);
     }
 
@@ -223,6 +224,30 @@ public sealed class PackageDownloader : IDisposable
             throw new IOException($"'{package.Package.ReadableFileName}' ended after {received} of {total} bytes.");
         }
     }
+
+    /// <summary>
+    /// True for failures worth another attempt. A dropped connection or a file that a scanner is
+    /// holding clears up by itself; a full disk, a path that cannot exist or a file the process may not
+    /// write fails the same way every time, so those are reported at once with the reason the operating
+    /// system gave instead of after three attempts and six seconds of sleeping.
+    /// </summary>
+    /// <param name="error">Failure a download attempt threw.</param>
+    internal static bool IsTransient(Exception? error) => error switch
+    {
+        null => false,
+        HttpRequestException => true,
+        PathTooLongException or DirectoryNotFoundException or FileNotFoundException or UnauthorizedAccessException => false,
+        IOException io => !IsPermanentIoFailure(io.HResult),
+        _ => false,
+    };
+
+    /// <summary>True for the IO failures that repeat identically however often they are tried.</summary>
+    /// <param name="hresult">HRESULT of the IO failure.</param>
+    private static bool IsPermanentIoFailure(int hresult) =>
+        hresult is unchecked((int)0x80070070)      // ERROR_DISK_FULL
+            or unchecked((int)0x80070027)          // ERROR_HANDLE_DISK_FULL
+            or unchecked((int)0x80070005)          // ERROR_ACCESS_DENIED
+            or unchecked((int)0x8007007B);         // ERROR_INVALID_NAME
 
     /// <summary>
     /// Deletes a partial file whose bytes cannot be trusted, so the next attempt starts from zero
