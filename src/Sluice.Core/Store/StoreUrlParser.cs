@@ -27,6 +27,13 @@ public static partial class StoreUrlParser
     private static partial Regex DeepLinkPattern();
 
     /// <summary>
+    /// Query keys that carry the product id itself. They are read before any other value, because a
+    /// tracking parameter is opaque text and one that happens to look like an id would otherwise
+    /// resolve a different product than the link points at.
+    /// </summary>
+    private static readonly string[] ProductIdKeys = ["ProductId", "pid", "appid", "packageFamilyName", "PackageFamilyName"];
+
+    /// <summary>
     /// Parses <paramref name="input"/> into a <see cref="StoreRequest"/>.
     /// </summary>
     /// <param name="input">Store URL, <c>ms-windows-store://</c> deep link or a bare product id.</param>
@@ -57,7 +64,7 @@ public static partial class StoreUrlParser
             var query = queryStart >= 0 ? ParseQuery(text[queryStart..]) : ParseQuery(string.Empty);
             var segments = text[queryStart >= 0 ? ..queryStart : ..].Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-            var productId = FirstProductId(query.Values.SelectMany(v => v)) ?? FirstProductId(segments);
+            var productId = FindProductId(query, segments, pathFirst: false);
             if (productId is null)
             {
                 error = $"The deep link '{text}' does not contain a Store product id.";
@@ -82,7 +89,7 @@ public static partial class StoreUrlParser
 
         var parameters = ParseQuery(uri.Query);
         var pathSegments = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var fromQueryOrPath = FirstProductId(parameters.Values.SelectMany(v => v)) ?? FirstProductId(pathSegments);
+        var fromQueryOrPath = FindProductId(parameters, pathSegments, pathFirst: true);
         if (fromQueryOrPath is null)
         {
             error = $"The URL '{text}' does not contain a Store product id (expected something like https://apps.microsoft.com/detail/9NKSQGP7F2NH).";
@@ -114,6 +121,23 @@ public static partial class StoreUrlParser
     /// <summary>Returns <c>true</c> when <paramref name="value"/> has the shape of a Store product id.</summary>
     /// <param name="value">Candidate text.</param>
     public static bool IsProductId(string? value) => value is not null && ProductIdPattern().IsMatch(value);
+
+    /// <summary>
+    /// Picks the product id out of the places a link can carry it. The path of a web link is the
+    /// canonical location, a deep link carries it in the query, and only when neither holds an id is
+    /// the remaining query text scanned as a last resort.
+    /// </summary>
+    /// <param name="query">Parsed query parameters.</param>
+    /// <param name="pathSegments">Path segments of the link.</param>
+    /// <param name="pathFirst">True when the path should win over the dedicated query keys.</param>
+    private static string? FindProductId(QueryParameters query, IReadOnlyList<string> pathSegments, bool pathFirst)
+    {
+        var fromKeys = FirstProductId(query.ValuesFor(ProductIdKeys));
+        var fromPath = FirstProductId(pathSegments);
+        return pathFirst
+            ? fromPath ?? fromKeys ?? FirstProductId(query.AllValues)
+            : fromKeys ?? fromPath ?? FirstProductId(query.AllValues);
+    }
 
     private static string? FirstProductId(IEnumerable<string> candidates)
     {
@@ -161,8 +185,11 @@ public static partial class StoreUrlParser
 
     private sealed class QueryParameters(Dictionary<string, List<string>> map)
     {
-        public IEnumerable<IEnumerable<string>> Values => map.Values;
+        public IEnumerable<string> AllValues => map.Values.SelectMany(values => values);
 
         public string? Get(string key) => map.TryGetValue(key, out var list) && list.Count > 0 ? list[0] : null;
+
+        public IEnumerable<string> ValuesFor(IEnumerable<string> keys) =>
+            keys.Where(map.ContainsKey).SelectMany(key => map[key]);
     }
 }
