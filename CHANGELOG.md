@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.27] - 2026-10-27
+
+### Fixed
+
+* A delivery answer that is not XML is reported as a delivery failure. A proxy, a captive portal or an
+  outage page can answer 200 with HTML; the parser threw a raw XML exception, nothing on the way up
+  caught it, and the tool died with a stack trace instead of saying what arrived. The failure now names
+  the cause and quotes the first part of the answer.
+* `--json` failures answer with a document everywhere. A missing argument, an empty folder, a refused
+  confirmation prompt and a plan with blocking issues all wrote their reason to standard error only, so
+  a caller that reads standard output as JSON died on an empty stream instead of seeing the reason. A
+  blocked plan also lists the issues that blocked it.
+
 ## [0.4.26] - 2026-10-27
 
 ### Fixed
