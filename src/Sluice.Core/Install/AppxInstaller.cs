@@ -297,10 +297,22 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
             """;
     }
 
-    private static string BuildRegisterScript(string path) => $$"""
+    /// <summary>
+    /// Where the loose file fallback unpacks a package. It has to outlive the run - the registration
+    /// points into that folder - so it lives in the local application data instead of the temp folder,
+    /// where a cleaner would quietly break an installed app.
+    /// </summary>
+    internal static string RegisterStagingRoot => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "sluice",
+        "registered");
+
+    /// <summary>Builds the script that unpacks a package and registers its manifest.</summary>
+    /// <param name="path">Package file to unpack.</param>
+    internal static string BuildRegisterScript(string path) => $$"""
         $ErrorActionPreference = 'Stop'
         $ProgressPreference = 'SilentlyContinue'
-        $destination = Join-Path ([System.IO.Path]::GetTempPath()) ('sluice-' + [guid]::NewGuid().ToString('N'))
+        $destination = Join-Path {{Quote(RegisterStagingRoot)}} ('sluice-' + [guid]::NewGuid().ToString('N'))
         try {
             New-Item -ItemType Directory -Path $destination -Force | Out-Null
             try { Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop } catch { }
@@ -311,6 +323,9 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
             Add-AppxPackage -Register $manifest.FullName -DisableDevelopmentMode
             [pscustomobject]@{ ok = $true; extractedTo = $destination } | ConvertTo-Json -Compress
         } catch {
+            # The registration did not happen, so nothing points at these files: take them back out
+            # instead of leaving a few hundred megabytes per attempt behind.
+            Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
             $ex = $_.Exception
             $message = $ex.Message
             $code = [int64]$ex.HResult

@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The loose file fallback (`-Register`, used when a package cannot be staged) unpacks into
+  `%LOCALAPPDATA%\sluice\registered` instead of the temp folder, because the registration points into
+  that folder and a temp cleaner deleting it breaks an app Windows still lists as installed. A failed
+  attempt now removes its own files, where before every retry left a few hundred megabytes behind.
+
 ## [0.4.8] - 2026-10-27
 
 ### Fixed
