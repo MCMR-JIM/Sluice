@@ -84,18 +84,20 @@ public sealed class Fe3Client : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(wuCategoryId);
 
-        _cookie ??= await GetCookieAsync(cancellationToken).ConfigureAwait(false);
-
-        var now = DateTimeOffset.UtcNow;
-        var soap = WuSoap.Envelope(
-            "SyncUpdates",
+        var xml = await PostWithSessionAsync(
+            cookie =>
+            {
+                var now = DateTimeOffset.UtcNow;
+                return WuSoap.Envelope(
+                    "SyncUpdates",
+                    ClientWebServiceUrl,
+                    now,
+                    now.AddMinutes(10),
+                    WuSoap.RetailTicket,
+                    WuSoap.SyncUpdatesBody(cookie, wuCategoryId, locale));
+            },
             ClientWebServiceUrl,
-            now,
-            now.AddMinutes(10),
-            WuSoap.RetailTicket,
-            WuSoap.SyncUpdatesBody(_cookie, wuCategoryId, locale));
-
-        var xml = await PostAsync(ClientWebServiceUrl, soap, cancellationToken).ConfigureAwait(false);
+            cancellationToken).ConfigureAwait(false);
         var packages = SyncUpdatesParser.Parse(xml);
         var languages = locale.Split('-');
         return new Fe3PackageList(wuCategoryId, packages, languages);
@@ -122,16 +124,20 @@ public sealed class Fe3Client : IDisposable
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var now = DateTimeOffset.UtcNow;
-            var soap = WuSoap.Envelope(
-                "GetExtendedUpdateInfo2",
+            var xml = await PostWithSessionAsync(
+                cookie =>
+                {
+                    var now = DateTimeOffset.UtcNow;
+                    return WuSoap.Envelope(
+                        "GetExtendedUpdateInfo2",
+                        SecuredClientWebServiceUrl,
+                        now,
+                        now.AddMinutes(10),
+                        WuSoap.RetailTicket,
+                        WuSoap.FileUrlBody(batch.Select(package => (package.UpdateId, package.RevisionNumber)), locale));
+                },
                 SecuredClientWebServiceUrl,
-                now,
-                now.AddMinutes(10),
-                WuSoap.RetailTicket,
-                WuSoap.FileUrlBody(batch.Select(package => (package.UpdateId, package.RevisionNumber)), locale));
-
-            var xml = await PostAsync(SecuredClientWebServiceUrl, soap, cancellationToken).ConfigureAwait(false);
+                cancellationToken).ConfigureAwait(false);
             CollectFileLocations(WuSoap.ParseDocument(xml), result);
         }
 
@@ -157,6 +163,38 @@ public sealed class Fe3Client : IDisposable
             {
                 sink[digest] = url;
             }
+        }
+    }
+
+    /// <summary>
+    /// Posts an envelope that carries the session cookie, fetching the cookie when there is none.
+    /// </summary>
+    /// <param name="envelopeFactory">Builds the envelope around a cookie, so a renewed one is sent.</param>
+    /// <param name="url">Endpoint to post to.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// Session cookies expire. The service answers an expired one with a fault that says nothing about
+    /// the cause, so a client that fetches one cookie and keeps it fails every later call - which reads
+    /// exactly like a service outage - until the process restarts. On a fault the cookie is dropped and
+    /// fetched once more before the same call is attempted again.
+    /// </remarks>
+    private async Task<string> PostWithSessionAsync(
+        Func<string, string> envelopeFactory,
+        string url,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(envelopeFactory);
+
+        var cookie = _cookie ?? await GetCookieAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await PostAsync(url, envelopeFactory(cookie), cancellationToken).ConfigureAwait(false);
+        }
+        catch (Fe3Exception)
+        {
+            _cookie = null;
+            cookie = await GetCookieAsync(cancellationToken).ConfigureAwait(false);
+            return await PostAsync(url, envelopeFactory(cookie), cancellationToken).ConfigureAwait(false);
         }
     }
 
