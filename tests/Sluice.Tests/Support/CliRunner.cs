@@ -42,8 +42,8 @@ internal static class CliRunner
     /// <param name="stdout">Captured standard output.</param>
     public static JsonElement ReadDocument(string stdout)
     {
-        var start = stdout.IndexOf('{', StringComparison.Ordinal);
-        var end = stdout.LastIndexOf('}');
+        var start = stdout.IndexOfAny(['{', '[']);
+        var end = stdout.LastIndexOfAny(['}', ']']);
         Assert.True(
             start >= 0 && end > start,
             $"standard output carried no JSON document. It said: '{stdout.Trim()}'");

@@ -146,8 +146,10 @@ public static class AppxErrorCatalog
                 + "manifest no longer matches the staged files.",
                 DeploymentRemedy.RegisterLooseFiles,
                 "Enable Developer Mode and install again: after this failure the tool unpacks the package and "
-                + "registers its manifest itself (turn that off with --no-register). If the registration is stale, "
-                + "remove it with Get-AppxPackage <name> | Remove-AppxPackage and install again."),
+                + "registers its manifest itself (turn that off with --no-register). That only works for a single "
+                + "package file, not for a bundle - unpack the bundle and install the child package for this "
+                + "architecture instead. If the registration is stale, remove it with Get-AppxPackage <name> | "
+                + "Remove-AppxPackage and install again."),
 
             new AppxErrorInfo(
                 0x80073CF9,
