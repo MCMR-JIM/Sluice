@@ -97,11 +97,15 @@ public static class AppxErrorCatalog
             return uint.TryParse(trimmed[2..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out code);
         }
 
-        // Bare eight digit hex values appear in event logs without the 0x prefix.
+        // Bare eight digit values appear in event logs without the 0x prefix. A value with the top bit
+        // set can only be hex: as a decimal it would sit well below the failure range, which is why
+        // 80070005 had to be read as 0x80070005 (access denied) rather than as 80,070,005.
         if (trimmed.Length == 8
-            && uint.TryParse(trimmed, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out code)
-            && trimmed.Any(character => character is 'A' or 'B' or 'C' or 'D' or 'E' or 'F' or 'a' or 'b' or 'c' or 'd' or 'e' or 'f'))
+            && uint.TryParse(trimmed, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var bare)
+            && (bare >= 0x80000000
+                || trimmed.Any(character => character is 'A' or 'B' or 'C' or 'D' or 'E' or 'F' or 'a' or 'b' or 'c' or 'd' or 'e' or 'f')))
         {
+            code = bare;
             return true;
         }
 

@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format follows
   An x86 framework sitting on an x64 machine used to count as "already installed", so the plan
   omitted the x64 package and the main install failed with 0x80073CF3 - a code whose own explanation
   blames a missing framework.
+* Eight digit HRESULTs written without the `0x` prefix are read as hex. `80070005` used to be taken
+  as the decimal 80,070,005, so `explain 80070005` answered "0x04C5C575 is not in the catalogue"
+  while `explain 0x80070005` explained access denied. A value with the top bit set cannot be a
+  decimal HRESULT, which is what makes the two forms distinguishable.
 
 ## [0.4.4] - 2026-10-27
 
