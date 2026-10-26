@@ -79,10 +79,14 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           git fetch --prune origin
-          git branch -r --merged "origin/${DEFAULT_BRANCH}" \
-            | sed 's|^ *origin/||' \
+          # for-each-ref prints the short name, so there is no "origin/" prefix to strip and no
+          # "HEAD -> origin/main" line to mistake for a branch. The old parsing let that line through and
+          # every sweep tried to delete a branch called "HEAD -> origin/main", which the API refuses with
+          # HTTP 422 - so the sweep never deleted anything and always reported a failure.
+          git for-each-ref --merged="origin/${DEFAULT_BRANCH}" --format='%(refname:lstrip=3)' refs/remotes/origin/ \
             | grep -v -E "^(HEAD|${DEFAULT_BRANCH})$" \
             > merged.txt || true
+          echo "merged branches to sweep:"
           cat merged.txt
 
           retry() {
