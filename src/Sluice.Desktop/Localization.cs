@@ -69,6 +69,8 @@ public sealed class Localization : ObservableObject
         ["StateRunning"] = "进行中",
         ["StateOk"] = "完成",
         ["StateFailed"] = "失败",
+        ["StateSkipped"] = "未执行",
+        ["LogNotAttempted"] = "还有 {0} 步未执行：上一步失败后流程就停了。",
         // stages and status
         ["StageIdle"] = "空闲",
         ["StageResolve"] = "解析",
@@ -227,6 +229,8 @@ public sealed class Localization : ObservableObject
         ["StateRunning"] = "running",
         ["StateOk"] = "done",
         ["StateFailed"] = "failed",
+        ["StateSkipped"] = "not run",
+        ["LogNotAttempted"] = "{0} step(s) were not attempted: the run stopped at the previous failure.",
         ["StageIdle"] = "idle",
         ["StageResolve"] = "resolve",
         ["StageDownload"] = "download",
