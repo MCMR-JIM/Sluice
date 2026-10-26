@@ -11,6 +11,9 @@ All notable changes to this project are documented here. The format follows
 * A download whose digest did not match used to leave the bad `.part` file on disk, so every later
   attempt resumed the same prefix and failed the same way. The file is thrown away and the retry
   starts from zero, which is what makes a cancelled or crashed run recoverable.
+* A Store link now resolves the product its path names, not whatever twelve-character value a
+  tracking parameter happens to carry. Dedicated id parameters are read first, then the path, and the
+  remaining query text only when neither holds an id.
 
 ## [0.4.3] - 2026-10-27
 

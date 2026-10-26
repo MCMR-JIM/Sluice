@@ -57,6 +57,19 @@ public sealed class StoreUrlParserTests
     }
 
     [Theory]
+    [InlineData("https://apps.microsoft.com/detail/9NKSQGP7F2NH?ocid=9ABCDEFGHIJK")]
+    [InlineData("https://apps.microsoft.com/detail/9NKSQGP7F2NH?referrer=9ABCDEFGHIJK&hl=en-us")]
+    [InlineData("ms-windows-store://pdp/?ocid=9ABCDEFGHIJK&ProductId=9NKSQGP7F2NH")]
+    public void PrefersTheRealProductIdOverATrackingValueOfTheSameShape(string input)
+    {
+        // Tracking parameters are opaque strings; one that happens to look like a product id must not
+        // win, because resolving the wrong product is worse than refusing the link.
+        Assert.True(StoreUrlParser.TryParse(input, out var request, out var error));
+        Assert.Null(error);
+        Assert.Equal("9NKSQGP7F2NH", request.ProductId);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData(null)]
