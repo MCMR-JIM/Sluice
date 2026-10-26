@@ -46,6 +46,8 @@ public sealed class PackageDownloader : IDisposable
         options ??= DownloadOptions.Default;
         Directory.CreateDirectory(directory);
 
+        EnsureRoom(packages, directory);
+
         var results = new System.Collections.Concurrent.ConcurrentBag<DownloadResult>();
         await Parallel.ForEachAsync(
             packages,
@@ -88,18 +90,31 @@ public sealed class PackageDownloader : IDisposable
 
         if (!options.Overwrite && File.Exists(targetPath))
         {
-            var existingVerification = options.VerifyDigest
-                ? await VerifyAsync(targetPath, package.Package, cancellationToken).ConfigureAwait(false)
-                : DownloadVerification.Skipped;
+            var existingSize = new FileInfo(targetPath).Length;
+            var expectedSize = package.Package.SizeInBytes;
+            var sizeIsKnown = expectedSize > 0;
 
-            if (existingVerification is DownloadVerification.DigestMatch or DownloadVerification.Skipped or DownloadVerification.NotPublished)
+            // A file of the wrong length is a truncated or foreign leftover; reusing it hands the install a
+            // package that will fail to open, which is exactly what an interrupted run leaves behind when
+            // verification was turned off.
+            if (sizeIsKnown && existingSize != expectedSize)
             {
-                var existingSize = new FileInfo(targetPath).Length;
-                return new DownloadResult(package.Package, targetPath, existingSize, existingVerification, Reused: true);
+                File.Delete(targetPath);
             }
+            else
+            {
+                var existingVerification = options.VerifyDigest
+                    ? await VerifyAsync(targetPath, package.Package, cancellationToken).ConfigureAwait(false)
+                    : sizeIsKnown ? DownloadVerification.DigestMatch : DownloadVerification.Skipped;
 
-            // A mismatching leftover file is worthless; start over instead of trusting it.
-            File.Delete(targetPath);
+                if (existingVerification is DownloadVerification.DigestMatch or DownloadVerification.Skipped or DownloadVerification.NotPublished)
+                {
+                    return new DownloadResult(package.Package, targetPath, existingSize, existingVerification, Reused: true);
+                }
+
+                // A mismatching leftover file is worthless; start over instead of trusting it.
+                File.Delete(targetPath);
+            }
         }
 
         Exception? lastError = null;
@@ -222,6 +237,38 @@ public sealed class PackageDownloader : IDisposable
         if (total > 0 && received < total)
         {
             throw new IOException($"'{package.Package.ReadableFileName}' ended after {received} of {total} bytes.");
+        }
+    }
+
+    /// <summary>
+    /// Refuses a run that cannot fit on the drive, before a single byte is fetched: a full disk fails at
+    /// the last write either way, and the operator would rather hear it before waiting for a download.
+    /// </summary>
+    /// <param name="packages">Packages the run will fetch.</param>
+    /// <param name="directory">Destination folder.</param>
+    private static void EnsureRoom(IEnumerable<ResolvedPackage> packages, string directory)
+    {
+        long required = 0;
+        foreach (var package in packages)
+        {
+            // Files that are already there at the right size are not going to be written again.
+            var target = Path.Combine(directory, FileNameSanitizer.Sanitize(package.Package.ReadableFileName));
+            var present = File.Exists(target) ? new FileInfo(target).Length : 0;
+            var missing = package.Package.SizeInBytes - present;
+            if (missing > 0)
+            {
+                required += missing;
+            }
+        }
+
+        if (required == 0)
+        {
+            return;
+        }
+
+        if (FreeSpace.Check(required, FreeSpace.AvailableBytes(directory), directory) is { } problem)
+        {
+            throw new DownloadException(problem);
         }
     }
 
