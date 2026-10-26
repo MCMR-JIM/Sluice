@@ -42,6 +42,17 @@ internal static class AnalyzeCommand
             analyses.Add(analysis);
         }
 
+        if (analyses.Count == 0)
+        {
+            // Every file was skipped, and the command used to report success with nothing to show: a
+            // caller asking "can this be installed?" was told yes, with an empty answer.
+            return Task.FromResult(Program.Fail(
+                arguments.Has("json"),
+                $"none of the {files.Count} file(s) behind '{path}' is a readable appx or msix package",
+                "unreadable-package",
+                1));
+        }
+
         // Read before the JSON branch: it used to be read after it, so `analyze --json --arch x46` was
         // accepted and ignored while the same mistake in the text output exited 2, and `--arch` had no
         // effect on the JSON at all.
