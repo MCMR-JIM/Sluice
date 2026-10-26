@@ -259,6 +259,8 @@ internal static class InstallCommand
                 VerifyRegistration: !arguments.Has("no-verify")));
 
         var outcome = await installer.InstallAsync(plan, progress: null, CancellationToken.None).ConfigureAwait(false);
+        var verificationRequested = !arguments.Has("no-verify");
+        var verification = InstallVerdict.Verification(verificationRequested, outcome.VerificationProblem);
 
         if (json)
         {
@@ -266,10 +268,12 @@ internal static class InstallCommand
             {
                 succeeded = outcome.Succeeded,
                 notAttempted = plan.NotAttempted(outcome.StepResults).Select(step => new { kind = step.Kind.ToString(), file = step.FileName }),
-                // True only when the run finished and the registration was actually read back: a failed
-                // install has not "verified" anything, and saying it had was the sort of quiet lie this
-                // field exists to avoid.
-                verified = outcome.Succeeded && outcome.VerificationProblem is null,
+                // True only when a check was asked for, the run finished and the registration was actually
+                // read back. "Succeeded and no problem" was printed as verified, so "--no-verify" - which
+                // reads nothing back - reported a verified install it never checked.
+                verified = InstallVerdict.Verified(outcome.Succeeded, outcome.VerificationProblem, verificationRequested),
+                // checked / unverified / skipped: three answers, because not checking is not a pass.
+                verification,
                 verificationProblem = outcome.VerificationProblem,
                 registered = outcome.Registered?.PackageFullName,
                 version = outcome.Registered?.Version,
@@ -286,7 +290,7 @@ internal static class InstallCommand
             return outcome.Succeeded ? 0 : 1;
         }
 
-        WriteOutcome(outcome, plan);
+        WriteOutcome(outcome, plan, verification);
 
         if (resolution is not null && outcome.Succeeded)
         {
@@ -424,7 +428,7 @@ internal static class InstallCommand
         return prompt() ? (true, 0, null) : (false, 1, null);
     }
 
-    private static void WriteOutcome(InstallOutcome outcome, InstallPlan plan)
+    private static void WriteOutcome(InstallOutcome outcome, InstallPlan plan, string verification)
     {
         TablePrinter.Print(
             ["KIND", "FILE", "RESULT", "NOTE"],
@@ -483,10 +487,19 @@ internal static class InstallCommand
             Console.WriteLine($"Unverified: {problem}");
         }
 
+        // A skipped check is not a pass, and the run used to say nothing at all about it.
+        var skippedCheck = string.Equals(verification, "skipped", StringComparison.Ordinal);
+        if (skippedCheck)
+        {
+            Console.WriteLine("Verification: skipped (--no-verify), so nothing was read back.");
+        }
+
         Console.WriteLine(outcome.Succeeded
-            ? outcome.VerificationProblem is null
-                ? "Install finished successfully."
-                : "Install finished, but the registration could not be verified."
+            ? skippedCheck
+                ? "Install finished. The registration was not checked."
+                : outcome.VerificationProblem is null
+                    ? "Install finished successfully."
+                    : "Install finished, but the registration could not be verified."
             : "Install did not finish: see the error explanation above.");
     }
 
