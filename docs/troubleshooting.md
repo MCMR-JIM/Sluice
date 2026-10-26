@@ -108,6 +108,11 @@ reported as **unverified** instead: the steps succeeded, and the command line pr
 the reason while `--json` sets `succeeded` false only for the deployment, `verified` false. That is a
 different problem from a missing package, and it usually fixes itself by running the check again.
 
+`--json` says which of the three cases it is in `verification`: `checked` (the registration was read back
+and matches), `unverified` (the check could not run, the reason is in `verificationProblem`), or
+`skipped` (`--no-verify` was passed, so nothing was read back - `verified` is false in that case, because
+not checking is not a pass).
+
 ## Diagnostics worth running
 
 | Command | What it answers |
