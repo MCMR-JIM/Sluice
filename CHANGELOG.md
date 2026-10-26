@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.35] - 2026-10-27
+
+### Fixed
+
+* The window normalises the language tag it is given. 0.4.28 taught the command line that `zh_CN` and
+  `zh-CN` are the same tag, but the window's free text field still handed over what was typed: `zh_CN`
+  splits into one part, matches no resource package, and the install arrived without its resources while
+  every step reported success. The normalising, the shape check and the display-language fallback live in
+  `LocaleTag` now, and the selector and the planner use it as well, so no front end can reintroduce the
+  silent loss. A field that does not hold a tag is replaced by the display language, and the log says so.
+* `help <typo>` no longer promises suggestions it does not have. The heading "Did you mean one of these?" was
+  printed unconditionally, so a word that resembles no command was answered with a heading and an empty list.
+
 ## [0.4.34] - 2026-10-27
 
 ### Changed
