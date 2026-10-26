@@ -43,6 +43,7 @@ internal static class DiagnosticText
         ["EnvServiceDown"] = "The {0} service is {1}; deployment needs it running (Start-Service {0}).",
         ["EnvLowDisk"] = "Only {0} GiB free on the system drive; large packages may fail to stage.",
         ["BundleNoApplication"] = "The bundle contains no application package; it may only carry resources.",
+        ["BundleNoMatchingArchitecture"] = "The bundle has no application package for {0}.",
         ["PlanNoMatchingArchitecture"] = "No application package in this folder is built for {0}; the plan uses the one that is there and Windows will probably refuse it.",
         ["BundleSelected"] = "Selected {0} for {1}.",
         ["BundleKeptResources"] = "Kept {0} resource package(s) for {1}.",

@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A bundle without a package for the target architecture is now reported as such instead of having
+  the biggest foreign build selected. The planner's "bundle has no application package for this
+  architecture" error could never fire before, so the install failed later with 0x80073CFD.
+* An install whose registration could not be read back is reported as unverified instead of failed.
+  `Get-AppxPackage` failing on its own made the verify step say "Nothing is registered for …
+  after the install" and the run end as a failure, sending people after a package Windows had just
+  installed; the reason is now carried in `InstallOutcome.VerificationProblem`, printed by the
+  command line and shown in the window.
+
 ## [0.4.7] - 2026-10-27
 
 ### Fixed

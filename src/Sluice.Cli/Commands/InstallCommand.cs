@@ -170,6 +170,8 @@ internal static class InstallCommand
             JsonOutput.Write(new
             {
                 succeeded = outcome.Succeeded,
+                verified = outcome.VerificationProblem is null,
+                verificationProblem = outcome.VerificationProblem,
                 registered = outcome.Registered?.PackageFullName,
                 version = outcome.Registered?.Version,
                 status = outcome.Registered?.Status,
@@ -269,8 +271,15 @@ internal static class InstallCommand
             Console.WriteLine($"Registered: {outcome.Registered.PackageFullName} (status {outcome.Registered.Status})");
         }
 
+        if (outcome.VerificationProblem is { } problem)
+        {
+            Console.WriteLine($"Unverified: {problem}");
+        }
+
         Console.WriteLine(outcome.Succeeded
-            ? "Install finished successfully."
+            ? outcome.VerificationProblem is null
+                ? "Install finished successfully."
+                : "Install finished, but the registration could not be verified."
             : "Install did not finish: see the error explanation above.");
     }
 

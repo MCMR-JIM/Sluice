@@ -41,7 +41,8 @@ public sealed record InstallOutcome(
     bool Succeeded,
     IReadOnlyList<InstallStepResult> StepResults,
     InstalledPackage? Registered,
-    IReadOnlyList<PlanIssue> Issues);
+    IReadOnlyList<PlanIssue> Issues,
+    string? VerificationProblem = null);
 
 /// <summary>
 /// Executes an install plan with <c>Add-AppxPackage</c>, escalating through the known remedies
@@ -84,56 +85,102 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
             return new InstallOutcome(true, results, null, plan.Issues);
         }
 
-        var registered = await ReadRegistrationAsync(plan, results, progress, cancellationToken).ConfigureAwait(false);
-        var succeeded = registered is not null
-            && (plan.MainVersion is null
-                || !System.Version.TryParse(plan.MainVersion, out var expected)
-                || registered.GetVersion() >= expected);
+        var (registered, verificationProblem) = await ReadRegistrationAsync(plan, results, progress, cancellationToken)
+            .ConfigureAwait(false);
+        var (succeeded, problem) = EvaluateVerification(registered, plan.MainVersion, verificationProblem);
 
-        return new InstallOutcome(succeeded, results, registered, plan.Issues);
+        return new InstallOutcome(succeeded, results, registered, plan.Issues, problem);
     }
 
     /// <summary>Reads a package registration back from the machine.</summary>
     /// <param name="plan">Plan whose main package should be verified.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task<InstalledPackage?> VerifyAsync(InstallPlan plan, CancellationToken cancellationToken = default)
+    public async Task<InstalledPackage?> VerifyAsync(InstallPlan plan, CancellationToken cancellationToken = default) =>
+        (await VerifyWithProblemAsync(plan, cancellationToken).ConfigureAwait(false)).Registered;
+
+    /// <summary>
+    /// Reads the registration back and says why it could not, when it could not.
+    /// </summary>
+    /// <param name="plan">Plan whose main package should be verified.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private async Task<(InstalledPackage? Registered, string? Problem)> VerifyWithProblemAsync(
+        InstallPlan plan,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(plan);
         if (plan.MainPackageName is null)
         {
-            return null;
+            return (null, null);
         }
 
         try
         {
-            return await inventory.FindHighestAsync(plan.MainPackageName, cancellationToken).ConfigureAwait(false);
+            return (await inventory.FindHighestAsync(plan.MainPackageName, cancellationToken).ConfigureAwait(false), null);
         }
-        catch (PowerShellUnavailableException)
+        catch (PowerShellUnavailableException ex)
         {
-            return null;
+            // The inventory could not be read at all. That is not evidence that the package is
+            // missing, and saying so sent people looking for a package Windows had just installed.
+            return (null, ex.Message);
         }
     }
 
-    private async Task<InstalledPackage?> ReadRegistrationAsync(
+    /// <summary>Words the verification result for a person.</summary>
+    /// <param name="registered">Registration that was read back, when there was one.</param>
+    /// <param name="mainPackageName">Package the plan installed.</param>
+    /// <param name="problem">Why the check could not run, when it could not.</param>
+    internal static string DescribeRegistration(InstalledPackage? registered, string? mainPackageName, string? problem) =>
+        problem is not null
+            ? $"The install finished, but the registration could not be read back: {problem}"
+            : registered is null
+                ? $"Nothing is registered for {mainPackageName} after the install."
+                : $"{registered.Name} {registered.Version} is registered with status {registered.Status}.";
+
+    /// <summary>Turns a verification attempt into the verdict of the whole install.</summary>
+    /// <param name="registered">Registration that was read back, when there was one.</param>
+    /// <param name="mainVersion">Version the plan expected.</param>
+    /// <param name="problem">Why the check could not run, when it could not.</param>
+    internal static (bool Succeeded, string? Problem) EvaluateVerification(
+        InstalledPackage? registered,
+        string? mainVersion,
+        string? problem)
+    {
+        if (problem is not null)
+        {
+            // Every step did what it was asked to; only the proof is missing, so the run is reported as
+            // unverified rather than as a failure.
+            return (true, problem);
+        }
+
+        var versionOk = mainVersion is null
+            || !System.Version.TryParse(mainVersion, out var expected)
+            || (registered?.GetVersion() ?? new System.Version(0, 0)) >= expected;
+
+        return (registered is not null && versionOk, null);
+    }
+
+    private async Task<(InstalledPackage? Registered, string? Problem)> ReadRegistrationAsync(
         InstallPlan plan,
         List<InstallStepResult> results,
         IProgress<InstallStepResult>? progress,
         CancellationToken cancellationToken)
     {
-        var registered = await VerifyAsync(plan, cancellationToken).ConfigureAwait(false);
+        var (registered, problem) = await VerifyWithProblemAsync(plan, cancellationToken).ConfigureAwait(false);
         var verifyStep = plan.Steps.FirstOrDefault(step => step.Kind == InstallStepKind.Verify);
-        var message = registered is null
-            ? $"Nothing is registered for {plan.MainPackageName} after the install."
-            : $"{registered.Name} {registered.Version} is registered with status {registered.Status}.";
+        var message = DescribeRegistration(registered, plan.MainPackageName, problem);
 
         if (verifyStep is not null)
         {
+            // A check that could not run is not a failed check, so it is not reported as one.
             var verification = new InstallStepResult(verifyStep, registered is not null, null, message, null, [message]);
-            results.Add(verification);
-            progress?.Report(verification);
+            if (problem is null)
+            {
+                results.Add(verification);
+                progress?.Report(verification);
+            }
         }
 
-        return registered;
+        return (registered, problem);
     }
 
     private async Task<InstallStepResult> RunStepAsync(

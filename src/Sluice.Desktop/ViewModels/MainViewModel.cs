@@ -40,6 +40,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private StoreProduct? _product;
     private InstalledPackage? _registered;
     private string? _installedMainName;
+    private string? _verificationProblem;
     private bool _installSucceeded;
     private string _resultHeadline = string.Empty;
     private string _resultDetail = string.Empty;
@@ -599,9 +600,12 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             SetResult("ResultInstalled");
             _registered = outcome.Registered;
             _installedMainName = plan.MainPackageName;
+            _verificationProblem = outcome.VerificationProblem;
             _installSucceeded = true;
             RebuildRegisteredDetail();
-            AddLog(LogLevel.Success, ResultDetail);
+            AddLog(
+                outcome.VerificationProblem is null ? LogLevel.Success : LogLevel.Warning,
+                loc => ResultDetail);
             SetStatus(loc => loc.Get("StatusInstalled"));
         }
         else
@@ -752,9 +756,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             return;
         }
 
-        ResultDetail = _registered is null
-            ? Loc.Format("DetailInstalled", _installedMainName ?? string.Empty)
-            : Loc.Format("RegisteredStatus", _registered.PackageFullName, _registered.Status);
+        ResultDetail = _verificationProblem is { } problem
+            ? Loc.Format("DetailInstalledUnverified", _installedMainName ?? string.Empty, problem)
+            : _registered is null
+                ? Loc.Format("DetailInstalled", _installedMainName ?? string.Empty)
+                : Loc.Format("RegisteredStatus", _registered.PackageFullName, _registered.Status);
     }
 
     /// <summary>
