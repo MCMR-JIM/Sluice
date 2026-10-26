@@ -15,7 +15,7 @@ internal static class ErrorExplainText
         [0x80073CF6] = (
             "包已经预置，但没能为当前用户注册。",
             "常见于手工解开的 bundle、做到一半的部署，或清单和已预置的文件对不上。",
-            "打开开发者模式后用 sluice install --register；或先 Get-AppxPackage <名称> | Remove-AppxPackage 清掉旧注册再装。"),
+            "打开开发者模式再装一次即可：这次失败之后 sluice 会自己解包并注册清单（不想用这个兜底就加 --no-register）；旧注册还留着的话，先 Get-AppxPackage <名称> | Remove-AppxPackage 清掉再装。"),
         [0x80073CF9] = (
             "AppX 部署服务没能完成这次操作。",
             "AppXSvc 或 StateRepository 被禁用、卡死，或者部署缓存损坏。",
@@ -39,7 +39,7 @@ internal static class ErrorExplainText
         [0x800B0100] = (
             "包没有签名，Windows 拒绝部署。",
             "未签名或重新打包的文件，包括没有有效签名的文件夹注册。",
-            "用 Store 的原签名包；如果是在调试散文件，打开开发者模式后用 sluice install --register。"),
+            "用 Store 的原签名包；手工解开的散文件必须先打开开发者模式，Windows 才肯注册。"),
         [0x800B010A] = (
             "包签名的证书链无效。",
             "签名是给别的包做的，或者下载损坏。",
