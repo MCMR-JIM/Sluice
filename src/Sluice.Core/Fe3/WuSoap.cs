@@ -83,7 +83,7 @@ public static class WuSoap
         return $"""
           <cookie>
             <Expiration>2045-03-11T02:02:48Z</Expiration>
-            <EncryptedData>{cookie}</EncryptedData>
+            <EncryptedData>{Escape(cookie)}</EncryptedData>
           </cookie>
           <parameters>
             <ExpressQuery>false</ExpressQuery>
@@ -93,7 +93,7 @@ public static class WuSoap
             <NeedTwoGroupOutOfScopeUpdates>true</NeedTwoGroupOutOfScopeUpdates>
             <FilterAppCategoryIds>
               <CategoryIdentifier>
-                <Id>{wuCategoryId}</Id>
+                <Id>{Escape(wuCategoryId)}</Id>
               </CategoryIdentifier>
             </FilterAppCategoryIds>
             <TreatAppCategoryIdsAsInstalled>true</TreatAppCategoryIdsAsInstalled>
@@ -104,17 +104,17 @@ public static class WuSoap
                 <XmlUpdateFragmentType>Extended</XmlUpdateFragmentType>
               </XmlUpdateFragmentTypes>
               <Locales>
-                <string>{language}</string>
-                <string>{languageRoot}</string>
+                <string>{Escape(language)}</string>
+                <string>{Escape(languageRoot)}</string>
               </Locales>
             </ExtendedUpdateInfoParameters>
             <ClientPreferredLanguages>
-              <string>{language}</string>
-              <string>{languageRoot}</string>
+              <string>{Escape(language)}</string>
+              <string>{Escape(languageRoot)}</string>
             </ClientPreferredLanguages>
             <ProductsParameters>
               <SyncCurrentVersionOnly>false</SyncCurrentVersionOnly>
-              <DeviceAttributes>{WuDeviceProfile.DeviceAttributes(language)}</DeviceAttributes>
+              <DeviceAttributes>{Escape(WuDeviceProfile.DeviceAttributes(language))}</DeviceAttributes>
               <CallerAttributes>Interactive=1;IsSeeker=0;</CallerAttributes>
               <Products/>
             </ProductsParameters>
@@ -130,7 +130,7 @@ public static class WuSoap
         ArgumentNullException.ThrowIfNull(updates);
 
         var identities = string.Concat(updates.Select(update =>
-            $"<UpdateIdentity><UpdateID>{update.UpdateId}</UpdateID><RevisionNumber>{update.RevisionNumber}</RevisionNumber></UpdateIdentity>"));
+            $"<UpdateIdentity><UpdateID>{Escape(update.UpdateId)}</UpdateID><RevisionNumber>{update.RevisionNumber}</RevisionNumber></UpdateIdentity>"));
 
         return $"""
           <updateIDs>{identities}</updateIDs>
@@ -138,12 +138,22 @@ public static class WuSoap
             <XmlUpdateFragmentType>FileUrl</XmlUpdateFragmentType>
             <XmlUpdateFragmentType>FileDecryption</XmlUpdateFragmentType>
           </infoTypes>
-          <deviceAttributes>{WuDeviceProfile.DeviceAttributes(locale)}</deviceAttributes>
+          <deviceAttributes>{Escape(WuDeviceProfile.DeviceAttributes(locale))}</deviceAttributes>
         """;
     }
 
     private static string IntList(string elementName, IEnumerable<int> values) =>
         $"<{elementName}>{string.Concat(values.Select(value => $"<int>{value}</int>"))}</{elementName}>";
+
+    /// <summary>
+    /// Escapes a value placed in an element. A locale from a Store link, a category id and a cookie the
+    /// service wrapped differently all end up in the envelope as text, and an unescaped ampersand or angle
+    /// bracket made the request itself unparsable - the fault that came back then described the service
+    /// instead of the value that broke the request.
+    /// </summary>
+    /// <param name="value">Text to place in an element.</param>
+    private static string Escape(string value) =>
+        string.IsNullOrEmpty(value) ? string.Empty : System.Security.SecurityElement.Escape(value);
 
     /// <summary>Formats a timestamp as the WU protocol expects it.</summary>
     /// <param name="value">Timestamp to format.</param>

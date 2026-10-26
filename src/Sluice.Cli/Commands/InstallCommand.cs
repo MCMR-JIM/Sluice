@@ -29,7 +29,7 @@ internal static class InstallCommand
         }
 
         var architecture = OptionValues.Architecture(arguments);
-        var locale = arguments.Get("locale") ?? Defaults.Locale;
+        var locale = OptionValues.Locale(arguments);
         var directory = arguments.Get("dir");
         var dryRun = arguments.Has("dry-run");
         var fromFolderOnly = PackageFileLocator.LooksLikePath(reference) || Directory.Exists(reference);

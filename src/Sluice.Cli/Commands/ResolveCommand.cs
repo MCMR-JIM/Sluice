@@ -20,7 +20,7 @@ internal static class ResolveCommand
 
         var reference = arguments.Positionals[0];
         using var resolver = new StorePackageResolver();
-        var resolution = await resolver.ResolveAsync(reference, arguments.Get("locale") ?? Defaults.Locale, CancellationToken.None)
+        var resolution = await resolver.ResolveAsync(reference, OptionValues.Locale(arguments), CancellationToken.None)
             .ConfigureAwait(false);
 
         if (arguments.Has("json"))
