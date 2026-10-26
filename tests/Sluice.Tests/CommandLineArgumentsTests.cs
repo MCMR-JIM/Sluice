@@ -54,6 +54,26 @@ public sealed class CommandLineArgumentsTests
     }
 
     [Fact]
+    public void ReportsOptionsTheCommandDoesNotTake()
+    {
+        // "sluice download <url> --al-arch" used to be accepted and ignored, so the command ran with
+        // its defaults while the caller believed every architecture had been kept.
+        var arguments = CommandLineArguments.Parse(["--al-arch", "--dir", "cache", "--json"]);
+
+        var unaccepted = arguments.FindUnaccepted(["dir", "json", "arch"]);
+
+        Assert.Equal(["al-arch"], unaccepted);
+    }
+
+    [Fact]
+    public void AcceptsEveryOptionItKnowsInAnyCasing()
+    {
+        var arguments = CommandLineArguments.Parse(["--JSON", "--Dir", "cache"]);
+
+        Assert.Empty(arguments.FindUnaccepted(["json", "dir"]));
+    }
+
+    [Fact]
     public void ParsesIntegersWithFallbacks()
     {
         var arguments = CommandLineArguments.Parse(["--parallel", "8"]);

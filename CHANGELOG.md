@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* `install --dry-run` no longer downloads. The manual promises it touches nothing, but resolve,
+  download and the manifest write all ran before the dry run gate, so inspecting a product fetched
+  every package and left `Sluice-manifest.json` behind. A dry run from a Store reference now reports
+  the selection it would fetch, without resolving file URLs or writing anything.
+* `doctor --json` returns the same exit code as the text output. The JSON branch returned 0
+  unconditionally, so a scripted caller saw success on a machine the text output called unfit (3).
+* An option a command does not take is now an error instead of a silent no-op: `sluice download <url>
+  --al-arch` used to run with its defaults while the caller believed the typo had been applied. The
+  accepted set is derived from the same manual `Sluice help <command>` prints, and
+  `--no-force-shutdown`, which install already honoured, is documented at last.
+* A cancelled or timed out run and an IO failure now end with a one line message instead of a stack
+  trace.
+
 ## [0.4.10] - 2026-10-27
 
 ### Fixed

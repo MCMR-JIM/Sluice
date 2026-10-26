@@ -50,6 +50,33 @@ internal static class CommandCatalog
         "3   doctor only: the machine cannot deploy packages until the warnings are fixed",
     ];
 
+    /// <summary>
+    /// Option names a command accepts, without leading dashes. Derived from the manual entries plus the
+    /// global switches, so an option that is documented is accepted and an option nobody documents is
+    /// not silently swallowed.
+    /// </summary>
+    /// <param name="help">Command whose manual page describes the options.</param>
+    public static IReadOnlyList<string> AcceptedOptionNames(CommandHelp help)
+    {
+        ArgumentNullException.ThrowIfNull(help);
+
+        var names = new List<string>();
+        foreach (var option in help.Options.Concat(GlobalOptions))
+        {
+            // "--dir <path>" -> "dir"; "-h, --help" -> "h" and "help".
+            foreach (var part in option.Flag.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+            {
+                var name = part.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                if (name is not null && name.StartsWith('-'))
+                {
+                    names.Add(name.TrimStart('-'));
+                }
+            }
+        }
+
+        return names;
+    }
+
     /// <summary>All documented commands.</summary>
     public static IReadOnlyList<CommandHelp> All { get; } =
     [
@@ -85,6 +112,7 @@ internal static class CommandCatalog
                 new CommandOption("--parallel <n>", "Concurrent downloads.", "3"),
                 new CommandOption("--no-verify", "Skip the post-install registration check."),
                 new CommandOption("--no-register", "Disable the loose-file registration fallback."),
+                new CommandOption("--no-force-shutdown", "Do not close a running copy of the app before replacing it."),
             ],
             [
                 "Sluice install https://apps.microsoft.com/detail/9nksqgp7f2nh",
