@@ -365,7 +365,8 @@ internal static class InstallCommand
                 packages = candidates.Select(package => new
                 {
                     file = package.Package.ReadableFileName,
-                    architecture = package.Package.Architecture, role = package.Package.IsFramework ? "framework" : "main",
+                    architecture = package.Package.Architecture,
+                    role = PackageRole.Of(package.Package),
                     size = package.Package.SizeInBytes,
                     downloadable = package.IsDownloadable,
                 }),
@@ -379,7 +380,7 @@ internal static class InstallCommand
             candidates
                 .Select(package => (IReadOnlyList<string>)
                 [
-                    package.Package.IsFramework ? "framework" : "main",
+                    PackageRole.Of(package.Package),
                     package.Package.ReadableFileName,
                     package.Package.Architecture ?? "neutral",
                     TablePrinter.FormatSize(package.Package.SizeInBytes),
