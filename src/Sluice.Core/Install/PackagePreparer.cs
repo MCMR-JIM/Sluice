@@ -116,7 +116,7 @@ public sealed class PackagePreparer(PackageDownloader downloader)
                 continue;
             }
 
-            notes?.Add($"{resource.Package.ReadableFileName} belongs to another package family; not downloading it.");
+            notes?.Add(Diagnostics.DiagnosticMessage.Of("PrepareForeignResource", resource.Package.ReadableFileName));
         }
 
         return required;

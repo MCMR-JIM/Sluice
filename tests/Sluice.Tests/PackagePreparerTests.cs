@@ -66,6 +66,24 @@ public sealed class PackagePreparerTests
     }
 
     [Fact]
+    public void CodesTheNoteAboutAForeignResourcePackage()
+    {
+        // This note was written as a finished English sentence, so the window could not translate it while
+        // every other note followed the language.
+        var selection = new PackageSelection(
+            [Create("Contoso.Notes", "2.0.0.0", "neutral", 1024, ".msixbundle")],
+            [],
+            [Create("Microsoft.WindowsAppRuntime.2", "2.5.1.0", "neutral", 64, ".appx", "zh-CN")],
+            []);
+        var notes = new List<Sluice.Diagnostics.DiagnosticMessage>();
+
+        var required = PackagePreparer.SelectRequired(selection, [], "zh-cn", notes);
+
+        Assert.Empty(required);
+        Assert.Contains(notes, note => note.Code == "PrepareForeignResource");
+    }
+
+    [Fact]
     public void NeverDownloadsAFrameworkTheManifestDidNotAskFor()
     {
         var selection = new PackageSelection(
