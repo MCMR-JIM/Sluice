@@ -31,9 +31,12 @@ public sealed class PlanRow(Localization loc) : ObservableObject
         {
             if (SetProperty(ref _state, value))
             {
+                // Every flag derived from the state has to be announced: IsSkipped was forgotten, so the
+                // row for a step the run never reached kept the look it had before.
                 Raise(nameof(StateLabel));
                 Raise(nameof(IsDone));
                 Raise(nameof(IsFailed));
+                Raise(nameof(IsSkipped));
             }
         }
     }
