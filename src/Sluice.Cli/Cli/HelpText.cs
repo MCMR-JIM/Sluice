@@ -107,17 +107,25 @@ internal static class HelpText
 
         writer.WriteLine($"error: unknown command '{name}'");
         writer.WriteLine();
-        writer.WriteLine("Did you mean one of these?");
-        foreach (var command in CommandCatalog.All)
-        {
-            if (command.Name.StartsWith(name, StringComparison.OrdinalIgnoreCase)
+
+        // The heading used to be printed unconditionally, so a typo that resembles nothing ("frobnicate")
+        // was answered with "Did you mean one of these?" and an empty list.
+        var suggestions = CommandCatalog.All
+            .Where(command => command.Name.StartsWith(name, StringComparison.OrdinalIgnoreCase)
                 || name.StartsWith(command.Name, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (suggestions.Count > 0)
+        {
+            writer.WriteLine("Did you mean one of these?");
+            foreach (var command in suggestions)
             {
                 writer.WriteLine($"  {command.Name}");
             }
+
+            writer.WriteLine();
         }
 
-        writer.WriteLine();
         Print(writer);
     }
 

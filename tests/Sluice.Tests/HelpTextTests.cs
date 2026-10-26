@@ -92,6 +92,24 @@ public sealed class HelpTextTests
         var text = writer.ToString();
 
         Assert.Contains("unknown command 'instal'", text, StringComparison.Ordinal);
+        Assert.Contains("Did you mean one of these?", text, StringComparison.Ordinal);
         Assert.Contains("install", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnknownCommandOutputPromisesNothingWhenNothingMatches()
+    {
+        // The heading was printed unconditionally, so a word that resembles no command was answered with
+        // "Did you mean one of these?" followed by an empty list.
+        using var writer = new StringWriter();
+
+        HelpText.PrintUnknownCommand("frobnicate", writer);
+        var text = writer.ToString();
+
+        Assert.Contains("unknown command 'frobnicate'", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Did you mean", text, StringComparison.Ordinal);
+
+        // The index is still printed, so the operator sees what there is.
+        Assert.Contains("COMMANDS", text, StringComparison.Ordinal);
     }
 }
