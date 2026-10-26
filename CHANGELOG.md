@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.3] - 2026-10-27
 
 ### Fixed
 
@@ -16,9 +16,9 @@ All notable changes to this project are documented here. The format follows
 ### Changed
 
 * The window no longer asks for an architecture it already knows: the left pane shows the machine's
-  own architecture as a read-only line and the x64/x86/arm64 picker only appears when "Prepare for
-  another architecture" is ticked, which is the case an offline archive for another device needs. The
-  command line keeps `--arch` for the same job.
+  own architecture as a read-only line and the x64/x86/arm64 picker only appears when "For another
+  machine" is ticked, which is the case an offline archive for another device needs. The command line
+  keeps `--arch` for the same job.
 
 ## [0.4.2] - 2026-10-19
 
