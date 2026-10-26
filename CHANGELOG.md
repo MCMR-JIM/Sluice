@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* An install started by a script no longer installs without being asked to. The confirmation step was
+  skipped whenever standard input was not a terminal, so a piped run deployed packages nobody agreed
+  to; without `--yes` it now refuses with exit code 2 and says which switch to pass.
+* `explain --json` produces a JSON document for the whole catalogue. The listing and the no-argument
+  form were handled before the JSON branch, so a caller asking for JSON got a text table.
+
 ## [0.4.12] - 2026-10-27
 
 ### Fixed

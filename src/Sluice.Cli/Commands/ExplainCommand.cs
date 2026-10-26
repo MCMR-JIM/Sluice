@@ -12,6 +12,27 @@ internal static class ExplainCommand
 
         if (arguments.Positionals.Count == 0 || arguments.Has("list"))
         {
+            // --json has to produce a document even here: the listing used to be printed as a table for
+            // a caller that asked for JSON, and piping it into a JSON reader died on the first line.
+            if (arguments.Has("json"))
+            {
+                JsonOutput.Write(new
+                {
+                    count = AppxErrorCatalog.All.Count,
+                    codes = AppxErrorCatalog.All.Select(entry => new
+                    {
+                        code = entry.FormattedCode,
+                        entry.Name,
+                        entry.Meaning,
+                        entry.TypicalCause,
+                        remedy = entry.Remedy.ToString(),
+                        manualSteps = entry.ManualSteps,
+                    }),
+                });
+
+                return 0;
+            }
+
             TablePrinter.Print(
                 ["CODE", "NAME", "MEANING"],
                 AppxErrorCatalog.All
