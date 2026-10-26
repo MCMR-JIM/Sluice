@@ -27,6 +27,15 @@ public sealed record DownloadOptions(
     /// <summary>Default span between progress callbacks: one mebibyte.</summary>
     public const long DefaultProgressIntervalBytes = 1024 * 1024;
 
+    /// <summary>Most files that may be downloaded at once, whatever the caller asks for.</summary>
+    public const int MaxParallelismLimit = 16;
+
+    /// <summary>
+    /// The parallelism this run will actually use. Clamping used to happen in one command and nowhere
+    /// else, so <c>--parallel 500</c> queued 500 files for <c>install</c> and 16 for <c>download</c>.
+    /// </summary>
+    public int Parallelism => Math.Clamp(MaxParallelism, 1, MaxParallelismLimit);
+
     /// <summary>Options used when the caller supplies none.</summary>
     public static DownloadOptions Default { get; } = new();
 }

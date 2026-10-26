@@ -17,6 +17,9 @@ public static class BuildInfo
     /// <summary>One line describing the tool, used by <c>--version</c> and help output.</summary>
     public static string Description => "resolve, download and sideload Microsoft Store packages";
 
+    /// <summary>Where this tool actually lives.</summary>
+    public const string RepositoryUrl = "https://github.com/MCMR-JIM/Sluice";
+
     private static string ReadVersion()
     {
         var assembly = typeof(BuildInfo).Assembly;

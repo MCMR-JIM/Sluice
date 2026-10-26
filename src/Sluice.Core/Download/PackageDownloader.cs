@@ -62,7 +62,7 @@ public sealed class PackageDownloader : IDisposable
             distinct,
             new ParallelOptions
             {
-                MaxDegreeOfParallelism = Math.Max(1, options.MaxParallelism),
+                MaxDegreeOfParallelism = options.Parallelism,
                 CancellationToken = cancellationToken,
             },
             async (package, token) =>
