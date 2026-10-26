@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.28] - 2026-10-27
+
+### Fixed
+
+* A locale typed the POSIX way (`zh_CN`) no longer loses the resource packages. The tag travelled
+  unchanged: the catalog answered in English, the delivery request carried a locale it could not match,
+  and the resource packages - which carry a `ResourceId` such as `zh-CN` - matched nothing, so the install
+  arrived without its resources while every step reported success. The separator is normalised now, and a
+  value that is not a language tag is refused with exit code 2 instead of being sent to the service, which
+  answered it with a fault that read like an outage.
+* The values placed in the delivery request are XML escaped. A locale from a Store link, a category id or a
+  differently wrapped cookie could make the request itself unparsable, and the fault that came back
+  described the service rather than the value that broke the request.
+
 ## [0.4.27] - 2026-10-27
 
 ### Fixed
