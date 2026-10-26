@@ -83,7 +83,7 @@ internal static class DownloadCommand
         using var downloader = new PackageDownloader();
         var progress = json ? null : new ProgressRenderer();
         var options = new DownloadOptions(
-            MaxParallelism: Math.Clamp(arguments.GetInt32("parallel", 3), 1, 16),
+            MaxParallelism: arguments.GetInt32("parallel", 3),
             Overwrite: arguments.Has("overwrite"),
             VerifyDigest: !arguments.Has("no-verify"),
             Progress: progress is null ? null : progress.Report);
