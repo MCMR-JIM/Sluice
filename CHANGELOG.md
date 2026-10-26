@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.34] - 2026-10-27
+
+### Changed
+
+* `--json` answers with camelCase keys everywhere. Documents were written with whatever name the anonymous
+  type or record carried, so `doctor --json` emitted `IsWindows`, `plan --json` emitted
+  `issues[].Message.Code` and `install --dry-run --json` emitted `MainPackageName`, next to hand written
+  documents that said `succeeded` and `kind` - a script had to know which document it was reading before it
+  could name a field. Values keep the spelling Windows uses (`InstallMain`, `Warning`), and a diagnostic
+  stays an object with `code`, `arguments` and the rendered `text`.
+
+### Fixed
+
+* An encrypted Store package is recognised whatever the letter case of its extension. The check compared
+  case sensitively, so `Contoso.EAPPX` - the same file Windows treats as `Contoso.eappx` - fell through to
+  the ZIP reader and was reported as an unreadable container instead of a package that needs a licence.
+* `analyze` says why a file was skipped. It printed `(not a readable package)` for every failure, although
+  the analyzer distinguishes an encrypted package, a truncated download and a container that is not a
+  package - which is the difference between downloading again and finding the licence.
+
 ## [0.4.33] - 2026-10-27
 
 ### Fixed
