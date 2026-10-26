@@ -17,6 +17,23 @@ public sealed class TablePrinterTests
     }
 
     [Fact]
+    public void KeepsARowOnOneLineWhenACellCarriesALineBreak()
+    {
+        // A deployment message in the NOTE column used to break the row in two: everything after it
+        // printed on its own line, one column to the left of where it belonged.
+        using var captured = new StringWriter();
+        TablePrinter.Print(
+            ["KIND", "RESULT", "NOTE"],
+            [["InstallMain", "failed", "Deployment failed\r\nwith 0x80073CF3\tand a note"]],
+            captured);
+
+        var lines = captured.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        Assert.Equal(3, lines.Length);
+        Assert.Contains("Deployment failed with 0x80073CF3 and a note", captured.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void KeepsColumnsAlignedWhenACellIsChinese()
     {
         // The path column used to be measured in UTF-16 units, so a Chinese path pushed every column

@@ -18,25 +18,30 @@ public static class TablePrinter
             return;
         }
 
+        // A cell that carries a line break or a tab leaves the row it belongs to: a deployment message
+        // pasted into a NOTE column broke the table into two sheared halves. Cells are flattened first.
+        var flatHeaders = headers.Select(Flatten).ToList();
+        var flatRows = rows.Select(row => (IReadOnlyList<string>)row.Select(Flatten).ToList()).ToList();
+
         // Widths are measured in terminal cells, not in UTF-16 units: a Chinese path is one character
         // per cell-pair, so counting characters sheared every column after it.
-        var widths = new int[headers.Count];
-        for (var column = 0; column < headers.Count; column++)
+        var widths = new int[flatHeaders.Count];
+        for (var column = 0; column < flatHeaders.Count; column++)
         {
-            widths[column] = DisplayWidth(headers[column]);
+            widths[column] = DisplayWidth(flatHeaders[column]);
         }
 
-        foreach (var row in rows)
+        foreach (var row in flatRows)
         {
-            for (var column = 0; column < headers.Count && column < row.Count; column++)
+            for (var column = 0; column < flatHeaders.Count && column < row.Count; column++)
             {
                 widths[column] = Math.Max(widths[column], DisplayWidth(row[column]));
             }
         }
 
-        writer.WriteLine(RenderRow(headers, widths));
+        writer.WriteLine(RenderRow(flatHeaders, widths));
         writer.WriteLine(string.Join("  ", widths.Select(width => new string('-', width))));
-        foreach (var row in rows)
+        foreach (var row in flatRows)
         {
             writer.WriteLine(RenderRow(row, widths));
         }
@@ -84,6 +89,37 @@ public static class TablePrinter
         return unit == 0
             ? $"{bytes} B"
             : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{value:0.##} {units[unit]}");
+    }
+
+    /// <summary>Collapses a cell onto one line so it cannot break the row it belongs to.</summary>
+    /// <param name="value">Cell text.</param>
+    private static string Flatten(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder(value.Length);
+        var lastWasSpace = false;
+        foreach (var character in value)
+        {
+            if (char.IsControl(character) || character is '\u00A0' or '\u2028' or '\u2029')
+            {
+                if (!lastWasSpace && builder.Length > 0)
+                {
+                    builder.Append(' ');
+                }
+
+                lastWasSpace = true;
+                continue;
+            }
+
+            builder.Append(character);
+            lastWasSpace = false;
+        }
+
+        return builder.ToString().TrimEnd();
     }
 
     private static string RenderRow(IReadOnlyList<string> values, int[] widths)

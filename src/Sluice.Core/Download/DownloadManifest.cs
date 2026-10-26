@@ -84,8 +84,18 @@ public static async Task<FolderSelection> SelectAsync(
 
     var files = new List<string>();
     var missing = new List<string>();
+    var ignored = new List<string>();
     foreach (var entry in manifest.Packages)
     {
+        if (!IsFileNameInFolder(entry.FileName))
+        {
+            // The manifest is a text file that sits next to the packages, and a hand written one used to
+            // name anything on the machine: Path.Combine returns its second argument unchanged when that
+            // one is rooted, so the plan happily installed a package from outside the folder.
+            ignored.Add(entry.FileName);
+            continue;
+        }
+
         var path = Path.Combine(directory, entry.FileName);
         if (File.Exists(path))
         {
@@ -100,8 +110,34 @@ public static async Task<FolderSelection> SelectAsync(
     // A manifest that names nothing found on disk is worse than no manifest at all: fall back to the
     // folder contents so a hand-replaced download still installs.
     return files.Count == 0
-        ? FolderSelection.Everything(allPackageFiles)
-        : new FolderSelection(files, missing, true);
+        ? FolderSelection.Everything(allPackageFiles) with { Ignored = ignored }
+        : new FolderSelection(files, missing, true, ignored);
+}
+
+/// <summary>
+/// True when a manifest entry names a file inside the folder: a bare name, with no directory part and
+/// no way to walk back out of it.
+/// </summary>
+/// <param name="fileName">Entry from the manifest.</param>
+private static bool IsFileNameInFolder(string fileName)
+{
+    if (string.IsNullOrWhiteSpace(fileName))
+    {
+        return false;
+    }
+
+    if (Path.IsPathRooted(fileName) || fileName.Contains(':', StringComparison.Ordinal))
+    {
+        return false;
+    }
+
+    if (fileName.Contains('/', StringComparison.Ordinal) || fileName.Contains('\\', StringComparison.Ordinal))
+    {
+        return false;
+    }
+
+    return string.Equals(fileName, Path.GetFileName(fileName), StringComparison.Ordinal)
+        && fileName is not "." and not "..";
 }
 
     /// <summary>Reads a manifest from a directory, returning <c>null</c> when there is none.</summary>

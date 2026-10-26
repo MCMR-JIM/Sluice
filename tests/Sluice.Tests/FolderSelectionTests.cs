@@ -72,6 +72,54 @@ public sealed class FolderSelectionTests : IDisposable
         Assert.Equal(["Contoso.Deleted_9.9.9.9_x64.appx"], partial.Missing);
     }
 
+    [Fact]
+    public async Task AManifestEntryThatNamesAPathOutsideTheFolderIsIgnored()
+    {
+        // A manifest is a text file that sits next to the packages, and it used to be trusted as written:
+        // Path.Combine returns its second argument unchanged when that one is rooted, so an entry naming
+        // an absolute path - or one that walks back out with .. - made the plan read a package from
+        // anywhere on the machine and install it instead of the one in the folder.
+        Directory.CreateDirectory(_directory);
+        var inside = Path.Combine(_directory, "Contoso.Notes_1.0.0.0_x64.appx");
+        await File.WriteAllBytesAsync(inside, [1, 2, 3]);
+
+        var outsideDirectory = Path.Combine(Path.GetTempPath(), "Sluice-outside-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(outsideDirectory);
+        var outside = Path.Combine(outsideDirectory, "Contoso.Other_1.0.0.0_x64.appx");
+        await File.WriteAllBytesAsync(outside, [4, 5, 6]);
+
+        try
+        {
+            await DownloadManifest.SaveAsync(_directory, ManifestOf(
+                "Contoso.Notes_1.0.0.0_x64.appx",
+                outside,
+                ".." + Path.DirectorySeparatorChar + "Contoso.Other_1.0.0.0_x64.appx"));
+
+            var selection = await DownloadManifest.SelectAsync(_directory, [inside]);
+
+            Assert.Equal([inside], selection.Files);
+            Assert.Contains(outside, selection.Ignored);
+            Assert.Contains(".." + Path.DirectorySeparatorChar + "Contoso.Other_1.0.0.0_x64.appx", selection.Ignored);
+            Assert.Empty(selection.Missing);
+        }
+        finally
+        {
+            Directory.Delete(outsideDirectory, recursive: true);
+        }
+    }
+
+    private static DownloadManifest ManifestOf(params string[] fileNames) =>
+        new(
+            "9TESTTEST01",
+            "Contoso Notes",
+            "Contoso.Notes_abcdefghij",
+            "x64",
+            "en-US",
+            DateTimeOffset.UnixEpoch,
+            fileNames
+                .Select(fileName => new ManifestEntry(fileName, "Contoso.Notes_1.0.0.0_x64__abcdefghij", "Contoso.Notes", "1.0.0.0", "x64", 3, null))
+                .ToList());
+
     private async Task SaveManifestAsync(params string[] fileNames)
     {
         var resolution = new PackageResolution(
