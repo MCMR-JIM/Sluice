@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Sluice.Desktop.Interop;
 using Sluice.Desktop.ViewModels;
+using Sluice.Windows;
 
 namespace Sluice.Desktop;
 
@@ -21,15 +22,61 @@ public partial class MainWindow : Window, IDisposable
         Icon = new BitmapImage(new Uri("pack://application:,,,/Assets/app.png", UriKind.Absolute));
 
         SourceInitialized += OnSourceInitialized;
+        Loaded += (_, _) => RestorePlacement();
 
         _viewModel = new MainViewModel();
         DataContext = _viewModel;
         _viewModel.Log.CollectionChanged += OnLogChanged;
+        Closing += (_, _) => RememberPlacement();
         Closed += (_, _) =>
         {
             _viewModel.Log.CollectionChanged -= OnLogChanged;
             _viewModel.Dispose();
         };
+    }
+
+    /// <summary>
+    /// Restores the remembered size and position, clamped into the work area: a window remembered on a
+    /// bigger screen or on a monitor that is no longer attached used to open with its status row below
+    /// the bottom edge.
+    /// </summary>
+    private void RestorePlacement()
+    {
+        if (WindowPlacementStore.Load() is not { } remembered)
+        {
+            return;
+        }
+
+        var workArea = SystemParameters.WorkArea;
+        var clamped = WindowPlacement.Clamp(
+            remembered,
+            new WindowBox((int)workArea.Left, (int)workArea.Top, (int)workArea.Width, (int)workArea.Height));
+
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        Left = clamped.Left;
+        Top = clamped.Top;
+        Width = clamped.Width;
+        Height = clamped.Height;
+    }
+
+    /// <summary>Remembers the size and position, using the restored bounds when maximized.</summary>
+    private void RememberPlacement()
+    {
+        // RestoreBounds is the only useful value while the window is maximized or minimized.
+        var bounds = WindowState == WindowState.Normal
+            ? new Rect(Left, Top, ActualWidth, ActualHeight)
+            : RestoreBounds;
+
+        if (bounds.Width <= 0 || bounds.Height <= 0 || double.IsNaN(bounds.Width))
+        {
+            return;
+        }
+
+        WindowPlacementStore.Save(new WindowBox(
+            (int)bounds.Left,
+            (int)bounds.Top,
+            (int)bounds.Width,
+            (int)bounds.Height));
     }
 
     private void OnSourceInitialized(object? sender, EventArgs e)
