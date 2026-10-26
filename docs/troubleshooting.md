@@ -133,3 +133,8 @@ Get-Service AppXSvc, StateRepository, ClipSVC
 `Sluice resolve <url> --json` and `Sluice plan <dir> --json` capture what the tool saw: product,
 category id, package identities, architectures, URLs and the plan. Neither contains personal data,
 which makes them safe to attach to an issue.
+
+A run that fails prints a document as well, not an empty stream: `succeeded: false`, the reason in
+`error` and a short `kind` (`invalid-arguments`, `no-packages`, `plan-blocked`, `consent-required`,
+`cancelled`, `wrong-platform`). A blocked plan carries its `blockingIssues` with it, which is usually
+the whole answer to "why will this not install".
