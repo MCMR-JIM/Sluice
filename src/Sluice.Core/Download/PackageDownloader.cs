@@ -16,6 +16,9 @@ public sealed class PackageDownloader : IDisposable
 {
     private const int CopyBufferSize = 128 * 1024;
 
+    /// <summary>How many times one file is attempted before the download is reported as failed.</summary>
+    private const int Attempts = 3;
+
     private readonly HttpClient _httpClient;
     private readonly bool _ownsClient;
 
@@ -100,7 +103,7 @@ public sealed class PackageDownloader : IDisposable
         }
 
         Exception? lastError = null;
-        for (var attempt = 1; attempt <= 3; attempt++)
+        for (var attempt = 1; attempt <= Attempts; attempt++)
         {
             cancellationToken.ThrowIfCancellationRequested();
             try
@@ -113,22 +116,32 @@ public sealed class PackageDownloader : IDisposable
 
                 if (verification == DownloadVerification.Mismatch)
                 {
-                    throw new DownloadException($"'{package.Package.ReadableFileName}' failed digest verification.");
+                    // Whatever is on disk is not the published file, so throw it away before retrying:
+                    // keeping it makes the next attempt resume a prefix that is already known to be
+                    // wrong, and the run fails the same way for every following attempt.
+                    DiscardPartial(partialPath);
+                    lastError = new DownloadException($"'{package.Package.ReadableFileName}' failed digest verification.");
                 }
-
-                File.Move(partialPath, targetPath, overwrite: true);
-                var size = new FileInfo(targetPath).Length;
-                return new DownloadResult(package.Package, targetPath, size, verification, Reused: false);
+                else
+                {
+                    File.Move(partialPath, targetPath, overwrite: true);
+                    var size = new FileInfo(targetPath).Length;
+                    return new DownloadResult(package.Package, targetPath, size, verification, Reused: false);
+                }
             }
             catch (Exception ex) when (ex is HttpRequestException or IOException && !cancellationToken.IsCancellationRequested)
             {
                 lastError = ex;
+            }
+
+            if (attempt < Attempts)
+            {
                 await Task.Delay(TimeSpan.FromSeconds(attempt), cancellationToken).ConfigureAwait(false);
             }
         }
 
         throw new DownloadException(
-            $"Failed to download '{package.Package.ReadableFileName}' after 3 attempts.",
+            $"Failed to download '{package.Package.ReadableFileName}' after {Attempts} attempts.",
             lastError);
     }
 
@@ -208,6 +221,30 @@ public sealed class PackageDownloader : IDisposable
         if (total > 0 && received < total)
         {
             throw new IOException($"'{package.Package.ReadableFileName}' ended after {received} of {total} bytes.");
+        }
+    }
+
+    /// <summary>
+    /// Deletes a partial file whose bytes cannot be trusted, so the next attempt starts from zero
+    /// instead of appending to a prefix that is already wrong.
+    /// </summary>
+    /// <param name="partialPath">Partial file to remove.</param>
+    private static void DiscardPartial(string partialPath)
+    {
+        try
+        {
+            if (File.Exists(partialPath))
+            {
+                File.Delete(partialPath);
+            }
+        }
+        catch (IOException)
+        {
+            // Held open by an antivirus scanner or a leftover handle; the next attempt overwrites it.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Read only file on disk; nothing better to do than let the retry fail loudly.
         }
     }
 
