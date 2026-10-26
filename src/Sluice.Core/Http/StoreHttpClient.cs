@@ -6,8 +6,13 @@ namespace Sluice.Http;
 /// <summary>Creates the <see cref="HttpClient"/> instances the tool uses everywhere.</summary>
 public static class StoreHttpClient
 {
-    /// <summary>User agent sent to Microsoft endpoints.</summary>
-    public const string UserAgent = "sluice/0.1 (+https://github.com/sluice/sluice)";
+    /// <summary>
+    /// User agent sent to Microsoft endpoints. It names the version that is actually running and the
+    /// project it comes from: the constant used to say <c>sluice/0.1</c> and point at a repository that
+    /// does not exist, so an operator reading a server log could not tell which build or which project
+    /// made the request.
+    /// </summary>
+    public static string UserAgent { get; } = $"sluice/{BuildInfo.Version} (+{BuildInfo.RepositoryUrl})";
 
     /// <summary>Creates a client configured for JSON catalog calls.</summary>
     public static HttpClient CreateCatalogClient() => Create(TimeSpan.FromSeconds(100));
