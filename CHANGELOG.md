@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.36] - 2026-10-27
+
+### Fixed
+
+* `-v` and `--version` work wherever they appear. The manual lists them as global options, but the entry
+  point only looked for them as the first argument: `Sluice install --version` answered that install needs a
+  Store reference, and `Sluice install <id> --version` would have gone ahead and installed. `-h/--help` has
+  always been honoured anywhere in the arguments.
+* A `ms-windows-store://` deep link has its market and locale hints trimmed, exactly like the web form of
+  the same link. A pasted link can carry escaped spaces (`market=%20CN%20`), and the untrimmed value went
+  into the catalog request, which answered 400 for a market that looks fine to the person who pasted it.
+
 ## [0.4.35] - 2026-10-27
 
 ### Fixed
