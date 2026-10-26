@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Sluice.Http;
 
 namespace Sluice.Store;
@@ -9,7 +10,9 @@ namespace Sluice.Store;
 public sealed class StoreProductResolver
 {
     private readonly IReadOnlyList<IStoreCatalogClient> _clients;
-    private readonly Dictionary<string, StoreProduct> _cache = new(StringComparer.OrdinalIgnoreCase);
+    // Resolutions can run concurrently (the window probes and the command line do), and only answers
+    // that actually carry packages are worth remembering.
+    private readonly ConcurrentDictionary<string, StoreProduct> _cache = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Creates a resolver backed by the default catalog endpoints.</summary>
     /// <param name="httpClient">Optional client; a catalog client is created when omitted.</param>
@@ -83,15 +86,20 @@ public sealed class StoreProductResolver
                 errors.Add($"{client.Name}: product has no package categories");
                 best ??= product;
             }
-            catch (StoreResolutionException ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                // Whatever an endpoint threw - a fault, an HTML body where JSON was expected, a socket
+                // that gave up after its retries - is a reason to try the next endpoint. Letting it
+                // escape meant the fallback was never consulted and the user saw a raw parser message.
                 errors.Add($"{client.Name}: {ex.Message}");
             }
         }
 
         if (best is not null)
         {
-            _cache[cacheKey] = best;
+            // Deliberately not cached: an answer without package categories is what a struggling
+            // endpoint returns, and replaying it for the rest of the process would keep telling the
+            // user the listing is a Win32 app long after the endpoint recovered.
             return best;
         }
 
