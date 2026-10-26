@@ -23,6 +23,37 @@ public sealed class CliAnalyzeTests : IDisposable
     }
 
     [Fact]
+    public async Task AFolderWithoutAReadablePackageIsAFailureNotAnEmptySuccess()
+    {
+        // Every file was skipped and the command reported success with nothing to show, so a caller asking
+        // "can this be installed?" was told yes.
+        Directory.CreateDirectory(_directory);
+        // A file the locator accepts but the analyzer cannot read: a zip without a package manifest.
+        PackageFixtureBuilder.CreatePlainZip(_directory, "Contoso.Broken.appx");
+
+        var run = await CliRunner.RunAsync(() => AnalyzeCommand.RunAsync([_directory, "--json"]));
+        var document = CliRunner.ReadDocument(run.StandardOutput);
+
+        Assert.Equal(1, run.ExitCode);
+        Assert.False(document.GetProperty("succeeded").GetBoolean());
+        Assert.Equal("unreadable-package", document.GetProperty("kind").GetString());
+    }
+
+    [Fact]
+    public async Task OneUnreadableFileDoesNotStopTheReadableOnes()
+    {
+        Directory.CreateDirectory(_directory);
+        PackageFixtureBuilder.CreateAppPackage(_directory, "Contoso.Notes.appx", "Contoso.Notes");
+        PackageFixtureBuilder.CreatePlainZip(_directory, "Contoso.Broken.appx");
+
+        var run = await CliRunner.RunAsync(() => AnalyzeCommand.RunAsync([_directory, "--json"]));
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Equal(1, CliRunner.ReadDocument(run.StandardOutput).GetArrayLength());
+        Assert.Contains("readable package", run.StandardError, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task AnUnusableArchitectureIsRejectedInJsonModeToo()
     {
         Directory.CreateDirectory(_directory);
