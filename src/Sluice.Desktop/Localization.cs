@@ -88,6 +88,7 @@ public sealed class Localization : ObservableObject
         ["StatusInstallFailed"] = "安装失败，日志里有错误码解释。",
         ["StatusCancelled"] = "已取消。",
         ["StatusCopied"] = "日志已复制。",
+        ["StatusCopyFailed"] = "复制失败：{0}",
         ["StatusEnvironment"] = "环境就绪：可以安装。",
         ["StatusEnvironmentWarnings"] = "环境有 {0} 条提示，见日志。",
         // headlines and details
@@ -134,7 +135,7 @@ public sealed class Localization : ObservableObject
         ["ChipDevOff"] = "开发者模式关",
         ["ChipDevUnknown"] = "开发者模式未知",
         ["EnvCheckFailed"] = "环境检查失败：{0}",
-        ["CrashDetails"] = "{0}{1}{1}崩溃详情已写入：{2}",
+        ["CrashDetails"] = "崩溃详情已写入：",
         // diagnostics the core layer emits
         ["Diag_EnvNotWindows"] = "当前不是 Windows：可以解析和下载，但无法安装。",
         ["Diag_EnvProbeFailed"] = "读取 Windows 环境失败：{0}",
@@ -243,6 +244,7 @@ public sealed class Localization : ObservableObject
         ["StatusInstallFailed"] = "The install failed, the log explains the error code.",
         ["StatusCancelled"] = "Cancelled.",
         ["StatusCopied"] = "Log copied.",
+        ["StatusCopyFailed"] = "Could not copy to the clipboard: {0}",
         ["StatusEnvironment"] = "Ready: this machine can install packages.",
         ["StatusEnvironmentWarnings"] = "{0} environment warnings, see the log.",
         ["ResultResolved"] = "Resolved",
@@ -286,7 +288,7 @@ public sealed class Localization : ObservableObject
         ["ChipDevOff"] = "developer mode off",
         ["ChipDevUnknown"] = "developer mode unknown",
         ["EnvCheckFailed"] = "Environment check failed: {0}",
-        ["CrashDetails"] = "{0}{1}{1}Crash details written to {2}",
+        ["CrashDetails"] = "Crash details were written to ",
         ["LogLevelInfo"] = "info",
         ["LogLevelSuccess"] = "done",
         ["LogLevelWarning"] = "warn",
