@@ -69,14 +69,27 @@ public static class PackageAnalyzer
 
     /// <summary>Analyses a file, returning <c>null</c> instead of throwing.</summary>
     /// <param name="filePath">Path to a package file.</param>
-    public static PackageAnalysis? TryAnalyze(string filePath)
+    public static PackageAnalysis? TryAnalyze(string filePath) => TryAnalyze(filePath, out _);
+
+    /// <summary>
+    /// Analyses a file, returning <c>null</c> instead of throwing and reporting why it could not.
+    /// </summary>
+    /// <param name="filePath">Path to a package file.</param>
+    /// <param name="reason">Why the file could not be analysed, when it could not.</param>
+    /// <remarks>
+    /// The reason matters: an encrypted Store package and a corrupt download both used to be reported
+    /// as "not a readable appx/msix package", which sends the operator looking for the wrong problem.
+    /// </remarks>
+    public static PackageAnalysis? TryAnalyze(string filePath, out string? reason)
     {
         try
         {
+            reason = null;
             return Analyze(filePath);
         }
-        catch (SluiceException)
+        catch (SluiceException ex)
         {
+            reason = ex.Message;
             return null;
         }
     }

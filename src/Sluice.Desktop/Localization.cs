@@ -151,6 +151,7 @@ public sealed class Localization : ObservableObject
         ["Diag_PrepareUnreadableBundle"] = "读不出 {0} 内部的清单：{1}",
         ["Diag_PrepareNotDeclared"] = "{0} 没有被应用清单声明，不下载。",
         ["Diag_PlanSkippedFile"] = "跳过「{0}」：它不是可读的 appx/msix 包。",
+        ["Diag_PlanSkippedFileReason"] = "跳过「{0}」：{1}",
         ["Diag_PlanNoMatchingArchitecture"] = "这个文件夹里没有给 {0} 编译的应用程序包；计划会用现有的那个，Windows 大概率会拒绝安装。",
         ["Diag_PlanBundleNoApplication"] = "bundle「{0}」没有适用于 {1} 的应用程序包。",
         ["Diag_PlanBundleNoApplicationHint"] = "重新下载这个产品；后端可能不提供这个架构。",
