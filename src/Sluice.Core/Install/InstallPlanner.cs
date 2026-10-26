@@ -126,8 +126,10 @@ public sealed class InstallPlanner
                     mainIdentity = child.Identity ?? mainIdentity;
                     dependencies = child.Dependencies;
                 }
-                catch (SluiceException ex)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
+                    // One unreadable child must not end the whole plan: record it and fall back to the
+                    // files that are in the folder.
                     issues.Add(new PlanIssue(
                         PlanIssueSeverity.Warning,
                         Diagnostics.DiagnosticMessage.Of("PlanBundleManifestUnreadable", ex.Message)));
