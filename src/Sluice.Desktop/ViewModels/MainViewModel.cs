@@ -748,6 +748,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 AddLog(LogLevel.Warning, loc => loc.Text(warning));
             }
 
+            foreach (var note in report.Notes)
+            {
+                AddLog(LogLevel.Info, loc => loc.Text(note));
+            }
+
             // The probe is fire and forget from the constructor, so it can land in the middle of a
             // resolve or an install; only an idle window may have its status line written.
             if (!Busy)

@@ -114,7 +114,7 @@ internal static class InstallCommand
             }
 
             await DownloadManifest
-                .SaveAsync(directory, DownloadManifest.FromResults(resolution, downloaded, architecture, locale), CancellationToken.None)
+                .SaveMergingAsync(directory, DownloadManifest.FromResults(resolution, downloaded, architecture, locale), CancellationToken.None)
                 .ConfigureAwait(false);
 
             if (!json)

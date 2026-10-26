@@ -61,6 +61,75 @@ public sealed record DownloadManifest(
         await JsonSerializer.SerializeAsync(stream, manifest, SerializerOptions, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Writes the manifest of a run that may only have touched part of the folder.
+    /// </summary>
+    /// <param name="directory">Download directory.</param>
+    /// <param name="manifest">Manifest of the run that just finished.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <remarks>
+    /// A partial run (<c>--deps-only</c>, <c>--only</c>) used to replace the manifest with the files it
+    /// downloaded. The folder still held the application, but the manifest no longer named it, so a later
+    /// <c>install --dir</c> planned against a folder that "has no application package" and refused to run.
+    /// Entries of the same product are kept and refreshed; a manifest of a different product is replaced,
+    /// because it describes a folder this run is not adding to.
+    /// </remarks>
+    public static async Task SaveMergingAsync(string directory, DownloadManifest manifest, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+
+        var existing = await LoadAsync(directory, cancellationToken).ConfigureAwait(false);
+        if (existing is not null)
+        {
+            // Entries whose file is gone describe a folder that no longer has that shape.
+            var present = existing.Packages
+                .Where(entry => IsFileNameInFolder(entry.FileName)
+                    && File.Exists(Path.Combine(directory, entry.FileName)))
+                .ToList();
+            existing = existing with { Packages = present };
+        }
+
+        await SaveAsync(directory, Merge(existing, manifest), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Combines the manifest of earlier runs with the one a run just produced.</summary>
+    /// <param name="existing">Manifest that was in the folder, when there was one.</param>
+    /// <param name="current">Manifest of the run that just finished.</param>
+    public static DownloadManifest Merge(DownloadManifest? existing, DownloadManifest current)
+    {
+        ArgumentNullException.ThrowIfNull(current);
+
+        if (existing is null
+            || existing.Packages.Count == 0
+            || !string.Equals(existing.ProductId, current.ProductId, StringComparison.OrdinalIgnoreCase))
+        {
+            return current;
+        }
+
+        var order = new List<string>();
+        var entries = new Dictionary<string, ManifestEntry>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in existing.Packages)
+        {
+            if (entries.TryAdd(entry.FileName, entry))
+            {
+                order.Add(entry.FileName);
+            }
+        }
+
+        foreach (var entry in current.Packages)
+        {
+            if (!entries.ContainsKey(entry.FileName))
+            {
+                order.Add(entry.FileName);
+            }
+
+            // The run that just finished is the newer answer for a file it touched.
+            entries[entry.FileName] = entry;
+        }
+
+        return current with { Packages = order.Select(name => entries[name]).ToList() };
+    }
+
 /// <summary>
 /// Narrows a folder of packages down to the ones a manifest names. A folder reused for several products
 /// otherwise offers the planner every file it holds, and picking the wrong one installs the wrong app.

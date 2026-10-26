@@ -98,8 +98,10 @@ internal static class DownloadCommand
             progress?.Finish();
         }
 
+        // Merged, not replaced: --deps-only and --only touch part of the folder, and the manifest of the
+        // files they did not download is what tells a later install that the application is still here.
         var manifest = DownloadManifest.FromResults(resolution, results, architecture, locale);
-        await DownloadManifest.SaveAsync(directory, manifest, CancellationToken.None).ConfigureAwait(false);
+        await DownloadManifest.SaveMergingAsync(directory, manifest, CancellationToken.None).ConfigureAwait(false);
 
         if (json)
         {
