@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+* The window remembers where it was. Size and position are kept in
+  `%LOCALAPPDATA%\sluice\window.json` and restored through a clamp against the work area, so a window
+  remembered on a bigger screen - or on a monitor that is no longer attached - opens fully visible
+  instead of with its status row below the bottom edge. A corrupt or missing file is simply no memory.
+
+### Fixed
+
+* Closing the window no longer disposes the cancellation source underneath a running stage. The pipeline
+  still holds that token while it unwinds, and a disposed source makes the next registration throw
+  `ObjectDisposedException` in a window that is already closing; the source is cancelled and left to the
+  run's own cleanup.
+
 ## [0.4.16] - 2026-10-27
 
 ### Fixed

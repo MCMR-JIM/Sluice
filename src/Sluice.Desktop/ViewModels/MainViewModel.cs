@@ -866,9 +866,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        // Cancel, but do not dispose: the pipeline that owns this token is still unwinding, and a
+        // token source disposed underneath it throws ObjectDisposedException from the next registration
+        // - while the window is already closing and cannot show anything. The process is ending, so the
+        // handle is not worth reclaiming; the run's own finally block disposes it when it finishes first.
         _cancellation?.Cancel();
-        _cancellation?.Dispose();
-        _cancellation = null;
     }
 
     private void OpenFolder()
