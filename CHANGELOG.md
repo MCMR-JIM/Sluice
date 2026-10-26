@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The delivery service session is renewed instead of trusted for the life of the process. The cookie
+  expires while the window is open, the service answers such a request with a fault that says nothing
+  about the cause, and every later call failed - reading exactly like an outage - until the app was
+  restarted. A fault now drops the cookie, fetches a fresh one and repeats the call once.
+* The install plan picks the application package built for the target architecture, not the largest
+  file in the folder. An offline folder with several builds (`--all-arch`) used to have the arm64
+  build staged on an x64 machine, which Windows rejects with 0x80073CFD. When nothing in the folder
+  fits, the plan still proceeds but warns that Windows will probably refuse it.
+
 ## [0.4.6] - 2026-10-27
 
 ### Fixed

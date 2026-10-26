@@ -164,6 +164,37 @@ public sealed class InstallPlannerTests : IDisposable
         Assert.DoesNotContain(plan.Steps, candidate => candidate.Kind == InstallStepKind.InstallFramework);
     }
 
+    [Fact]
+    public async Task PicksTheApplicationForTheTargetArchitectureEvenWhenAnotherOneIsBigger()
+    {
+        // An offline folder legitimately holds several builds (--all-arch). Choosing the largest file
+        // meant staging the arm64 build on an x64 machine, which Windows rejects with 0x80073CFD.
+        var x64 = PackageFixtureBuilder.CreateAppPackage(
+            _directory, "Contoso.Notes_2.0.0.0_x64.msix", "Contoso.Notes", "2.0.0.0", "x64", null, false, true, 0);
+        var arm64 = PackageFixtureBuilder.CreateAppPackage(
+            _directory, "Contoso.Notes_2.0.0.0_arm64.msix", "Contoso.Notes", "2.0.0.0", "arm64", null, false, true, 8192);
+
+        Assert.True(new FileInfo(arm64).Length > new FileInfo(x64).Length, "the arm64 fixture has to be the bigger file");
+
+        var plan = await new InstallPlanner().CreatePlanAsync([x64, arm64], new InstallPlannerOptions("x64"));
+
+        var main = Assert.Single(plan.Steps, step => step.Kind == InstallStepKind.InstallMain);
+        Assert.Equal("Contoso.Notes_2.0.0.0_x64.msix", main.FileName);
+    }
+
+    [Fact]
+    public async Task WarnsWhenOnlyADifferentlyBuiltApplicationIsAvailable()
+    {
+        var arm64 = PackageFixtureBuilder.CreateAppPackage(
+            _directory, "Contoso.Notes_2.0.0.0_arm64.msix", "Contoso.Notes", "2.0.0.0", "arm64", null, false, true, 0);
+
+        var plan = await new InstallPlanner().CreatePlanAsync([arm64], new InstallPlannerOptions("x64"));
+
+        var main = Assert.Single(plan.Steps, step => step.Kind == InstallStepKind.InstallMain);
+        Assert.Equal("Contoso.Notes_2.0.0.0_arm64.msix", main.FileName);
+        Assert.Contains(plan.Issues, issue => issue.Message.Code == "PlanNoMatchingArchitecture");
+    }
+
     private string CreateFramework(string name, string version, string architecture) =>
         PackageFixtureBuilder.CreateAppPackage(
             _directory,
