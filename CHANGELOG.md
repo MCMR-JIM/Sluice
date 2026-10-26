@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+* Cancelling a run now ends the PowerShell child instead of only abandoning the wait. Waiting with a
+  token left `Add-AppxPackage` running in a process nobody was watching, so the window could say
+  "cancelled" while a deployment was still going; the child is killed as a process tree and reaped,
+  and a test asserts that the process it started is gone after cancellation.
+
 ### Changed
 
 * The window no longer asks for an architecture it already knows: the left pane shows the machine's
