@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.37] - 2026-10-27
+
+### Fixed
+
+* `install --dry-run <link>` works on Linux and macOS. Whether an argument is a folder was decided with
+  `Path.DirectorySeparatorChar`, which is a slash there - and every Store link contains one, so the link was
+  taken as the download folder and the run stopped with "is neither an existing file nor a directory" on
+  exactly the platforms where the manual recommends the dry run. Both separators are looked for now, and a
+  value that names a scheme is never a path.
+* The window reports a folder it cannot open instead of ending. `Open folder` created the directory and
+  started explorer with no guard: a policy that forbids the folder, a drive that vanished or an explorer that
+  refuses to start ended the window, where the clipboard paths already answer such a failure with a status
+  line.
+
+### Changed
+
+* A new test keeps the window's two language tables in step: a key in only one of them makes the window
+  print the key name itself, and templates whose placeholders disagree throw while the line renders.
+
 ## [0.4.36] - 2026-10-27
 
 ### Fixed
