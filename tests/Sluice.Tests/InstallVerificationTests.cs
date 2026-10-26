@@ -45,6 +45,28 @@ public sealed class InstallVerificationTests
         Assert.True(AppxInstaller.EvaluateVerification(Installed("2.5.0.0"), "2.0.0.0", null).Succeeded);
     }
 
+    [Theory]
+    [InlineData(true, null, true, true)]
+    [InlineData(true, "Get-AppxPackage failed", true, false)]
+    [InlineData(false, null, true, false)]
+    [InlineData(true, null, false, false)]
+    public void AVerifiedInstallIsOneThatWasActuallyChecked(bool succeeded, string? problem, bool requested, bool expected)
+    {
+        // "--no-verify" reads nothing back, so the outcome carries neither a registration nor a problem, and
+        // "succeeded and no problem" was printed as verified: a checked install and an unchecked one were
+        // indistinguishable.
+        Assert.Equal(expected, InstallVerdict.Verified(succeeded, problem, requested));
+    }
+
+    [Theory]
+    [InlineData(false, null, "skipped")]
+    [InlineData(true, null, "checked")]
+    [InlineData(true, "boom", "unverified")]
+    public void TheCheckHasThreeAnswersNotTwo(bool requested, string? problem, string expected)
+    {
+        Assert.Equal(expected, InstallVerdict.Verification(requested, problem));
+    }
+
     [Fact]
     public void TheMessageDoesNotClaimThePackageIsMissingWhenTheCheckCouldNotRun()
     {
