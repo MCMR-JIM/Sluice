@@ -99,9 +99,10 @@ public sealed class InstallPlanner
         var mainIdentity = application.Identity;
         var dependencies = application.Dependencies;
 
-        var locale = string.IsNullOrWhiteSpace(options.Locale)
-            ? System.Globalization.CultureInfo.CurrentUICulture.Name
-            : options.Locale;
+        // Normalised, not taken as written: a front end hands over whatever was typed, and zh_CN split
+        // into one part, matched no resource package, and left the plan without the resources the user
+        // asked for - silently, because every remaining step still succeeded.
+        var locale = Store.LocaleTag.NormalizeOrDefault(options.Locale);
 
         if (application.Kind == PackageKind.Bundle)
         {

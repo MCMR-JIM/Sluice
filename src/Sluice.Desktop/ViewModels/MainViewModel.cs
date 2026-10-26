@@ -477,8 +477,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         SetStatus(loc => loc.Format("StatusResolving", request.ProductId));
         AddLog(LogLevel.Command, loc => $"{ModeLabel(mode)} · {Reference}");
 
+        // The locale field is free text. A value that is not a language tag is replaced by the display
+        // language and said out loud, because a tag the delivery service cannot match costs the install
+        // its resource packages without failing anything.
+        var typedLocale = Locale;
+        var locale = Sluice.Store.LocaleTag.NormalizeOrDefault(typedLocale);
+        if (Sluice.Store.LocaleTag.Normalize(typedLocale) is null && !string.IsNullOrWhiteSpace(typedLocale))
+        {
+            AddLog(LogLevel.Warning, loc => loc.Format("LogLocaleIgnored", typedLocale, locale));
+        }
+
         using var resolver = new StorePackageResolver();
-        var resolution = await resolver.ResolveAsync(request, Locale, token).ConfigureAwait(true);
+        var resolution = await resolver.ResolveAsync(request, locale, token).ConfigureAwait(true);
 
         _product = resolution.Product;
         ProductTitle = resolution.Product.Title;
@@ -518,7 +528,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         var selection = PackageSelector.Select(
             resolution,
-            new PackageSelectionOptions(Architecture, Locale, IncludeAllArchitectures: AllArchitectures));
+            new PackageSelectionOptions(Architecture, locale, IncludeAllArchitectures: AllArchitectures));
 
         Directory.CreateDirectory(CacheDirectory);
         using var downloader = new PackageDownloader();
@@ -533,7 +543,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ProgressIndeterminate = false;
             Progress = 0;
             var preparation = await new PackagePreparer(downloader)
-                .PrepareAsync(resolution, selection, CacheDirectory, Architecture, Locale, downloadOptions, token)
+                .PrepareAsync(resolution, selection, CacheDirectory, Architecture, locale, downloadOptions, token)
                 .ConfigureAwait(true);
 
             foreach (var note in preparation.Notes)
@@ -567,7 +577,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ? new InstallPlanner(new SnapshotInventory(token => _inventory.GetAllAsync(token)))
             : new InstallPlanner();
         var plan = await planner
-            .CreatePlanAsync(files, new InstallPlannerOptions(Architecture, Locale), token)
+            .CreatePlanAsync(files, new InstallPlannerOptions(Architecture, locale), token)
             .ConfigureAwait(true);
 
         PlanRows.Clear();

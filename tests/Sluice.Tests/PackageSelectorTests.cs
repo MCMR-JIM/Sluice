@@ -50,6 +50,22 @@ public sealed class PackageSelectorTests
     }
 
     [Fact]
+    public void KeepsTheResourcePackagesWhenTheTagIsTypedWithAnUnderscore()
+    {
+        // The window has a free text field for this value, and the separator it accepted travelled into
+        // the selection: zh_CN split into one part and matched no resource package, so the install
+        // arrived without its resources while every step reported success.
+        var resolution = CreateResolution(
+            Package("Contoso.Notes", "2.0.0.0", "neutral", 200),
+            Package("Contoso.Notes", "2.0.0.0", "neutral", 20, resourceId: "zh-CN"));
+
+        var selection = PackageSelector.Select(resolution, new PackageSelectionOptions("x64", "zh_CN"));
+
+        Assert.Single(selection.Resources);
+        Assert.Equal("zh-CN", selection.Resources[0].Package.ReadableFileName.Split('_')[^1].Split('.')[0]);
+    }
+
+    [Fact]
     public void KeepsResourcePackagesForTheRequestedLocale()
     {
         var resolution = CreateResolution(

@@ -1,4 +1,5 @@
 using Sluice.Packages;
+using Sluice.Store;
 
 namespace Sluice.Cli.Cli;
 
@@ -51,36 +52,13 @@ internal static class OptionValues
         var value = arguments.Get("locale");
         if (value is null)
         {
-            return Defaults.Locale;
+            return LocaleTag.Default;
         }
 
-        var normalized = value.Trim().Replace('_', '-');
-        if (!IsLanguageTag(normalized))
-        {
-            throw new FormatException(
+        // The normalising and the shape check live in the core, because the window has a free text field
+        // for the same value and used to keep the silent resource loss this command line no longer has.
+        return LocaleTag.Normalize(value)
+            ?? throw new FormatException(
                 $"'{value}' is not a language tag; use one like zh-CN, zh-Hans-CN or en-US");
-        }
-
-        return normalized;
-    }
-
-    /// <summary>True for the shape of a language tag Windows and the Store use.</summary>
-    /// <param name="value">Candidate tag.</param>
-    private static bool IsLanguageTag(string value)
-    {
-        var parts = value.Split('-');
-        if (parts.Length is < 1 or > 5)
-        {
-            return false;
-        }
-
-        if (parts[0].Length is < 2 or > 3 || !parts[0].All(char.IsAsciiLetter))
-        {
-            return false;
-        }
-
-        return parts
-            .Skip(1)
-            .All(part => part.Length is >= 2 and <= 8 && part.All(char.IsAsciiLetterOrDigit));
     }
 }
