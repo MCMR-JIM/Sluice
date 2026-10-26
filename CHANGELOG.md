@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.39] - 2026-10-27
+
+### Fixed
+
+* A single HTTP 500 no longer ends a release. Publishing v0.4.37 failed after the three windows archives had
+  been built, because one call to the GitHub API answered 500 and the job gave up; the release had to be
+  re-run by hand. The calls that publish a release are retried now, a 4xx is treated as a refusal instead of
+  a hiccup, and a release that appears between the check and the create is filled in instead of failing.
+* The branch sweep deletes branches again. It parsed `git branch -r`, which prints `HEAD -> origin/main` in a
+  fresh clone, so every run tried to delete a branch with that name: the API refused with 422, the job
+  reported a failure and nothing was ever swept. It lists short names now, retries each branch on its own,
+  and reports how many it deleted and how many were left.
+
 ## [0.4.38] - 2026-10-27
 
 ### Fixed

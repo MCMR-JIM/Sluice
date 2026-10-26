@@ -11,9 +11,9 @@
     <!-- The desktop project targets Windows; this lets Linux and macOS build and test it too. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <Version>0.4.38</Version>
-    <FileVersion>0.4.38.0</FileVersion>
-    <AssemblyVersion>0.4.38.0</AssemblyVersion>
+    <Version>0.4.39</Version>
+    <FileVersion>0.4.39.0</FileVersion>
+    <AssemblyVersion>0.4.39.0</AssemblyVersion>
     <Product>Sluice</Product>
     <Authors>Sluice contributors</Authors>
     <RepositoryType>git</RepositoryType>
