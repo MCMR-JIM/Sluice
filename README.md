@@ -183,7 +183,7 @@ Sluice explain 0x80073CF3 --json
 
 | Option | Applies to | Effect |
 | --- | --- | --- |
-| `--locale \<tag\>` | resolve, download, install, plan | Language of the resource packages (default: Windows display language) |
+| `--locale \<tag\>` | resolve, download, install, plan | Language of the resource packages, as a tag like `zh-CN` (default: Windows display language); `zh_CN` is accepted and normalised |
 | `--arch \<arch\>` | download, install, plan | Target architecture (default: this machine) |
 | `--all-arch` | download, install | Keep every architecture, for offline archives |
 | `--all-deps` | install | Download every candidate dependency instead of only the declared ones |
