@@ -156,10 +156,19 @@ internal static class InstallCommand
             return 0;
         }
 
-        if (!arguments.Has("yes") && !Console.IsInputRedirected && !Confirm())
+        var consent = DecideConsent(arguments.Has("yes"), Console.IsInputRedirected, Confirm);
+        if (!consent.Proceed)
         {
-            Console.WriteLine("Cancelled.");
-            return 1;
+            if (consent.Message is null)
+            {
+                Console.WriteLine("Cancelled.");
+            }
+            else
+            {
+                Console.Error.WriteLine(consent.Message);
+            }
+
+            return consent.ExitCode;
         }
 
         var installer = new AppxInstaller(
@@ -302,6 +311,35 @@ internal static class InstallCommand
             + $"candidate package(s) into {directory} "
             + (allDependencies ? "(every candidate, because of --all-deps)" : "(only the dependencies the manifest declares)")
             + ", then plan and install them.");
+    }
+
+    /// <summary>
+    /// Decides whether the install may go ahead. A run started by a script must say so explicitly:
+    /// skipping the question because nobody can answer it installed packages without consent.
+    /// </summary>
+    /// <param name="assumeYes">True when the caller passed the yes switch.</param>
+    /// <param name="stdinRedirected">True when standard input is not a terminal.</param>
+    /// <param name="prompt">Asks the operator; only consulted when a terminal is attached.</param>
+    /// <returns>Whether to proceed, the exit code to use otherwise, and a message for stderr.</returns>
+    internal static (bool Proceed, int ExitCode, string? Message) DecideConsent(
+        bool assumeYes,
+        bool stdinRedirected,
+        Func<bool> prompt)
+    {
+        if (assumeYes)
+        {
+            return (true, 0, null);
+        }
+
+        if (stdinRedirected)
+        {
+            return (
+                false,
+                2,
+                "error: install asks for confirmation and standard input is not a terminal; pass --yes to install without a prompt");
+        }
+
+        return prompt() ? (true, 0, null) : (false, 1, null);
     }
 
     private static void WriteOutcome(InstallOutcome outcome)
