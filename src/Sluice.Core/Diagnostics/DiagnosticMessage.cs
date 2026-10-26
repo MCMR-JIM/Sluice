@@ -51,6 +51,7 @@ internal static class DiagnosticText
         ["PrepareInnerPackage"] = "{0} carries {1} for {2}.",
         ["PrepareUnreadableBundle"] = "Could not read the inner manifest of {0}: {1}",
         ["PrepareNotDeclared"] = "{0} is not declared by the app manifest; not downloading it.",
+        ["PrepareForeignResource"] = "{0} belongs to another package family; not downloading it.",
         ["PlanSkippedFile"] = "Skipped '{0}': it is not a readable appx/msix package.",
         ["PlanSkippedFileReason"] = "Skipped '{0}': {1}",
         ["PlanBundleNoApplication"] = "Bundle '{0}' has no application package for {1}.",
@@ -70,6 +71,9 @@ internal static class DiagnosticText
         ["PlanInventoryUnreadable"] = "Could not read the installed package inventory ({0}); every dependency in the folder will be installed.",
         ["PlanInventoryCheckFailed"] = "Could not check whether {0} is installed ({1}).",
     };
+
+    /// <summary>Every diagnostic code the core layer can emit.</summary>
+    public static IReadOnlyList<string> Codes { get; } = Templates.Keys.OrderBy(code => code, StringComparer.Ordinal).ToList();
 
     /// <summary>Formats a code in English; unknown codes are returned unchanged.</summary>
     /// <param name="code">Message code or ready made sentence.</param>

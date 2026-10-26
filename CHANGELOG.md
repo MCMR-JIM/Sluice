@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The note about a resource package that belongs to another family follows the language. It was the last
+  diagnostic still written as a finished English sentence, so the window could not translate it while
+  every other note followed the switch. A new test now proves that every diagnostic the core can emit
+  has a translation in the window, so the next one cannot be forgotten.
+
 ## [0.4.19] - 2026-10-27
 
 ### Fixed
