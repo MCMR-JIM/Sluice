@@ -13,12 +13,20 @@ namespace Sluice.Download;
 /// <param name="Overwrite">Re-download files that already exist and verify, instead of skipping them.</param>
 /// <param name="VerifyDigest">Verify the SHA-1 digest the delivery service published.</param>
 /// <param name="Progress">Callback invoked with throttled progress updates.</param>
+/// <param name="ProgressIntervalBytes">
+/// How much data may pass between two progress callbacks. Reporting every buffer made a large download
+/// push thousands of updates per file at the window, each one a dispatcher hop.
+/// </param>
 public sealed record DownloadOptions(
     int MaxParallelism = 3,
     bool Overwrite = false,
     bool VerifyDigest = true,
-    Action<DownloadProgress>? Progress = null)
+    Action<DownloadProgress>? Progress = null,
+    long ProgressIntervalBytes = DownloadOptions.DefaultProgressIntervalBytes)
 {
+    /// <summary>Default span between progress callbacks: one mebibyte.</summary>
+    public const long DefaultProgressIntervalBytes = 1024 * 1024;
+
     /// <summary>Options used when the caller supplies none.</summary>
     public static DownloadOptions Default { get; } = new();
 }

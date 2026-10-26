@@ -222,6 +222,8 @@ public sealed class PackageDownloader : IDisposable
             useAsync: true);
 
         var received = append ? resumeFrom : 0;
+        var reported = received;
+        var interval = Math.Max(1, options.ProgressIntervalBytes);
         var buffer = ArrayPool<byte>.Shared.Rent(CopyBufferSize);
         try
         {
@@ -235,12 +237,25 @@ public sealed class PackageDownloader : IDisposable
 
                 await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
                 received += read;
-                options.Progress?.Invoke(new DownloadProgress(package.Package.ReadableFileName, received, total));
+
+                // One callback per interval instead of one per buffer: a 300 MiB package used to push more
+                // than two thousand updates, each of them a trip to the window's dispatcher.
+                if (received - reported >= interval)
+                {
+                    reported = received;
+                    options.Progress?.Invoke(new DownloadProgress(package.Package.ReadableFileName, received, total));
+                }
             }
         }
         finally
         {
             ArrayPool<byte>.Shared.Return(buffer);
+        }
+
+        // The last word on the file always goes out, so a progress bar cannot stop short of the end.
+        if (received > reported)
+        {
+            options.Progress?.Invoke(new DownloadProgress(package.Package.ReadableFileName, received, total));
         }
 
         if (total > 0 && received < total)

@@ -40,8 +40,9 @@ internal static class PlanCommand
         }
 
         var shell = new PowerShellHost();
+        var inventory = new AppxInventory(shell);
         var planner = OperatingSystem.IsWindows() && shell.IsAvailable
-            ? new InstallPlanner(new AppxInventory(shell))
+            ? new InstallPlanner(new SnapshotInventory(token => inventory.GetAllAsync(token)))
             : new InstallPlanner();
 
         var plan = await planner.CreatePlanAsync(
