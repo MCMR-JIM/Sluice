@@ -615,6 +615,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         SetStage("StageInstall");
         ProgressIndeterminate = true;
+
+        // The download phase left the bar at 100; the install counts its own steps, so it restarts at zero
+        // deliberately instead of appearing to jump backwards.
+        Progress = 0;
         var installer = new AppxInstaller(
             _shell,
             _inventory,
@@ -713,8 +717,19 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 loc => $"{loc.Get(result.Succeeded ? "StateOk" : "StateFailed")} · {result.Step.FileName}"
                     + (result.HResult is null ? string.Empty : $" · {AppxErrorCatalog.Format(result.HResult.Value)}"));
 
+            // A step result makes the bar determinate: it used to keep the download phase's animation, so
+            // the install showed a marquee while the numbers underneath were being set.
+            ProgressIndeterminate = false;
+
             var done = PlanRows.Count(row2 => row2.State is "ok" or "failed");
-            Progress = PlanRows.Count == 0 ? 0 : Math.Round(done * 100d / PlanRows.Count, 1);
+            Progress = InstallProgress.Percent(done, PlanRows.Count);
+
+            var stepNumber = InstallProgress.StepNumber(plan, result.Step);
+            SetStatus(loc => loc.Format(
+                "StatusInstalling",
+                stepNumber == 0 ? done : stepNumber,
+                plan.Steps.Count,
+                result.Step.FileName));
         }
 
         Dispatcher(Apply);

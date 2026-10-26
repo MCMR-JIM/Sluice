@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The install phase shows real step progress. It left the bar animating from the download stage and never
+  turned that off, so the whole install showed a marquee while the numbers underneath were being set,
+  and the status line still described the download. Each step now makes the bar determinate and names
+  itself ("installing step 2 of 4: …"), and the bar restarts at zero when the install begins instead of
+  jumping back from the download's 100%.
+
 ## [0.4.24] - 2026-10-27
 
 ### Fixed
