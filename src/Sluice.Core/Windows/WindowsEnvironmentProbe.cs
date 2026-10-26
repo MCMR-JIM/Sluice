@@ -14,7 +14,8 @@ namespace Sluice.Windows;
 /// <param name="IsElevated">Whether the current process is elevated.</param>
 /// <param name="PowerShellPath">PowerShell executable that will be used.</param>
 /// <param name="FreeDiskBytes">Free space on the system drive.</param>
-/// <param name="Warnings">Things that are likely to break an install.</param>
+/// <param name="Warnings">Things that break an install until they are changed.</param>
+/// <param name="Notes">Advisory findings: worth knowing, never a reason to refuse an install.</param>
 public sealed record EnvironmentReport(
     bool IsWindows,
     string Architecture,
@@ -27,7 +28,8 @@ public sealed record EnvironmentReport(
     bool? IsElevated,
     string? PowerShellPath,
     long FreeDiskBytes,
-    IReadOnlyList<Diagnostics.DiagnosticMessage> Warnings);
+    IReadOnlyList<Diagnostics.DiagnosticMessage> Warnings,
+    IReadOnlyList<Diagnostics.DiagnosticMessage> Notes);
 
 /// <summary>
 /// Checks the parts of Windows that actually decide whether an appx install will succeed:
@@ -61,7 +63,8 @@ public static class WindowsEnvironmentProbe
                 null,
                 shell.Executable,
                 0,
-                [Diagnostics.DiagnosticMessage.Of("EnvNotWindows")]);
+                [Diagnostics.DiagnosticMessage.Of("EnvNotWindows")],
+                []);
         }
 
         var script = """
@@ -107,7 +110,8 @@ public static class WindowsEnvironmentProbe
                 null,
                 shell.Executable,
                 0,
-                [Diagnostics.DiagnosticMessage.Of("EnvProbeFailed", result.StandardError)]);
+                [Diagnostics.DiagnosticMessage.Of("EnvProbeFailed", result.StandardError)],
+                []);
         }
 
         using var document = JsonDocument.Parse(result.StandardOutput);
@@ -145,9 +149,14 @@ public static class WindowsEnvironmentProbe
             warnings.Add(Diagnostics.DiagnosticMessage.Of("EnvSideloadingOff"));
         }
 
+        // Developer Mode is not needed to deploy a signed package: it is needed for the loose file
+        // fallback, which only runs after a registration failure. Reporting it as a warning made every
+        // machine with the policy explicitly off exit 3, for a machine that can install perfectly well -
+        // the exit code is documented as "the machine cannot deploy packages until the warnings are fixed".
+        var notes = new List<Diagnostics.DiagnosticMessage>();
         if (developerMode == false)
         {
-            warnings.Add(Diagnostics.DiagnosticMessage.Of("EnvDevModeOff"));
+            notes.Add(Diagnostics.DiagnosticMessage.Of("EnvDevModeOff"));
         }
 
         foreach (var (name, status) in services)
@@ -184,7 +193,8 @@ public static class WindowsEnvironmentProbe
             elevated,
             powerShellPath,
             freeSpace,
-            warnings);
+            warnings,
+            notes);
     }
 
     private static string? ReadString(JsonElement element, string name) =>

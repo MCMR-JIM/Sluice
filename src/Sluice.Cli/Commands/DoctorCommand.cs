@@ -53,6 +53,18 @@ internal static class DoctorCommand
             }
         }
 
+        if (report.Notes.Count > 0)
+        {
+            // Notes are advisory: they describe a fallback that will not work, not a machine that cannot
+            // deploy, so they do not change the exit code.
+            Console.WriteLine();
+            Console.WriteLine("Notes");
+            foreach (var note in report.Notes)
+            {
+                Console.WriteLine($"  - {note}");
+            }
+        }
+
         return report.Warnings.Count == 0 ? 0 : 3;
     }
 

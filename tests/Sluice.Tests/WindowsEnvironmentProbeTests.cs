@@ -56,6 +56,26 @@ public sealed class WindowsEnvironmentProbeTests
     }
 
     [Fact]
+    public void DeveloperModeOffIsNotAWarning()
+    {
+        // Developer Mode is what the loose file fallback needs, and that fallback only runs after a
+        // registration failure. Reporting it as a warning made doctor exit 3 - which is documented as
+        // "the machine cannot deploy packages until the warnings are fixed" - on machines that install
+        // signed packages perfectly well, because the policy is explicitly off on most of them.
+        var report = Parse("""{"allowAllTrustedApps": 1, "allowDevelopmentWithoutDevLicense": 0, "services": {}}""");
+
+        Assert.Empty(report.Warnings);
+    }
+
+    [Fact]
+    public void DeveloperModeOffIsStillReported()
+    {
+        var report = Parse("""{"allowAllTrustedApps": 1, "allowDevelopmentWithoutDevLicense": 0, "services": {}}""");
+
+        Assert.Contains(report.Notes, note => note.Text.Contains("Developer Mode", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void WarnsAboutDeploymentServicesThatAreNotRunning()
     {
         var report = Parse("""
