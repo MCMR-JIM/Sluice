@@ -171,16 +171,49 @@ jobs:
         run: |
           TAG="${{ steps.version.outputs.tag }}"
           TITLE="Sluice ${{ steps.version.outputs.version }}"
+
+          # Every call below talks to the GitHub API, which answers 5xx on its own schedule: release
+          # v0.4.37 failed here on a single HTTP 500 after the three publish jobs had already succeeded,
+          # and the release had to be re-run by hand. A 4xx is a refusal, not a hiccup, so it is not
+          # retried - the fallback below handles the one refusal that matters (the release already
+          # exists).
+          retry() {
+            local label="$1"
+            shift
+            local attempt=1 output
+            while true; do
+              if output=$("$@" 2>&1); then
+                echo "$output"
+                return 0
+              fi
+              echo "$output" >&2
+              echo "$output" > "${RUNNER_TEMP}/last-attempt.log"
+              if echo "$output" | grep -qiE 'HTTP 4[0-9][0-9]'; then
+                echo "$label: the API refused, not retrying" >&2
+                return 1
+              fi
+              if [ "$attempt" -ge 4 ]; then
+                echo "$label: giving up after $attempt attempts" >&2
+                return 1
+              fi
+              echo "$label: attempt $attempt failed, retrying in $((attempt * 5))s" >&2
+              sleep $((attempt * 5))
+              attempt=$((attempt + 1))
+            done
+          }
+
           if gh release view "${TAG}" > /dev/null 2>&1; then
             echo "release ${TAG} exists, replacing its assets and notes"
-            gh release upload "${TAG}" release-assets/* --clobber
-            gh release edit "${TAG}" --title "${TITLE}" --notes-file notes.md
+            retry "upload the assets" gh release upload "${TAG}" release-assets/* --clobber
+            retry "update the notes" gh release edit "${TAG}" --title "${TITLE}" --notes-file notes.md
+          elif retry "create the release" gh release create "${TAG}" release-assets/* --title "${TITLE}" --notes-file notes.md --generate-notes; then
+            echo "created ${TAG}"
+          elif grep -qiE "already exists|HTTP 422" "${RUNNER_TEMP}/last-attempt.log"; then
+            # The release appeared between the two calls, so this run only has to fill it in.
+            echo "the release appeared while this job ran; updating it"
+            retry "upload the assets" gh release upload "${TAG}" release-assets/* --clobber
+            retry "update the notes" gh release edit "${TAG}" --title "${TITLE}" --notes-file notes.md
           else
-            # No --target here: the tag already exists when a release is rebuilt, and the API
-            # rejects a target for a tag that is already there.
-            gh release create "${TAG}" \
-              release-assets/* \
-              --title "${TITLE}" \
-              --notes-file notes.md \
-              --generate-notes
+            echo "could not create or update the release" >&2
+            exit 1
           fi
