@@ -16,6 +16,12 @@ public static class PackageAnalyzer
     /// <summary>Entry name of a bundle manifest.</summary>
     public const string BundleManifestEntryName = "AppxMetadata/AppxBundleManifest.xml";
 
+    /// <summary>Extensions that mark a Store package this tool cannot open, in any letter case.</summary>
+    private static readonly HashSet<string> EncryptedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".eappx", ".emsix", ".eappxbundle", ".emsixbundle",
+    };
+
     /// <summary>
     /// Analyses a package file.
     /// </summary>
@@ -31,8 +37,11 @@ public static class PackageAnalyzer
             throw new SluiceException($"Package file '{filePath}' does not exist.");
         }
 
+        // Compared without case: Windows file names are case insensitive, so a file called
+        // Contoso.EAPPX is the same encrypted package as Contoso.eappx - and it used to fall through to
+        // the ZIP reader, which then blamed the container instead of the encryption.
         var extension = Path.GetExtension(filePath);
-        if (extension is ".eappx" or ".emsix" or ".eappxbundle" or ".emsixbundle")
+        if (EncryptedExtensions.Contains(extension))
         {
             throw new SluiceException(
                 $"'{Path.GetFileName(filePath)}' is an encrypted Store package. It can only be installed with a "

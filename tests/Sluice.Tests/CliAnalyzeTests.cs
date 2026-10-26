@@ -44,13 +44,16 @@ public sealed class CliAnalyzeTests : IDisposable
     {
         Directory.CreateDirectory(_directory);
         PackageFixtureBuilder.CreateAppPackage(_directory, "Contoso.Notes.appx", "Contoso.Notes");
-        PackageFixtureBuilder.CreatePlainZip(_directory, "Contoso.Broken.appx");
+        PackageFixtureBuilder.CreatePlainZip(_directory, "Contoso.Secret.emsix");
 
         var run = await CliRunner.RunAsync(() => AnalyzeCommand.RunAsync([_directory, "--json"]));
 
         Assert.Equal(0, run.ExitCode);
         Assert.Equal(1, CliRunner.ReadDocument(run.StandardOutput).GetArrayLength());
-        Assert.Contains("readable package", run.StandardError, StringComparison.OrdinalIgnoreCase);
+
+        // The reason the analyzer gave reaches the operator. "not a readable package" sent people looking
+        // for a corrupt download when the file was an encrypted Store package.
+        Assert.Contains("encrypted", run.StandardError, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

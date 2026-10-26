@@ -32,10 +32,13 @@ internal static class AnalyzeCommand
         var analyses = new List<PackageAnalysis>();
         foreach (var file in files)
         {
-            var analysis = PackageAnalyzer.TryAnalyze(file);
+            var analysis = PackageAnalyzer.TryAnalyze(file, out var reason);
             if (analysis is null)
             {
-                Console.Error.WriteLine($"warning: skipped '{Path.GetFileName(file)}' (not a readable package)");
+                // The analyzer knows why - an encrypted Store package, a truncated download, a container
+                // that is not a package - and this warning used to throw that away and say only that the
+                // file was not readable, which sends the operator looking for the wrong problem.
+                Console.Error.WriteLine($"warning: skipped '{Path.GetFileName(file)}': {reason ?? "it is not a readable appx or msix package"}");
                 continue;
             }
 
