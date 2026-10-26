@@ -150,7 +150,13 @@ internal static class InstallCommand
 
         var shell = new PowerShellHost();
         var inventory = new AppxInventory(shell);
-        var planner = OperatingSystem.IsWindows() && shell.IsAvailable ? new InstallPlanner(inventory) : new InstallPlanner();
+
+        // Planning asks about every dependency and then about the application; one snapshot answers all
+        // of it from a single read of the machine. The installer keeps the live inventory, because it
+        // changes the machine as it goes.
+        var planner = OperatingSystem.IsWindows() && shell.IsAvailable
+            ? new InstallPlanner(new SnapshotInventory(token => inventory.GetAllAsync(token)))
+            : new InstallPlanner();
         var plan = await planner
             .CreatePlanAsync(files, new InstallPlannerOptions(architecture, locale), CancellationToken.None)
             .ConfigureAwait(false);

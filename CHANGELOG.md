@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+* Planning reads the machine once. It asked about the installed frameworks and then about the
+  application, and each question started its own PowerShell process - half a second each, and two
+  slightly different views of the machine. A snapshot answers both, and the installer keeps asking the
+  live inventory because it is the thing changing the machine.
+* Download progress is reported once per mebibyte instead of once per 128 KiB buffer, with the final
+  update always sent. A 300 MiB package used to push more than two thousand callbacks at the window,
+  each of them a trip through its dispatcher.
+
 ## [0.4.22] - 2026-10-27
 
 ### Fixed

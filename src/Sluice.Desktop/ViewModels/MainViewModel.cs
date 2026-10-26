@@ -559,7 +559,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
         SetStage("StagePlan");
         ProgressIndeterminate = true;
-        var planner = _shell.IsAvailable ? new InstallPlanner(_inventory) : new InstallPlanner();
+        // One snapshot per run: the planner asks about every dependency and then the application, and this
+        // view model keeps its inventory for the whole session, so it must not cache across runs.
+        var planner = _shell.IsAvailable
+            ? new InstallPlanner(new SnapshotInventory(token => _inventory.GetAllAsync(token)))
+            : new InstallPlanner();
         var plan = await planner
             .CreatePlanAsync(files, new InstallPlannerOptions(Architecture, Locale), token)
             .ConfigureAwait(true);
