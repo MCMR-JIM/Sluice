@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using Sluice.Download;
 using Sluice.Install;
@@ -684,9 +685,14 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 AddLog(LogLevel.Warning, loc => loc.Text(warning));
             }
 
-            StatusLine = report.Warnings.Count == 0
-                ? Loc.Get("StatusEnvironment")
-                : Loc.Format("StatusEnvironmentWarnings", report.Warnings.Count);
+            // The probe is fire and forget from the constructor, so it can land in the middle of a
+            // resolve or an install; only an idle window may have its status line written.
+            if (!Busy)
+            {
+                SetStatus(loc => report.Warnings.Count == 0
+                    ? loc.Get("StatusEnvironment")
+                    : loc.Format("StatusEnvironmentWarnings", report.Warnings.Count));
+            }
         }
         catch (Exception ex)
         {
@@ -839,19 +845,40 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void CopyLog()
     {
-        var text = string.Join(Environment.NewLine, Log.Select(entry => $"{entry.Time}  {entry.LevelText,-7} {entry.Text}"));
-        if (!string.IsNullOrEmpty(text))
+        var text = string.Join(
+            Environment.NewLine,
+            Log.Select(entry => $"{entry.Time}  {entry.LevelText,-7} {entry.Text}"));
+
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
+
+        try
         {
             Clipboard.SetText(text);
             SetStatus(loc => loc.Get("StatusCopied"));
+        }
+        catch (Exception ex) when (ex is ExternalException or COMException or InvalidOperationException)
+        {
+            // Another process can hold the clipboard open (remote sessions and clipboard managers do
+            // it constantly). A failed copy is a status line, not the end of the window.
+            SetStatus(loc => loc.Format("StatusCopyFailed", ex.Message));
         }
     }
 
     private void Paste()
     {
-        if (Clipboard.ContainsText())
+        try
         {
-            Reference = Clipboard.GetText().Trim();
+            if (Clipboard.ContainsText())
+            {
+                Reference = Clipboard.GetText().Trim();
+            }
+        }
+        catch (Exception ex) when (ex is ExternalException or COMException or InvalidOperationException)
+        {
+            SetStatus(loc => loc.Format("StatusCopyFailed", ex.Message));
         }
     }
 

@@ -30,17 +30,35 @@ public partial class App : Application
 
     private static void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        // A binding mistake must never be silent: it goes to a file next to the temp folder so it
-        // can be read without a debugger, and the user sees a short message.
+        // A binding mistake must never be silent, but reporting it must not become a second failure
+        // either: every step here is guarded, because an exception raised inside this handler used to
+        // take the process down without a dialog and without a log. The message is assembled from a
+        // template without placeholders for the same reason - a template edit could otherwise throw
+        // a FormatException exactly where everything is already going wrong.
         var path = Path.Combine(Path.GetTempPath(), "Sluice-UI-crash.txt");
-        File.WriteAllText(path, e.Exception.ToString());
+        try
+        {
+            File.WriteAllText(path, e.Exception.ToString());
+        }
+        catch (Exception)
+        {
+            // A read only or locked temp folder; the dialog below still names the failure.
+        }
 
-        var text = new Localization().Format("CrashDetails", e.Exception.Message, path);
-        MessageBox.Show(
-            text,
-            "Sluice",
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
+        try
+        {
+            var text = e.Exception.Message
+                + Environment.NewLine
+                + Environment.NewLine
+                + new Localization().Get("CrashDetails")
+                + path;
+            MessageBox.Show(text, "Sluice", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception)
+        {
+            // Nothing better is left to do than let the process end.
+        }
+
         e.Handled = true;
     }
 }

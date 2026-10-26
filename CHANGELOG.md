@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The crash dialog works again. The template it renders asked for three placeholders while the handler
+  passed two, so the handler threw a `FormatException` of its own: any unhandled exception made the
+  window disappear with no message and no log file. The text is now assembled from a template without
+  placeholders and every step of the handler is guarded.
+* Copying the log, or pasting a link, no longer ends the window when another process holds the
+  clipboard open (remote sessions and clipboard managers do that constantly); the failure shows in the
+  status line instead.
+* The environment check no longer overrides a running stage. The probe is fire and forget from the
+  constructor, so a slow one could replace "Resolving…" with "Ready" a moment after a run started.
+
 ## [0.4.11] - 2026-10-27
 
 ### Fixed
