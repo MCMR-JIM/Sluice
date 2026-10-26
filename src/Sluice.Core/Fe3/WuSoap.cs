@@ -152,9 +152,60 @@ public static class WuSoap
 
     /// <summary>Parses a response document, tolerating the HTML escaping some endpoints use.</summary>
     /// <param name="xml">Raw response body.</param>
+    /// <exception cref="Fe3Exception">The body is not well formed XML.</exception>
+    /// <remarks>
+    /// A 200 answer is not a promise of XML. A proxy, a captive portal or an outage page answers 200 with
+    /// HTML, and the parser then threw <see cref="System.Xml.XmlException"/>, which nothing on the way up
+    /// caught: the command line died with a stack trace instead of saying what actually arrived.
+    /// </remarks>
     public static XDocument ParseDocument(string xml)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(xml);
-        return XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+
+        try
+        {
+            return XDocument.Parse(xml, LoadOptions.PreserveWhitespace);
+        }
+        catch (System.Xml.XmlException ex)
+        {
+            throw new Fe3Exception(
+                "The delivery service answered with something that is not XML, which usually means a proxy or a "
+                + "sign-in page answered in its place. It said: " + Excerpt(xml),
+                ex);
+        }
+    }
+
+    /// <summary>Collapses a response body into one quoted, bounded line for an error message.</summary>
+    /// <param name="body">Raw response body.</param>
+    private static string Excerpt(string body)
+    {
+        const int Limit = 200;
+        var builder = new System.Text.StringBuilder(Limit + 1);
+        var lastWasSpace = false;
+
+        foreach (var character in body)
+        {
+            if (char.IsWhiteSpace(character) || char.IsControl(character))
+            {
+                if (!lastWasSpace && builder.Length > 0)
+                {
+                    builder.Append(' ');
+                }
+
+                lastWasSpace = true;
+                continue;
+            }
+
+            builder.Append(character);
+            lastWasSpace = false;
+
+            if (builder.Length >= Limit)
+            {
+                builder.Append('\u2026');
+                break;
+            }
+        }
+
+        return builder.ToString().Trim();
     }
 }

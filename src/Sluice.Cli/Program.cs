@@ -96,6 +96,22 @@ internal static class Program
     }
 
     /// <summary>
+    /// Reports a failure and returns the exit code to use, so every command reports a bad argument or a
+    /// refusal the same way. A caller that asked for JSON used to get an empty stream on those paths:
+    /// the message was on standard error only, and a JSON reader failed with a parse error instead of
+    /// the reason.
+    /// </summary>
+    /// <param name="json">True when the caller asked for JSON.</param>
+    /// <param name="message">Human readable reason.</param>
+    /// <param name="kind">Short machine readable kind of failure.</param>
+    /// <param name="exitCode">Exit code the command should return.</param>
+    internal static int Fail(bool json, string message, string kind, int exitCode)
+    {
+        ReportFailure(json, message, kind);
+        return exitCode;
+    }
+
+    /// <summary>
     /// Reports a failure: always on standard error, and as a JSON document on standard output when the
     /// caller asked for JSON.
     /// </summary>

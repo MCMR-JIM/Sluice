@@ -14,16 +14,22 @@ internal static class PlanCommand
         var arguments = CommandLineArguments.Parse(args);
         if (arguments.Positionals.Count == 0)
         {
-            Console.Error.WriteLine("error: plan needs a folder of downloaded packages");
-            return 2;
+            return Program.Fail(
+                arguments.Has("json"),
+                "plan needs a folder of downloaded packages",
+                "invalid-arguments",
+                2);
         }
 
         var folder = arguments.Positionals[0];
         var found = PackageFileLocator.Resolve(folder);
         if (found.Count == 0)
         {
-            Console.Error.WriteLine($"error: no package files found in '{folder}'");
-            return 1;
+            return Program.Fail(
+                arguments.Has("json"),
+                $"no package files found in '{folder}'",
+                "no-packages",
+                1);
         }
 
         // Same rule as install: a manifest in the folder says which packages belong to one product.
