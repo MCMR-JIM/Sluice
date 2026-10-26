@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.33] - 2026-10-27
+
+### Fixed
+
+* `analyze` reports a run that could read nothing. Files it cannot open are skipped with a warning, which is
+  right, but when every file was skipped the command still answered success: the text output was silent and
+  `--json` printed `[]`, so a caller asking "can this be installed?" was told yes. It exits 1 with the same
+  document every other failure uses, and a run with at least one readable package still succeeds.
+
 ## [0.4.32] - 2026-10-27
 
 ### Fixed
