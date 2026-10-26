@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A new run forgets the previous verdict completely. Only the two visible strings were cleared, so the
+  headline key, the detail recipe and the install flag survived: after an install, a later resolve and
+  a language flip showed "Resolved" in the headline with "<app> is installed" underneath. The failure
+  branch now goes through the same recipe mechanism instead of writing the strings directly.
+* The error code panel follows the language. The body was re-rendered on a flip but the title was not,
+  so "that is not a code" stayed in the old language above a correctly translated sentence.
+
 ## [0.4.15] - 2026-10-27
 
 ### Fixed

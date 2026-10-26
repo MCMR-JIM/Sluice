@@ -49,6 +49,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private string? _headlineKey;
     private Func<Localization, string>? _detailRender;
     private uint? _explainCode;
+    private uint? _explainUnknownCode;
+    private bool _explainUnparsable;
     private string _explainInput = "0x80073CF3";
     private string _explainTitle = string.Empty;
     private string _explainBody = string.Empty;
@@ -89,9 +91,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             RebuildRegisteredDetail();
             RebuildStatusLine();
             RebuildResultTexts();
-            if (_explainCode is { } explained && AppxErrorCatalog.TryLookup(explained, out var info))
+            if (ExplainVisible && _explainCode is { } explained && AppxErrorCatalog.TryLookup(explained, out var info))
             {
+                // The title of a catalogue hit is code plus symbolic name, which no language owns; the
+                // body is prose, so only that is re-rendered.
                 ExplainBody = DescribeError(info);
+            }
+            else if (ExplainVisible && _explainUnparsable)
+            {
+                ExplainTitle = Loc.Get("ExplainUnparsableTitle");
+                ExplainBody = Loc.Get("ExplainUnparsable");
+            }
+            else if (ExplainVisible && _explainUnknownCode is { } unknown)
+            {
+                ExplainTitle = AppxErrorCatalog.Format(unknown);
+                ExplainBody = Loc.Get("ExplainUnknownCode");
             }
 
             foreach (var entry in Log)
@@ -407,6 +421,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         var token = _cancellation.Token;
         Busy = true;
         ProgressIndeterminate = true;
+
+        // Forget the previous verdict completely. Clearing only the two strings left the headline key,
+        // the detail recipe and the install flag behind, so a later language flip re-rendered the old
+        // result over the new one - "Resolved" in the headline with "<app> is installed" under it.
+        _headlineKey = null;
+        _detailRender = null;
+        _installSucceeded = false;
+        _installedMainName = null;
+        _registered = null;
+        _verificationProblem = null;
         ResultHeadline = string.Empty;
         ResultDetail = string.Empty;
         PlanRows.Clear();
@@ -424,9 +448,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         catch (SluiceException ex)
         {
             AddLog(LogLevel.Error, ex.Message);
-            StatusLine = ex.Message;
-            ResultHeadline = Loc.Get("ResultUnfinished");
-            ResultDetail = ex.Message;
+            SetStatus(ex.Message);
+
+            // Through the same recipe mechanism as every other verdict: writing the strings directly
+            // left the headline key stale, and the next language flip re-rendered something else.
+            SetResult("ResultUnfinished", _ => ex.Message);
         }
         catch (Exception ex)
         {
@@ -798,15 +824,23 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void Explain()
     {
+        // Remember what was asked so the panel can be re-rendered when the language flips: the
+        // "cannot parse that" answer is prose, and it used to stay in the old language.
+        _explainCode = null;
+        _explainUnknownCode = null;
+        _explainUnparsable = false;
+
         if (!AppxErrorCatalog.TryLookup(ExplainInput, out var info))
         {
             if (AppxErrorCatalog.TryParse(ExplainInput, out var code))
             {
+                _explainUnknownCode = code;
                 ExplainTitle = AppxErrorCatalog.Format(code);
                 ExplainBody = Loc.Get("ExplainUnknownCode");
             }
             else
             {
+                _explainUnparsable = true;
                 ExplainTitle = Loc.Get("ExplainUnparsableTitle");
                 ExplainBody = Loc.Get("ExplainUnparsable");
             }
