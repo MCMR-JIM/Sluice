@@ -142,6 +142,16 @@ internal static class InstallCommand
             Console.WriteLine();
         }
 
+        if (folderSelection.Ignored.Count > 0 && !json)
+        {
+            // A manifest entry that names a path rather than a file in this folder is not a missing
+            // download: it is an entry that would have made the plan read a package from elsewhere.
+            Console.WriteLine(
+                $"Note: {folderSelection.Ignored.Count} manifest entry(s) name a path outside '{directory}' "
+                + $"and were ignored: {string.Join(", ", folderSelection.Ignored)}");
+            Console.WriteLine();
+        }
+
         if (files.Count == 0)
         {
             return Program.Fail(

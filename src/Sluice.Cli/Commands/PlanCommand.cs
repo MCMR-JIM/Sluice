@@ -45,6 +45,14 @@ internal static class PlanCommand
             Console.WriteLine();
         }
 
+        if (folderSelection.Ignored.Count > 0 && !arguments.Has("json"))
+        {
+            Console.WriteLine(
+                $"Note: {folderSelection.Ignored.Count} manifest entry(s) name a path outside the folder "
+                + "and were ignored: " + string.Join(", ", folderSelection.Ignored));
+            Console.WriteLine();
+        }
+
         var shell = new PowerShellHost();
         var inventory = new AppxInventory(shell);
         var planner = OperatingSystem.IsWindows() && shell.IsAvailable
