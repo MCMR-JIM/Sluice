@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.30] - 2026-10-27
+
+### Fixed
+
+* `doctor` no longer calls Developer Mode a blocker. The policy is only needed by the loose-file
+  registration fallback, which runs after a failure, so a machine that explicitly has it off installs
+  signed packages perfectly well - and still exited 3, which the manual documents as "the machine cannot
+  deploy packages until the warnings are fixed". It is reported as a note now, in the text output, in
+  `notes` in the JSON, and in the window's log, and it no longer changes the exit code.
+* A partial download keeps the manifest it found. `download --deps-only` and `--only` replaced
+  `Sluice-manifest.json` with the files they fetched, so the folder still held the application while the
+  manifest no longer named it, and the next `install --dir` stopped with "no application package was found".
+  Entries of the same product are kept and refreshed now, entries whose file is gone are dropped, and a
+  manifest belonging to another product is replaced.
+
 ## [0.4.29] - 2026-10-27
 
 ### Fixed
