@@ -15,6 +15,7 @@ Five layers, each usable on its own, so the tool can be scripted in pieces.
 | --- | --- | --- |
 | Store | `Sluice.Store` | Parse input, resolve product metadata and `WuCategoryId` |
 | Delivery | `Sluice.Fe3` | Expand a category into packages with signed URLs |
+| Resolution | `Sluice.Resolution` | Join catalog and delivery into the packages a product offers |
 | Packages | `Sluice.Packages` | Read manifests, choose architecture and resources |
 | Download | `Sluice.Download` | Get bytes on disk, verify them, record a manifest |
 | Install | `Sluice.Install` | Plan, deploy, escalate remedies, verify registration |
@@ -84,6 +85,9 @@ those. `--all-deps` restores the "download everything" behaviour for offline arc
 | Downloads | File name sanitising, digest verification paths, manifest round-trips |
 | Errors | HRESULT parsing in hex, decimal and signed form; catalogue completeness |
 | CLI | Argument parsing, value-less switches, help completeness, version reporting |
+| Documents | Every `--json` answer: camelCase keys, the failure document of each command, an analysis that could read nothing |
+| Cross-layer honesty | Every `--switch` the error catalogue, the message templates and the window quote exists; every diagnostic the core emits has a translation |
+| The window | Read at the source level, because it is a project the tests cannot reference: localisation coverage and the plan row announcing every flag it derives |
 
 Fixtures build real appx, msix and bundle containers into a temporary folder at test time, so
 manifest reading is exercised against actual ZIP archives rather than mocks.
