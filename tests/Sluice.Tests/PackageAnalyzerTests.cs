@@ -106,6 +106,23 @@ public sealed class PackageAnalyzerTests : IDisposable
         Assert.Contains("license", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Theory]
+    [InlineData("Contoso.App_1.0.0.0_x64.EAPPX")]
+    [InlineData("Contoso.App_1.0.0.0_x64.Emsix")]
+    [InlineData("Contoso.App_1.0.0.0_x64.eAppxBundle")]
+    [InlineData("Contoso.App_1.0.0.0_x64.EMSIXBUNDLE")]
+    public void RejectsEncryptedPackagesWhateverTheLetterCase(string fileName)
+    {
+        // Windows file names are case insensitive, so Contoso.EAPPX is the same encrypted package as
+        // Contoso.eappx. It used to fall through to the ZIP reader, which blamed the container - a file
+        // the operator can open perfectly well - instead of the encryption.
+        var path = PackageFixtureBuilder.CreateAppPackage(_directory, fileName, "Contoso.App");
+
+        var error = Assert.Throws<SluiceException>(() => PackageAnalyzer.Analyze(path));
+
+        Assert.Contains("encrypted", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact]
     public void RejectsZipFilesThatAreNotPackages()
     {
