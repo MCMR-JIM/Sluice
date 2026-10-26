@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* Resolution now falls back to the second catalog endpoint when the first one fails in any way. Only
+  `StoreResolutionException` was caught, so an HTML body where JSON was expected, or a socket that
+  gave up after its retries, ended the resolution with a raw parser message instead of trying the next
+  endpoint.
+* An answer that carries no package categories is no longer cached. A struggling endpoint returns
+  metadata only, and remembering that for the rest of the process kept telling the user the listing
+  was probably a Win32 app long after the endpoint had recovered. The cache is also a
+  `ConcurrentDictionary` now, because the window and the command line can resolve at the same time.
+
 ## [0.4.5] - 2026-10-27
 
 ### Fixed
