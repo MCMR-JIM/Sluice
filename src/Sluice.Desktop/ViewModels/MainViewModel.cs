@@ -657,6 +657,24 @@ public sealed class MainViewModel : ObservableObject, IDisposable
                 AddLog(LogLevel.Info, loc => $"{loc.Get("ExplainHow")}: {explain.Steps}");
             }
 
+            // The run stopped here. Saying which steps were never attempted is the difference between
+            // "still working" and "gave up", and it stops rows sitting on "waiting" for ever.
+            var notAttempted = plan.NotAttempted(outcome.StepResults);
+            foreach (var step in notAttempted)
+            {
+                var row = PlanRows.FirstOrDefault(candidate => candidate.Step == step);
+                if (row is not null)
+                {
+                    row.State = "skipped";
+                    row.Detail = Loc.Get("StateSkipped");
+                }
+            }
+
+            if (notAttempted.Count > 0)
+            {
+                AddLog(LogLevel.Warning, loc => loc.Format("LogNotAttempted", notAttempted.Count));
+            }
+
             SetStatus(loc => loc.Get("StatusInstallFailed"));
         }
     }

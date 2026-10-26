@@ -195,7 +195,11 @@ internal static class InstallCommand
             JsonOutput.Write(new
             {
                 succeeded = outcome.Succeeded,
-                verified = outcome.VerificationProblem is null,
+                notAttempted = plan.NotAttempted(outcome.StepResults).Select(step => new { kind = step.Kind.ToString(), file = step.FileName }),
+                // True only when the run finished and the registration was actually read back: a failed
+                // install has not "verified" anything, and saying it had was the sort of quiet lie this
+                // field exists to avoid.
+                verified = outcome.Succeeded && outcome.VerificationProblem is null,
                 verificationProblem = outcome.VerificationProblem,
                 registered = outcome.Registered?.PackageFullName,
                 version = outcome.Registered?.Version,
@@ -212,7 +216,7 @@ internal static class InstallCommand
             return outcome.Succeeded ? 0 : 1;
         }
 
-        WriteOutcome(outcome);
+        WriteOutcome(outcome, plan);
 
         if (resolution is not null && outcome.Succeeded)
         {
@@ -349,7 +353,7 @@ internal static class InstallCommand
         return prompt() ? (true, 0, null) : (false, 1, null);
     }
 
-    private static void WriteOutcome(InstallOutcome outcome)
+    private static void WriteOutcome(InstallOutcome outcome, InstallPlan plan)
     {
         TablePrinter.Print(
             ["KIND", "FILE", "RESULT", "NOTE"],
@@ -381,6 +385,19 @@ internal static class InstallCommand
             if (failure.HResult is not null)
             {
                 Console.WriteLine($"  detail: {failure.Message}");
+            }
+        }
+
+        var notAttempted = plan.NotAttempted(outcome.StepResults);
+        if (notAttempted.Count > 0)
+        {
+            // The run stops at the first failure. Saying what it never reached is the difference between
+            // "still working" and "gave up here", and a script can see it in the JSON too.
+            Console.WriteLine();
+            Console.WriteLine($"Not attempted ({notAttempted.Count}):");
+            foreach (var step in notAttempted)
+            {
+                Console.WriteLine($"  {step.Kind} {step.FileName}");
             }
         }
 

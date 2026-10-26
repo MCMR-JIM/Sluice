@@ -80,6 +80,20 @@ public sealed record InstallPlan(
     public IReadOnlyList<InstallStep> InstallSteps =>
         Steps.Where(step => step.Kind != InstallStepKind.Verify).ToList();
 
+    /// <summary>
+    /// Steps of this plan that an outcome never reached. An install stops at the first failure, so the
+    /// rest are not failures and not pending either: saying which ones were never attempted is the
+    /// difference between "still working" and "gave up here".
+    /// </summary>
+    /// <param name="results">Results the installer reported.</param>
+    public IReadOnlyList<InstallStep> NotAttempted(IReadOnlyList<InstallStepResult> results)
+    {
+        ArgumentNullException.ThrowIfNull(results);
+
+        var attempted = results.Select(result => result.Step).ToHashSet();
+        return InstallSteps.Where(step => !attempted.Contains(step)).ToList();
+    }
+
     /// <summary>Framework files the plan will install.</summary>
     public IReadOnlyList<string> DependencyPaths =>
         Steps.Where(step => step.Kind == InstallStepKind.InstallFramework).Select(step => step.FilePath).ToList();

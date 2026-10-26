@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A failed install says which steps it never reached. It stops at the first failure, leaving the rest in
+  the plan list as "waiting" for ever - which reads like the tool is still working - and the report said
+  nothing about them. The window marks them "not run", the command line lists them, and the JSON output
+  carries them.
+* `install --json` no longer claims `verified: true` for a run that failed. The flag described "no
+  verification problem", which is true and useless when the install itself did not finish.
+
 ## [0.4.20] - 2026-10-27
 
 ### Fixed

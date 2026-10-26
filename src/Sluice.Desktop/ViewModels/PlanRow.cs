@@ -43,6 +43,7 @@ public sealed class PlanRow(Localization loc) : ObservableObject
         "ok" => "StateOk",
         "failed" => "StateFailed",
         "running" => "StateRunning",
+        "skipped" => "StateSkipped",
         _ => "StatePending",
     });
 
@@ -55,6 +56,9 @@ public sealed class PlanRow(Localization loc) : ObservableObject
     public bool IsDone => State == "ok";
 
     public bool IsFailed => State == "failed";
+
+    /// <summary>True when the run stopped before this step, so it was never attempted.</summary>
+    public bool IsSkipped => State == "skipped";
 
     /// <summary>Re-reads the label after the language changed.</summary>
     public void RefreshLanguage()
