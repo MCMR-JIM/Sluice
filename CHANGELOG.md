@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The manual describes what the tool actually does now. `--dry-run` still claimed to print the plan and
+  touch nothing, although a dry run from a Store link reports the package selection (a plan needs files
+  on disk) and only the `--dir` form prints a plan; the install page also never mentioned that a folder
+  is narrowed down by its download manifest, or that a failed run lists the steps it never reached.
+
 ## [0.4.23] - 2026-10-27
 
 ### Changed
