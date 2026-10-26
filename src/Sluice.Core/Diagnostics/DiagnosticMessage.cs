@@ -52,6 +52,7 @@ internal static class DiagnosticText
         ["PrepareUnreadableBundle"] = "Could not read the inner manifest of {0}: {1}",
         ["PrepareNotDeclared"] = "{0} is not declared by the app manifest; not downloading it.",
         ["PlanSkippedFile"] = "Skipped '{0}': it is not a readable appx/msix package.",
+        ["PlanSkippedFileReason"] = "Skipped '{0}': {1}",
         ["PlanBundleNoApplication"] = "Bundle '{0}' has no application package for {1}.",
         ["PlanBundleNoApplicationHint"] = "Download the product again; the delivery service may not offer this architecture.",
         ["PlanBundleManifestUnreadable"] = "Could not read the manifest inside the bundle ({0}); falling back to the files in the folder.",

@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A package the plan could not use now says why. An encrypted Store package and a truncated download
+  were both reported as "not a readable appx/msix package", which sends the operator after the wrong
+  problem; the analyzer's own explanation is carried into the plan instead.
+* The activity log is capped at a thousand lines and drops the oldest. It used to keep every line for
+  the life of the process, and since the log is a plain (non-virtualised) list, each line also held a
+  visual. Copying it now prints the severity in the language the window speaks.
+
 ## [0.4.9] - 2026-10-27
 
 ### Fixed

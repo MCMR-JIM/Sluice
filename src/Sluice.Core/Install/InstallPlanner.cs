@@ -50,12 +50,15 @@ public sealed class InstallPlanner
         var analyses = new List<PackageAnalysis>();
         foreach (var file in packageFiles.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            var analysis = PackageAnalyzer.TryAnalyze(file);
+            var analysis = PackageAnalyzer.TryAnalyze(file, out var skipReason);
             if (analysis is null)
             {
+                // Carry the analyzer's reason: "not a readable appx/msix package" said nothing about an
+                // encrypted Store package or a truncated download.
                 issues.Add(new PlanIssue(
                     PlanIssueSeverity.Warning,
-                    Diagnostics.DiagnosticMessage.Of("PlanSkippedFile", Path.GetFileName(file))));
+                    Diagnostics.DiagnosticMessage.Of(
+                        "PlanSkippedFileReason", Path.GetFileName(file), skipReason ?? "it could not be analysed")));
                 continue;
             }
 

@@ -165,6 +165,34 @@ public sealed class InstallPlannerTests : IDisposable
     }
 
     [Fact]
+    public async Task ExplainsWhyAFileInTheFolderCouldNotBeUsed()
+    {
+        // An encrypted Store package used to be skipped with "it is not a readable appx/msix package",
+        // which points at the wrong problem: the file is a perfectly good package that needs a licence.
+        var app = CreateApp("Contoso.Notes", "2.0.0.0", "x64");
+        var encrypted = PackageFixtureBuilder.CreateAppPackage(
+            _directory, "Contoso.Locked_1.0.0.0_x64.eappx", "Contoso.Locked", "1.0.0.0", "x64", null, false, true, 0);
+
+        var plan = await new InstallPlanner().CreatePlanAsync([app, encrypted], new InstallPlannerOptions("x64"));
+
+        var issue = Assert.Single(plan.Issues, candidate => candidate.Message.Code == "PlanSkippedFileReason");
+        Assert.Contains("encrypted", issue.Message.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("licen", issue.Message.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ExplainsWhyAContainerCouldNotBeUsed()
+    {
+        var app = CreateApp("Contoso.Notes", "2.0.0.0", "x64");
+        var plainZip = PackageFixtureBuilder.CreatePlainZip(_directory, "payload.zip");
+
+        var plan = await new InstallPlanner().CreatePlanAsync([app, plainZip], new InstallPlannerOptions("x64"));
+
+        var issue = Assert.Single(plan.Issues, candidate => candidate.Message.Code == "PlanSkippedFileReason");
+        Assert.Contains("AppxManifest", issue.Message.Text, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task PicksTheApplicationForTheTargetArchitectureEvenWhenAnotherOneIsBigger()
     {
         // An offline folder legitimately holds several builds (--all-arch). Choosing the largest file

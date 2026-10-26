@@ -839,7 +839,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void CopyLog()
     {
-        var text = string.Join(Environment.NewLine, Log.Select(entry => $"{entry.Time}  {entry.Level,-7} {entry.Text}"));
+        var text = string.Join(Environment.NewLine, Log.Select(entry => $"{entry.Time}  {entry.LevelText,-7} {entry.Text}"));
         if (!string.IsNullOrEmpty(text))
         {
             Clipboard.SetText(text);
@@ -871,14 +871,32 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>How many activity lines are kept. The list is not virtualised, so it cannot grow freely.</summary>
+    private const int MaxLogLines = 1000;
+
     private void AddLog(LogLevel level, string text) =>
-        Log.Add(LogEntry.Plain(Loc, level, text));
+        AppendLog(LogEntry.Plain(Loc, level, text));
 
     /// <summary>Adds a line that is re-rendered whenever the language changes.</summary>
     /// <param name="level">Severity shown in the gutter.</param>
     /// <param name="render">Recipe for the text, given the current localization.</param>
     private void AddLog(LogLevel level, Func<Localization, string> render) =>
-        Log.Add(LogEntry.Rendered(Loc, level, render));
+        AppendLog(LogEntry.Rendered(Loc, level, render));
+
+    /// <summary>
+    /// Appends a line and drops the oldest ones past the cap. A long session used to keep every line
+    /// for the life of the process, and the log is a plain ItemsControl, so each of them also kept a
+    /// visual: memory and layout cost grew with every resolve and install.
+    /// </summary>
+    /// <param name="entry">Line to append.</param>
+    private void AppendLog(LogEntry entry)
+    {
+        Log.Add(entry);
+        while (Log.Count > MaxLogLines)
+        {
+            Log.RemoveAt(0);
+        }
+    }
 
     private static void Dispatcher(Action action)
     {
