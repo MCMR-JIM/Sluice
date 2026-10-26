@@ -145,8 +145,9 @@ public static class AppxErrorCatalog
                 "Typical after installing a bundle that was unpacked by hand, after a partial deployment, or when the "
                 + "manifest no longer matches the staged files.",
                 DeploymentRemedy.RegisterLooseFiles,
-                "Enable Developer Mode and install with 'sluice install --register', or remove the stale registration "
-                + "with Get-AppxPackage <name> | Remove-AppxPackage and install again."),
+                "Enable Developer Mode and install again: after this failure the tool unpacks the package and "
+                + "registers its manifest itself (turn that off with --no-register). If the registration is stale, "
+                + "remove it with Get-AppxPackage <name> | Remove-AppxPackage and install again."),
 
             new AppxErrorInfo(
                 0x80073CF9,
@@ -198,8 +199,8 @@ public static class AppxErrorCatalog
                 "The package is not signed, so Windows refuses to deploy it.",
                 "Unsigned or re-packed packages, including folders registered without a valid signature.",
                 DeploymentRemedy.None,
-                "Use the original signed package from the Store, or enable Developer Mode and install with "
-                + "'sluice install --register' if you are working with loose files."),
+                "Use the original signed package from the Store. Loose files that were unpacked by hand need "
+                + "Developer Mode before Windows will register them at all."),
 
             new AppxErrorInfo(
                 0x800B010A,
