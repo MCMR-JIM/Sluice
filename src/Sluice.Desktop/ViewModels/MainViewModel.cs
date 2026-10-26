@@ -22,6 +22,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly PowerShellHost _shell = new();
     private readonly AppxInventory _inventory;
+    private readonly DownloadProgressAggregate _downloadProgress = new();
     private CancellationTokenSource? _cancellation;
 
     private string _reference = "https://apps.microsoft.com/detail/9nksqgp7f2nh";
@@ -431,6 +432,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _installedMainName = null;
         _registered = null;
         _verificationProblem = null;
+        _downloadProgress.Reset();
         ResultHeadline = string.Empty;
         ResultDetail = string.Empty;
         PlanRows.Clear();
@@ -649,11 +651,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             ProgressIndeterminate = false;
             _installSucceeded = false;
             var failure = outcome.StepResults.FirstOrDefault(result => !result.Succeeded);
-            SetResult("ResultInstallFailed");
-            ResultDetail = failure?.Error is null
+            // Through the recipe mechanism, not written directly: a direct write left the detail out of the
+            // stored recipe, so flipping the language replaced the failure reason with the generic one.
+            var failureDetail = failure?.Error is null
                 ? failure?.Message ?? Loc.Get("UnknownError")
                 : $"{failure.Error.FormattedCode} {failure.Error.Name} · {failure.Error.Meaning}";
-            AddLog(LogLevel.Error, ResultDetail);
+            SetResult("ResultInstallFailed", _ => failureDetail);
+            AddLog(LogLevel.Error, failureDetail);
             if (failure?.Error is not null)
             {
                 var error = failure.Error;
@@ -691,7 +695,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         void Apply()
         {
-            Progress = Math.Round(progress.Fraction * 100, 1);
+            // The run reports per file and three files are usually in flight, so a single file's fraction
+            // made the bar jump to 100% and back as files finished and started.
+            Progress = Math.Round(_downloadProgress.Fraction(progress) * 100, 1);
             StatusLine = Loc.Format("StatusDownloading", progress.FileName, UiFormat.Size(progress.BytesReceived), UiFormat.Size(progress.TotalBytes));
         }
 
