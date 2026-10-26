@@ -192,7 +192,7 @@ Sluice explain 0x80073CF3 --json
 | `--skip-download` | install | Install from `--dir` without asking the Store again |
 | `--force` | install | Allow installing over a higher version |
 | `--all-users` | install | Install for every user; needs elevation |
-| `--json` | resolve, download, plan, install, analyze, explain, doctor | Machine readable output; a failed run is a document too (`succeeded: false` plus a `kind`) |
+| `--json` | resolve, download, plan, install, analyze, explain, doctor | Machine readable output with camelCase keys; a failed run is a document too (`succeeded: false` plus a `kind`) |
 
 ## How it works
 

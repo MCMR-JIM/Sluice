@@ -138,3 +138,8 @@ A run that fails prints a document as well, not an empty stream: `succeeded: fal
 `error` and a short `kind` (`invalid-arguments`, `no-packages`, `plan-blocked`, `consent-required`,
 `cancelled`, `wrong-platform`). A blocked plan carries its `blockingIssues` with it, which is usually
 the whole answer to "why will this not install".
+
+Every key in every document is camelCase (`isWindows`, `mainPackage`, `issues[].message.text`). Values
+keep the spelling Windows uses, so a step kind reads `InstallMain` and a severity reads `Warning`. A
+diagnostic is an object rather than a finished sentence - `code`, `arguments` and `text` - so a script can
+match the code instead of the wording.
