@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A batch never downloads the same destination twice. The delivery service can list one file under two
+  category entries, and names that differ only in case are one file on Windows; two writers on one
+  `.part` file made the second one fail with a sharing violation that looked like a network error.
+  Names are deduplicated case-insensitively before the first byte is fetched.
+* The activity log opens on the newest line. While the pane was collapsed its scroll viewer had no
+  extent, so the scroll-to-end that ran with each new line did nothing and the tab opened on the oldest
+  entry, with the reason somebody opened it off screen.
+
 ## [0.4.18] - 2026-10-27
 
 ### Fixed
