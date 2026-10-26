@@ -65,6 +65,14 @@ public static class PackageAnalyzer
         {
             throw new SluiceException($"'{Path.GetFileName(filePath)}' is not a readable ZIP container.", ex);
         }
+        catch (System.Xml.XmlException ex)
+        {
+            // A manifest that is not valid XML used to escape as an XmlException, which no caller
+            // expected: they catch the tool's own exception type and report a reason.
+            throw new SluiceException(
+                $"The manifest inside '{Path.GetFileName(filePath)}' is not valid XML: {ex.Message}",
+                ex);
+        }
     }
 
     /// <summary>Analyses a file, returning <c>null</c> instead of throwing.</summary>
@@ -105,22 +113,39 @@ public static class PackageAnalyzer
         ArgumentException.ThrowIfNullOrWhiteSpace(bundlePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(childFileName);
 
-        using var stream = File.OpenRead(bundlePath);
-        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
-        var entry = FindEntry(archive, childFileName)
-            ?? throw new SluiceException($"Bundle '{Path.GetFileName(bundlePath)}' has no entry '{childFileName}'.");
+        try
+        {
+            using var stream = File.OpenRead(bundlePath);
+            using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+            var entry = FindEntry(archive, childFileName)
+                ?? throw new SluiceException($"Bundle '{Path.GetFileName(bundlePath)}' has no entry '{childFileName}'.");
 
-        using var entryStream = entry.Open();
-        using var buffer = new MemoryStream();
-        entryStream.CopyTo(buffer);
-        buffer.Position = 0;
+            using var entryStream = entry.Open();
+            using var buffer = new MemoryStream();
+            entryStream.CopyTo(buffer);
+            buffer.Position = 0;
 
-        using var childArchive = new ZipArchive(buffer, ZipArchiveMode.Read);
-        var manifestEntry = FindEntry(childArchive, AppManifestEntryName)
-            ?? throw new SluiceException($"'{childFileName}' inside '{Path.GetFileName(bundlePath)}' has no {AppManifestEntryName}.");
+            using var childArchive = new ZipArchive(buffer, ZipArchiveMode.Read);
+            var manifestEntry = FindEntry(childArchive, AppManifestEntryName)
+                ?? throw new SluiceException($"'{childFileName}' inside '{Path.GetFileName(bundlePath)}' has no {AppManifestEntryName}.");
 
-        using var manifestStream = manifestEntry.Open();
-        return ParseAppManifest(bundlePath, manifestStream);
+            using var manifestStream = manifestEntry.Open();
+            return ParseAppManifest(bundlePath, manifestStream);
+        }
+        catch (InvalidDataException ex)
+        {
+            throw new SluiceException(
+                $"'{childFileName}' inside '{Path.GetFileName(bundlePath)}' is not a readable package: {ex.Message}",
+                ex);
+        }
+        catch (System.Xml.XmlException ex)
+        {
+            // A manifest that is not valid XML used to escape as an XmlException and ended the whole
+            // planning run with a stack trace instead of a note about one unusable child.
+            throw new SluiceException(
+                $"The manifest of '{childFileName}' inside '{Path.GetFileName(bundlePath)}' is not valid XML: {ex.Message}",
+                ex);
+        }
     }
 
     /// <summary>Reads one entry out of a package as text.</summary>

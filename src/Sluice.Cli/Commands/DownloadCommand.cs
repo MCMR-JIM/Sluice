@@ -54,6 +54,12 @@ internal static class DownloadCommand
         if (wanted.Count == 0)
         {
             Console.Error.WriteLine("error: nothing matched the selection");
+
+            if (json)
+            {
+                JsonOutput.Write(new { succeeded = false, error = "nothing matched the selection", kind = "empty-selection" });
+            }
+
             return 1;
         }
 

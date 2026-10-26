@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A command that fails while `--json` was requested now says so in a document on standard output.
+  It used to write only to standard error and leave stdout empty, so a reader piping into a JSON parser
+  failed on an empty stream and lost the real reason. Failures from the option guard, from a bad
+  argument, from the network, from a cancellation and from a command's own checks all carry a
+  `{ succeeded: false, error, kind }` document now.
+* A package whose manifest is not valid XML is reported as that, instead of escaping as an
+  `XmlException` that ended the whole planning run with a stack trace. A bundle with one unreadable
+  child now plans around it and says which child it was.
+
 ## [0.4.14] - 2026-10-27
 
 ### Fixed
