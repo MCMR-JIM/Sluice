@@ -157,7 +157,9 @@ Sluice analyze .\downloads
 Sluice plan .\downloads --arch x64
 ```
 
-Build an offline archive for another machine, then replay it with no network:
+Build an offline archive for another machine, then replay it with no network. The download writes
+`Sluice-manifest.json` next to the packages, and `install` follows it, so a folder reused for several
+products still installs the one it was downloaded for:
 
 ```console
 Sluice download 9NKSQGP7F2NH --all-arch --locale zh-CN --dir D:\StoreCache
@@ -186,7 +188,7 @@ Sluice explain 0x80073CF3 --json
 | `--all-arch` | download, install | Keep every architecture, for offline archives |
 | `--all-deps` | install | Download every candidate dependency instead of only the declared ones |
 | `--dir \<path\>` | download, install | Download folder (default `./downloads`) |
-| `--dry-run` | install | Print the plan and stop |
+| `--dry-run` | install | Report what a run would do and stop: the package selection for a Store link, the install plan for `--dir`; nothing is downloaded |
 | `--skip-download` | install | Install from `--dir` without asking the Store again |
 | `--force` | install | Allow installing over a higher version |
 | `--all-users` | install | Install for every user; needs elevation |

@@ -104,7 +104,10 @@ internal static class CommandCatalog
                 new CommandOption("--locale <tag>", "Locale of the resource packages.", "Windows display language"),
                 new CommandOption("--all-arch", "Download every architecture instead of this one."),
                 new CommandOption("--all-deps", "Download every candidate dependency, not just declared ones."),
-                new CommandOption("--dry-run", "Print the plan and stop; touches nothing."),
+                new CommandOption(
+                    "--dry-run",
+                    "Report what a run would do and stop, downloading nothing. From a Store link that is the "
+                    + "package selection; from --dir it is the install plan."),
                 new CommandOption("--yes", "Do not ask for confirmation before installing."),
                 new CommandOption("--skip-download", "Install from --dir without asking the Store again."),
                 new CommandOption("--force", "Allow installing over a higher version."),
@@ -123,6 +126,9 @@ internal static class CommandCatalog
                 "Needs Windows and PowerShell: deployment goes through Add-AppxPackage.",
                 "Encrypted Store packages (.eappx, .emsix) are refused; they need a Store licence.",
                 "When the plan reports a missing dependency, nothing is installed at all.",
+                "A folder holding several products is narrowed down by Sluice-manifest.json, which download "
+                + "writes next to the packages, so the product the folder was downloaded for is the one installed.",
+                "If the run stops at a failure, the steps it never reached are listed as not attempted.",
             ],
             ["Sluice help download", "Sluice help plan", "Sluice help doctor"]),
 
