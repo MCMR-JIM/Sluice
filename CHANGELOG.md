@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.38] - 2026-10-27
+
+### Fixed
+
+* `--no-verify` no longer reports a verified install. The document computed `verified` as "succeeded and no
+  problem", which is also true of a run that read nothing back, so an install whose registration was never
+  checked came out as verified. `--json` now carries `verification` - `checked`, `unverified` or
+  `skipped` - and `verified` is false when nothing was checked, while the text output says the check was
+  skipped and that the run therefore proves less.
+
 ## [0.4.37] - 2026-10-27
 
 ### Fixed
