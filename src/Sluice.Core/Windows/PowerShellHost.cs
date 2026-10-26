@@ -117,6 +117,10 @@ public sealed class PowerShellHost
         try
         {
             await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            // WaitForExitAsync returns once the process is gone, but the asynchronous readers may still
+            // be draining the pipes; the synchronous wait is what guarantees the output is complete.
+            process.WaitForExit();
         }
         catch (OperationCanceledException)
         {
@@ -149,7 +153,8 @@ public sealed class PowerShellHost
         }
         catch (InvalidOperationException)
         {
-            // The process was never started or is already gone.
+            // Covers the disposal race too, since ObjectDisposedException derives from this: the
+            // process was never started, is already gone, or the owning scope disposed it mid kill.
         }
         catch (System.ComponentModel.Win32Exception)
         {
