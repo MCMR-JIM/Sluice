@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.29] - 2026-10-27
+
+### Fixed
+
+* A download manifest can no longer name a package outside its folder. The manifest is a text file that
+  sits next to the packages, and its entries were resolved as written: `Path.Combine` returns its second
+  argument unchanged when that one is rooted, so an entry naming an absolute path - or one that walked back
+  out with `..` - made `plan` and `install --dir` read a package from elsewhere on the machine. Entries
+  that are not a bare file name are refused now, and both commands say how many they ignored.
+* A table row stays on one line. A deployment message in the NOTE column arrives with line breaks and tabs,
+  and printing it verbatim split the row: everything after the break landed on its own line, one column to
+  the left of where it belonged.
+
 ## [0.4.28] - 2026-10-27
 
 ### Fixed
