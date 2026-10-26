@@ -933,8 +933,18 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void OpenFolder()
     {
-        Directory.CreateDirectory(CacheDirectory);
-        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{CacheDirectory}\"") { UseShellExecute = true });
+        try
+        {
+            Directory.CreateDirectory(CacheDirectory);
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{CacheDirectory}\"") { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+            or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            // A policy can forbid the folder, a drive can be gone, and explorer can refuse to start. The
+            // clipboard already answers such a failure with a status line; this one ended the window.
+            SetStatus(loc => loc.Format("StatusOpenFailed", ex.Message));
+        }
     }
 
     private void CopyLog()
