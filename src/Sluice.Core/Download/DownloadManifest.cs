@@ -61,6 +61,49 @@ public sealed record DownloadManifest(
         await JsonSerializer.SerializeAsync(stream, manifest, SerializerOptions, cancellationToken).ConfigureAwait(false);
     }
 
+/// <summary>
+/// Narrows a folder of packages down to the ones a manifest names. A folder reused for several products
+/// otherwise offers the planner every file it holds, and picking the wrong one installs the wrong app.
+/// </summary>
+/// <param name="directory">Folder holding the packages and, optionally, a manifest.</param>
+/// <param name="allPackageFiles">Every package file the caller found in the folder.</param>
+/// <param name="cancellationToken">Cancellation token.</param>
+public static async Task<FolderSelection> SelectAsync(
+    string directory,
+    IReadOnlyList<string> allPackageFiles,
+    CancellationToken cancellationToken = default)
+{
+    ArgumentException.ThrowIfNullOrWhiteSpace(directory);
+    ArgumentNullException.ThrowIfNull(allPackageFiles);
+
+    var manifest = await LoadAsync(directory, cancellationToken).ConfigureAwait(false);
+    if (manifest is null || manifest.Packages.Count == 0)
+    {
+        return FolderSelection.Everything(allPackageFiles);
+    }
+
+    var files = new List<string>();
+    var missing = new List<string>();
+    foreach (var entry in manifest.Packages)
+    {
+        var path = Path.Combine(directory, entry.FileName);
+        if (File.Exists(path))
+        {
+            files.Add(path);
+        }
+        else
+        {
+            missing.Add(entry.FileName);
+        }
+    }
+
+    // A manifest that names nothing found on disk is worse than no manifest at all: fall back to the
+    // folder contents so a hand-replaced download still installs.
+    return files.Count == 0
+        ? FolderSelection.Everything(allPackageFiles)
+        : new FolderSelection(files, missing, true);
+}
+
     /// <summary>Reads a manifest from a directory, returning <c>null</c> when there is none.</summary>
     /// <param name="directory">Download directory.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

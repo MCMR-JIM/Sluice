@@ -1,4 +1,5 @@
 using Sluice.Cli.Cli;
+using Sluice.Download;
 using Sluice.Install;
 using Sluice.Packages;
 using Sluice.Windows;
@@ -17,11 +18,25 @@ internal static class PlanCommand
             return 2;
         }
 
-        var files = PackageFileLocator.Resolve(arguments.Positionals[0]);
-        if (files.Count == 0)
+        var folder = arguments.Positionals[0];
+        var found = PackageFileLocator.Resolve(folder);
+        if (found.Count == 0)
         {
-            Console.Error.WriteLine($"error: no package files found in '{arguments.Positionals[0]}'");
+            Console.Error.WriteLine($"error: no package files found in '{folder}'");
             return 1;
+        }
+
+        // Same rule as install: a manifest in the folder says which packages belong to one product.
+        var folderSelection = await DownloadManifest
+            .SelectAsync(Path.GetDirectoryName(Path.GetFullPath(found[0])) ?? folder, found, CancellationToken.None)
+            .ConfigureAwait(false);
+        var files = folderSelection.Files;
+        if (folderSelection.Missing.Count > 0 && !arguments.Has("json"))
+        {
+            Console.WriteLine(
+                $"Note: {folderSelection.Missing.Count} package(s) named by the manifest are missing: "
+                + string.Join(", ", folderSelection.Missing));
+            Console.WriteLine();
         }
 
         var shell = new PowerShellHost();

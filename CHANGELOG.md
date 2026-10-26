@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* `install --dir` and `plan` follow the download manifest instead of planning against every package in
+  the folder. A folder reused for several products offered the planner all of them, and the main
+  package was chosen by architecture and size - so the wrong application could be installed. Verified
+  with two products in one folder: without a manifest the plan picked the wrong one, with the manifest
+  it picks the product the folder was downloaded for. Packages the manifest names but that are gone are
+  reported instead of silently ignored.
+
 ## [0.4.21] - 2026-10-27
 
 ### Fixed
