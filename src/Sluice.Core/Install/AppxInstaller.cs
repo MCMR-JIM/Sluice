@@ -234,6 +234,21 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
                     continue;
 
                 case DeploymentRemedy.RegisterLooseFiles when _options.AllowRegisterFallback:
+                    if (!CanRegisterLooseFiles(step.FilePath))
+                    {
+                        // A bundle holds child packages and a bundle manifest, so unpacking it can never
+                        // turn up an AppxManifest.xml. The old code unpacked the whole thing, failed, and
+                        // replaced the real reason for the failure with its own extraction message.
+                        return new InstallStepResult(
+                            step,
+                            false,
+                            attempt.HResult,
+                            attempt.Message + " The loose-file fallback was skipped: '" + step.FileName
+                                + "' is a bundle, which holds child packages instead of a package manifest.",
+                            info,
+                            attempts);
+                    }
+
                     attempts.Add($"Add-AppxPackage -Register (extracted) for {step.FileName}");
                     var registerAttempt = await RunScriptAsync(BuildRegisterScript(step.FilePath), cancellationToken).ConfigureAwait(false);
                     return registerAttempt.Succeeded
@@ -306,6 +321,24 @@ public sealed class AppxInstaller(PowerShellHost shell, AppxInventory inventory,
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "sluice",
         "registered");
+
+    /// <summary>
+    /// True when the loose file fallback can do anything for this package.
+    /// </summary>
+    /// <param name="path">Package file the failing step installs.</param>
+    /// <remarks>
+    /// The fallback unpacks the file and looks for an <c>AppxManifest.xml</c>. A bundle contains
+    /// <c>AppxMetadata/AppxBundleManifest.xml</c> and the child packages, never that file, so the attempt
+    /// always failed - after unpacking a few hundred megabytes - and its failure message replaced the
+    /// Windows error the operator needed to see.
+    /// </remarks>
+    internal static bool CanRegisterLooseFiles(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        var extension = Path.GetExtension(path);
+        return !string.Equals(extension, ".msixbundle", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(extension, ".appxbundle", StringComparison.OrdinalIgnoreCase);
+    }
 
     /// <summary>Builds the script that unpacks a package and registers its manifest.</summary>
     /// <param name="path">Package file to unpack.</param>

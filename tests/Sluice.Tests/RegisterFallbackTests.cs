@@ -20,6 +20,18 @@ public sealed class RegisterFallbackTests
     }
 
     [Fact]
+    public void ABundleIsNotOfferedTheFallbackItCannotUse()
+    {
+        // The fallback unpacks the file and looks for an AppxManifest.xml. A bundle holds a bundle
+        // manifest and child packages, so the attempt unpacked hundreds of megabytes, failed, and
+        // replaced the Windows error with its own "No AppxManifest.xml found after extraction".
+        Assert.False(AppxInstaller.CanRegisterLooseFiles(@"C:packagesController.msixbundle"));
+        Assert.False(AppxInstaller.CanRegisterLooseFiles(@"C:packagesController.appxbundle"));
+        Assert.True(AppxInstaller.CanRegisterLooseFiles(@"C:packages\Controller_1.0.0.0_x64.msix"));
+        Assert.True(AppxInstaller.CanRegisterLooseFiles(@"C:packages\Controller_1.0.0.0_x64.appx"));
+    }
+
+    [Fact]
     public void AFailedAttemptTakesItsFilesBackOut()
     {
         // Every retry used to leave a fresh sluice-<guid> folder of a few hundred megabytes behind,
