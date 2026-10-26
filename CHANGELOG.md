@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A download that cannot fit on the drive is refused before the first byte is fetched, with the numbers
+  in the message. It used to run until the disk filled up and fail at the last write, minutes later.
+* A leftover file of the wrong length is downloaded again instead of being reused. With verification
+  turned off, an interrupted run left a truncated package behind and the next run reported it as already
+  downloaded, so the install failed later on a package that could not be opened.
+
 ## [0.4.17] - 2026-10-27
 
 ### Added
