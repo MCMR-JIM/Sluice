@@ -15,6 +15,19 @@ internal static class PackageFixtureBuilder
         string? resourceId = null,
         bool framework = false,
         bool withApplications = true,
+        params (string Name, string MinVersion)[] dependencies) =>
+        CreateAppPackage(directory, fileName, identityName, version, architecture, resourceId, framework, withApplications, 0, dependencies);
+
+    public static string CreateAppPackage(
+        string directory,
+        string fileName,
+        string identityName,
+        string version,
+        string architecture,
+        string? resourceId,
+        bool framework,
+        bool withApplications,
+        int padding,
         params (string Name, string MinVersion)[] dependencies)
     {
         Directory.CreateDirectory(directory);
@@ -57,6 +70,13 @@ internal static class PackageFixtureBuilder
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
         WriteEntry(archive, "AppxManifest.xml", manifest);
         WriteEntry(archive, "AppxBlockMap.xml", "<BlockMap />");
+        if (padding > 0)
+        {
+            // Padding makes a fixture bigger than another one, which is how "the largest file wins"
+            // behaviour can be exercised without shipping a real multi-megabyte package.
+            WriteEntry(archive, "Padding.bin", new string('p', padding));
+        }
+
         return path;
     }
 

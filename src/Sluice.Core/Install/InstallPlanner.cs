@@ -62,9 +62,28 @@ public sealed class InstallPlanner
             analyses.Add(analysis);
         }
 
-        var application = analyses
+        // Several builds of the same product can sit in one folder (--all-arch, a reused --dir). Size
+        // alone used to decide, which could stage an arm64 build on an x64 machine and fail with
+        // 0x80073CFD; the build that fits the target architecture wins, and only when none fits does
+        // the largest file win, with a warning that says so.
+        var applications = analyses
             .Where(analysis => analysis.Kind is PackageKind.Bundle or PackageKind.App)
-            .OrderByDescending(analysis => analysis.SizeInBytes)
+            .ToList();
+
+        var compatible = applications
+            .Where(analysis => WindowsArchitecture.IsCompatible(analysis.Identity?.Architecture, targetArchitecture))
+            .ToList();
+
+        if (applications.Count > 0 && compatible.Count == 0)
+        {
+            issues.Add(new PlanIssue(
+                PlanIssueSeverity.Warning,
+                Diagnostics.DiagnosticMessage.Of("PlanNoMatchingArchitecture", targetArchitecture)));
+        }
+
+        var application = (compatible.Count > 0 ? compatible : applications)
+            .OrderByDescending(analysis => WindowsArchitecture.MatchScore(analysis.Identity?.Architecture, targetArchitecture))
+            .ThenByDescending(analysis => analysis.SizeInBytes)
             .FirstOrDefault();
 
         if (application is null)
