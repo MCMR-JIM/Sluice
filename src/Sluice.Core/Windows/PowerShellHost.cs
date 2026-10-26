@@ -107,12 +107,54 @@ public sealed class PowerShellHost
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+        // Waiting with a token only abandons the wait: the child would keep running whatever it was
+        // told to do, so a cancelled install kept deploying after the window said it stopped. The
+        // registration is what actually ends the work, and the catch is the path where the token had
+        // already fired when the wait started.
+        using var registration = cancellationToken.Register(() => Terminate(process));
+
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            Terminate(process);
+            throw;
+        }
 
         return new PowerShellResult(
             process.ExitCode,
             stdout.ToString().Trim(),
             Sanitize(stderr.ToString()));
+    }
+
+    /// <summary>
+    /// Ends the child process and everything it started, then reaps it so no handle or output reader
+    /// is left behind. Failures are swallowed: the process may have exited between the check and the
+    /// kill, which is the outcome we want anyway.
+    /// </summary>
+    /// <param name="process">Process to end.</param>
+    private static void Terminate(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            process.WaitForExit(5000);
+        }
+        catch (InvalidOperationException)
+        {
+            // The process was never started or is already gone.
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // Access denied on a process that outlived its parent; nothing else to do about it.
+        }
     }
 
     /// <summary>
