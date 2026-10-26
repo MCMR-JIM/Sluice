@@ -71,7 +71,13 @@ public static partial class StoreUrlParser
                 return false;
             }
 
-            request = new StoreRequest(productId, query.Get("market") ?? query.Get("gl"), query.Get("locale") ?? query.Get("hl"));
+            // Trimmed like the web form below. A pasted deep link can carry escaped spaces
+            // (market=%20CN%20), and the untrimmed value travelled into the catalog request, which then
+            // answered 400 for a market that looks fine to a person.
+            request = new StoreRequest(
+                productId,
+                Normalise(query.Get("market") ?? query.Get("gl")),
+                Normalise(query.Get("locale") ?? query.Get("hl")));
             return true;
         }
 

@@ -34,6 +34,15 @@ internal static class Program
             return ShowHelp([command]);
         }
 
+        // The manual lists -v/--version as a global option, and it was only honoured as the first argument:
+        // "Sluice install --version" answered that install needs a Store reference, and "Sluice install <id>
+        // --version" would have gone ahead and installed.
+        if (rest.Contains("-v", StringComparer.Ordinal) || rest.Contains("--version", StringComparer.Ordinal))
+        {
+            VersionText.Print(Console.Out);
+            return 0;
+        }
+
         // A caller that asked for JSON reads stdout as a document, so a failure has to be a document too:
         // an empty stream makes a JSON reader fail with a message that hides the real reason.
         var argumentsForCommand = CommandArguments(rest);
