@@ -37,7 +37,11 @@ public static class BundlePackageSelector
             notes.Add(Diagnostics.DiagnosticMessage.Of("BundleNoApplication"));
         }
 
+        // Ranking alone picked the biggest child even when it was built for another machine, which
+        // made the planner's "bundle has no application package for this architecture" error
+        // unreachable and the install fail later with 0x80073CFD. A child has to fit the target first.
         var application = applications
+            .Where(child => WindowsArchitecture.IsCompatible(child.Architecture, targetArchitecture))
             .OrderByDescending(child => WindowsArchitecture.MatchScore(child.Architecture, targetArchitecture))
             .ThenByDescending(child => child.SizeInBytes)
             .FirstOrDefault();
@@ -45,6 +49,10 @@ public static class BundlePackageSelector
         if (application is not null)
         {
             notes.Add(Diagnostics.DiagnosticMessage.Of("BundleSelected", application.FileName, targetArchitecture));
+        }
+        else if (applications.Count > 0)
+        {
+            notes.Add(Diagnostics.DiagnosticMessage.Of("BundleNoMatchingArchitecture", targetArchitecture));
         }
 
         var locales = (preferredLocales ?? [])

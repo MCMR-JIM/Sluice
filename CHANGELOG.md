@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* A bundle without a package for the target architecture is now reported as such instead of having
+  the biggest foreign build selected. The planner's "bundle has no application package for this
+  architecture" error could never fire before, so the install failed later with 0x80073CFD.
+
 ## [0.4.7] - 2026-10-27
 
 ### Fixed
