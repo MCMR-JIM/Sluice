@@ -62,7 +62,7 @@ internal static class AnalyzeCommand
             return Task.FromResult(0);
         }
 
-        var architecture = WindowsArchitecture.Normalize(arguments.Get("arch") ?? WindowsArchitecture.Current);
+        var architecture = OptionValues.Architecture(arguments);
         foreach (var analysis in analyses)
         {
             Console.WriteLine($"{analysis.FileName}");

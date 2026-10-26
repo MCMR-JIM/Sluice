@@ -18,7 +18,7 @@ internal static class DownloadCommand
         }
 
         var reference = arguments.Positionals[0];
-        var architecture = WindowsArchitecture.Normalize(arguments.Get("arch") ?? WindowsArchitecture.Current);
+        var architecture = OptionValues.Architecture(arguments);
         var locale = arguments.Get("locale") ?? Defaults.Locale;
         var directory = arguments.Get("dir") ?? Path.Combine(Environment.CurrentDirectory, "downloads");
         var dependenciesOnly = arguments.Has("deps-only") || arguments.Has("dependencies-only");

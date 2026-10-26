@@ -23,7 +23,7 @@ internal static class InstallCommand
             Console.Error.WriteLine("error: install needs a Store URL, a product id or a folder of packages (--dir)");
             return 2;
         }
-        var architecture = WindowsArchitecture.Normalize(arguments.Get("arch") ?? WindowsArchitecture.Current);
+        var architecture = OptionValues.Architecture(arguments);
         var locale = arguments.Get("locale") ?? Defaults.Locale;
         var directory = arguments.Get("dir");
         var dryRun = arguments.Has("dry-run");
