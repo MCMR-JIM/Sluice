@@ -8,6 +8,14 @@ public static class WindowsArchitecture
     /// <summary>The architecture of the machine this process runs on.</summary>
     public static string Current => Normalize(RuntimeInformation.OSArchitecture.ToString());
 
+    /// <summary>Architectures a plan or a download can target, in the order they are worth naming.</summary>
+    public static IReadOnlyList<string> Targetable { get; } = ["x64", "x86", "arm64", "arm"];
+
+    /// <summary>True when the text names an architecture the tool can target.</summary>
+    /// <param name="value">Architecture name as typed, in any of the accepted shapes.</param>
+    public static bool IsTargetable(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && Targetable.Contains(Normalize(value), StringComparer.Ordinal);
+
     /// <summary>Maps .NET or catalog architecture names onto manifest names.</summary>
     /// <param name="value">Architecture name in any of the shapes the codebase receives.</param>
     /// <returns>One of <c>x86</c>, <c>x64</c>, <c>arm</c>, <c>arm64</c>, <c>neutral</c>, or the lowercased input.</returns>

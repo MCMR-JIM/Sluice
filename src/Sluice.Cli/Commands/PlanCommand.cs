@@ -32,7 +32,7 @@ internal static class PlanCommand
         var plan = await planner.CreatePlanAsync(
             files,
             new InstallPlannerOptions(
-                arguments.Get("arch") ?? WindowsArchitecture.Current,
+                OptionValues.Architecture(arguments),
                 arguments.Get("locale")),
             CancellationToken.None).ConfigureAwait(false);
 

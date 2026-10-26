@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* Tables line up when a cell holds Chinese. Column widths were measured in UTF-16 units, so a path such
+  as `D:\下载\…` counted as half its visible width and pushed every following column out of place; the
+  printer measures terminal cells now, counting East Asian characters and emoji as two.
+* `--arch x46` is rejected as a typing error (exit code 2, naming the values that exist) instead of
+  travelling into a selection that matched nothing and being reported as a product problem.
+
 ## [0.4.13] - 2026-10-27
 
 ### Fixed
