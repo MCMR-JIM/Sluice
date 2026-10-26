@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.32] - 2026-10-27
+
+### Fixed
+
+* The user agent names the version that is running and this project. It said `sluice/0.1` and pointed at a
+  repository that does not exist, so a server log could not tell which build made a request.
+* `--parallel` is clamped once, where the download options live. `download` clamped it to 16 and `install`
+  did not, so `--parallel 500` queued 500 files for one command and 16 for the other; the manual says the
+  range now.
+* The window shows the progress of the whole download. A run reports per file and three files are usually in
+  flight, so the bar followed whichever file reported last: it jumped to 100% as one finished and fell back
+  as the next started.
+* The window announces the skipped flag when a plan step state changes. `IsSkipped` was the one flag the
+  state setter forgot, so a step the run never reached kept the look it had before.
+* The window keeps the install failure detail through a language change. It was written next to the result
+  recipe instead of into it, so the HRESULT meaning was replaced by the generic sentence.
+
 ## [0.4.31] - 2026-10-27
 
 ### Fixed
