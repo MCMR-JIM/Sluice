@@ -117,7 +117,24 @@ internal static class InstallCommand
             }
         }
 
-        var files = PackageFileLocator.Resolve(directory);
+        var found = PackageFileLocator.Resolve(directory);
+
+        // A folder can hold more than one product's downloads. The manifest written when the packages
+        // arrived says which of them belong together, so planning follows it instead of whatever happens
+        // to be the biggest application package in the folder.
+        var folderSelection = await DownloadManifest
+            .SelectAsync(directory, found, CancellationToken.None)
+            .ConfigureAwait(false);
+        var files = folderSelection.Files;
+
+        if (folderSelection.Missing.Count > 0 && !json)
+        {
+            Console.WriteLine(
+                $"Note: {folderSelection.Missing.Count} package(s) named by the manifest are missing from "
+                + $"'{directory}': {string.Join(", ", folderSelection.Missing)}");
+            Console.WriteLine();
+        }
+
         if (files.Count == 0)
         {
             var reason = $"no package files in '{directory}'; run 'sluice download ... --dir {directory}' first";
