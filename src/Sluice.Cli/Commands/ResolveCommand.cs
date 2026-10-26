@@ -11,8 +11,11 @@ internal static class ResolveCommand
         var arguments = CommandLineArguments.Parse(args);
         if (arguments.Positionals.Count == 0)
         {
-            Console.Error.WriteLine("error: resolve needs a Store URL or product id");
-            return 2;
+            return Program.Fail(
+                arguments.Has("json"),
+                "resolve needs a Store URL or product id",
+                "invalid-arguments",
+                2);
         }
 
         var reference = arguments.Positionals[0];

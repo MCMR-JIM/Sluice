@@ -11,16 +11,22 @@ internal static class AnalyzeCommand
         var arguments = CommandLineArguments.Parse(args);
         if (arguments.Positionals.Count == 0)
         {
-            Console.Error.WriteLine("error: analyze needs a package file or a folder");
-            return Task.FromResult(2);
+            return Task.FromResult(Program.Fail(
+                arguments.Has("json"),
+                "analyze needs a package file or a folder",
+                "invalid-arguments",
+                2));
         }
 
         var path = arguments.Positionals[0];
         var files = PackageFileLocator.Resolve(path);
         if (files.Count == 0)
         {
-            Console.Error.WriteLine($"error: no package files found in '{path}'");
-            return Task.FromResult(1);
+            return Task.FromResult(Program.Fail(
+                arguments.Has("json"),
+                $"no package files found in '{path}'",
+                "no-packages",
+                1));
         }
 
         var analyses = new List<PackageAnalysis>();

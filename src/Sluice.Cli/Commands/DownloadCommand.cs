@@ -13,8 +13,11 @@ internal static class DownloadCommand
         var arguments = CommandLineArguments.Parse(args);
         if (arguments.Positionals.Count == 0)
         {
-            Console.Error.WriteLine("error: download needs a Store URL or product id");
-            return 2;
+            return Program.Fail(
+                arguments.Has("json"),
+                "download needs a Store URL or product id",
+                "invalid-arguments",
+                2);
         }
 
         var reference = arguments.Positionals[0];

@@ -17,23 +17,30 @@ internal static class InstallCommand
     public static async Task<int> RunAsync(string[] args)
     {
         var arguments = CommandLineArguments.Parse(args);
+        var json = arguments.Has("json");
         var reference = arguments.Positionals.Count > 0 ? arguments.Positionals[0] : arguments.Get("dir");
         if (string.IsNullOrWhiteSpace(reference))
         {
-            Console.Error.WriteLine("error: install needs a Store URL, a product id or a folder of packages (--dir)");
-            return 2;
+            return Program.Fail(
+                json,
+                "install needs a Store URL, a product id or a folder of packages (--dir)",
+                "invalid-arguments",
+                2);
         }
+
         var architecture = OptionValues.Architecture(arguments);
         var locale = arguments.Get("locale") ?? Defaults.Locale;
         var directory = arguments.Get("dir");
         var dryRun = arguments.Has("dry-run");
-        var json = arguments.Has("json");
         var fromFolderOnly = PackageFileLocator.LooksLikePath(reference) || Directory.Exists(reference);
 
         if (!OperatingSystem.IsWindows() && !dryRun)
         {
-            Console.Error.WriteLine("error: installing needs Windows; use --dry-run to inspect the plan on this platform");
-            return 1;
+            return Program.Fail(
+                json,
+                "installing needs Windows; use --dry-run to inspect the plan on this platform",
+                "wrong-platform",
+                1);
         }
 
         if (fromFolderOnly)
@@ -137,15 +144,11 @@ internal static class InstallCommand
 
         if (files.Count == 0)
         {
-            var reason = $"no package files in '{directory}'; run 'sluice download ... --dir {directory}' first";
-            Console.Error.WriteLine($"error: {reason}");
-
-            if (json)
-            {
-                JsonOutput.Write(new { succeeded = false, error = reason, kind = "no-packages" });
-            }
-
-            return 1;
+            return Program.Fail(
+                json,
+                $"no package files in '{directory}'; run 'sluice download ... --dir {directory}' first",
+                "no-packages",
+                1);
         }
 
         var shell = new PowerShellHost();
@@ -168,7 +171,24 @@ internal static class InstallCommand
 
         if (!plan.CanProceed)
         {
-            Console.Error.WriteLine("error: the plan has blocking issues, nothing will be installed");
+            // The blocking issues are the reason, so a JSON caller gets them instead of having to scrape
+            // the plan table it never asked for.
+            const string reason = "the plan has blocking issues, nothing will be installed";
+            Console.Error.WriteLine($"error: {reason}");
+
+            if (json)
+            {
+                JsonOutput.Write(new
+                {
+                    succeeded = false,
+                    error = reason,
+                    kind = "plan-blocked",
+                    blockingIssues = plan.Issues
+                        .Where(issue => issue.Severity == PlanIssueSeverity.Error)
+                        .Select(issue => issue.Message.ToString()),
+                });
+            }
+
             return 1;
         }
 
@@ -192,10 +212,27 @@ internal static class InstallCommand
             if (consent.Message is null)
             {
                 Console.WriteLine("Cancelled.");
+
+                if (json)
+                {
+                    JsonOutput.Write(new { succeeded = false, error = "cancelled", kind = "cancelled" });
+                }
+
+                return consent.ExitCode;
             }
-            else
+
+            Console.Error.WriteLine(consent.Message);
+
+            if (json)
             {
-                Console.Error.WriteLine(consent.Message);
+                // The message carries its own "error: " prefix for the terminal; the document carries the
+                // reason itself.
+                JsonOutput.Write(new
+                {
+                    succeeded = false,
+                    error = consent.Message.Replace("error: ", string.Empty, StringComparison.Ordinal),
+                    kind = "consent-required",
+                });
             }
 
             return consent.ExitCode;
