@@ -42,6 +42,11 @@ internal static class AnalyzeCommand
             analyses.Add(analysis);
         }
 
+        // Read before the JSON branch: it used to be read after it, so `analyze --json --arch x46` was
+        // accepted and ignored while the same mistake in the text output exited 2, and `--arch` had no
+        // effect on the JSON at all.
+        var architecture = OptionValues.Architecture(arguments);
+
         if (arguments.Has("json"))
         {
             JsonOutput.Write(analyses.Select(analysis => new
@@ -64,11 +69,16 @@ internal static class AnalyzeCommand
                     architecture = child.Architecture,
                     resourceId = child.ResourceId,
                 }),
+                // The child Windows would install for this machine, which is what the text output calls
+                // "for <arch>".
+                forArchitecture = architecture,
+                selectedChild = analysis.Kind == PackageKind.Bundle
+                    ? BundlePackageSelector.Select(analysis, architecture).Application?.FileName
+                    : null,
             }));
             return Task.FromResult(0);
         }
 
-        var architecture = OptionValues.Architecture(arguments);
         foreach (var analysis in analyses)
         {
             Console.WriteLine($"{analysis.FileName}");
