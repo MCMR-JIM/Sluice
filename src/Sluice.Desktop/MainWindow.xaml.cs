@@ -1,5 +1,7 @@
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Threading;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -27,10 +29,12 @@ public partial class MainWindow : Window, IDisposable
         _viewModel = new MainViewModel();
         DataContext = _viewModel;
         _viewModel.Log.CollectionChanged += OnLogChanged;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         Closing += (_, _) => RememberPlacement();
         Closed += (_, _) =>
         {
             _viewModel.Log.CollectionChanged -= OnLogChanged;
+            _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _viewModel.Dispose();
         };
     }
@@ -97,6 +101,23 @@ public partial class MainWindow : Window, IDisposable
         {
             LogScroll.ScrollToEnd();
         }
+    }
+
+    /// <summary>
+    /// Scrolls to the newest line when the log is opened. While the pane is collapsed its scroll viewer
+    /// has no extent, so every ScrollToEnd made earlier did nothing and the tab opened on the oldest
+    /// line, with the newest activity - the reason somebody opens it - off screen.
+    /// </summary>
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainViewModel.ShowLog) || !_viewModel.ShowLog)
+        {
+            return;
+        }
+
+        // The pane becomes visible in this frame; scrolling before the layout has measured it would be
+        // the same no-op, so the scroll is queued behind the layout pass.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() => LogScroll.ScrollToEnd()));
     }
 
     public void Dispose()

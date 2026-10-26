@@ -46,11 +46,20 @@ public sealed class PackageDownloader : IDisposable
         options ??= DownloadOptions.Default;
         Directory.CreateDirectory(directory);
 
-        EnsureRoom(packages, directory);
+        // The delivery service can list the same file under two category entries, and --all-arch adds
+        // resources that share a name across architectures. Downloading such a file twice means two
+        // writers on one .part file, which fails the second one for a reason that has nothing to do with
+        // the network, so the batch keeps one entry per destination file name.
+        var distinct = packages
+            .GroupBy(package => FileNameSanitizer.Sanitize(package.Package.ReadableFileName), StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
+
+        EnsureRoom(distinct, directory);
 
         var results = new System.Collections.Concurrent.ConcurrentBag<DownloadResult>();
         await Parallel.ForEachAsync(
-            packages,
+            distinct,
             new ParallelOptions
             {
                 MaxDegreeOfParallelism = Math.Max(1, options.MaxParallelism),
