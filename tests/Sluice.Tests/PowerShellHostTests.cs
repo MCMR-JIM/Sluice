@@ -26,7 +26,14 @@ public sealed class PowerShellHostTests
             var run = host.RunAsync(script, cancellation.Token);
 
             var childPid = await ReadMarkerAsync(marker).ConfigureAwait(true);
-            Assert.True(childPid > 0, "the child PowerShell never reported its process id");
+            if (childPid == 0)
+            {
+                // Say why instead of "never reported": a cold runner can take a while to start
+                // PowerShell, and a genuinely broken host has to be told apart from a slow machine.
+                cancellation.Cancel();
+                var completed = await run.ConfigureAwait(true);
+                Assert.Fail($"the child PowerShell never reported its process id (exit {completed.ExitCode})");
+            }
 
             // The run is in the middle of a long sleep when the caller cancels, which is exactly the
             // shape of a cancelled install.
@@ -45,7 +52,9 @@ public sealed class PowerShellHostTests
 
     private static async Task<int> ReadMarkerAsync(string path)
     {
-        for (var attempt = 0; attempt < 120; attempt++)
+        // Generous on purpose: the point is that cancellation kills the child, not how fast a cold
+        // runner can start PowerShell. A CI runner under load took longer than twelve seconds once.
+        for (var attempt = 0; attempt < 600; attempt++)
         {
             if (File.Exists(path))
             {
