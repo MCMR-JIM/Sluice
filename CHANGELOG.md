@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.31] - 2026-10-27
+
+### Fixed
+
+* A dry run names the role of every package correctly. The table and its JSON answered "framework or main",
+  so a resource package - neither of the two - was printed as the application itself.
+* Four remedy strings no longer advise `sluice install --register`. There is no such option: `install` has
+  `--no-register`, which turns the fallback off, and the command line rejects options it does not take, so
+  following the advice exited 2. A new test keeps every switch the error catalogue, the message templates
+  and the window quote honest.
+* The loose-file registration fallback is no longer attempted for a bundle. It unpacks the file looking for
+  an `AppxManifest.xml`, and a bundle holds a bundle manifest plus child packages instead: the run unpacked
+  hundreds of megabytes, failed, and its own message replaced the Windows error the operator needed.
+* `analyze --json` validates and uses `--arch`. It was read after the JSON branch, so a misspelled
+  architecture produced a document and exit 0 while the text output exited 2, and the bundle selection the
+  option controls was missing from the document. The JSON now carries `forArchitecture` and `selectedChild`.
+
 ## [0.4.30] - 2026-10-27
 
 ### Fixed
