@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The planner only skips a framework when the installed copy is built for the target architecture.
+  An x86 framework sitting on an x64 machine used to count as "already installed", so the plan
+  omitted the x64 package and the main install failed with 0x80073CF3 - a code whose own explanation
+  blames a missing framework.
+
 ## [0.4.4] - 2026-10-27
 
 ### Fixed

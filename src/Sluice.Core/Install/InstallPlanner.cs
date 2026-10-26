@@ -137,7 +137,9 @@ public sealed class InstallPlanner
 
             if (matches.Count == 0)
             {
-                if (installedMatch is not null && Satisfies(installedMatch, requiredVersion))
+                if (installedMatch is not null
+                    && Satisfies(installedMatch, requiredVersion)
+                    && SatisfiesArchitecture(installedMatch, targetArchitecture))
                 {
                     issues.Add(new PlanIssue(
                         PlanIssueSeverity.Info,
@@ -157,6 +159,7 @@ public sealed class InstallPlanner
             var chosenVersion = ParseVersion(chosen.Identity!.Version);
             if (installedMatch is not null
                 && Satisfies(installedMatch, requiredVersion)
+                && SatisfiesArchitecture(installedMatch, targetArchitecture)
                 && (chosenVersion is null || installedMatch.GetVersion() >= chosenVersion))
             {
                 issues.Add(new PlanIssue(
@@ -295,6 +298,26 @@ public sealed class InstallPlanner
 
     private static Version? ParseVersion(string? value) =>
         System.Version.TryParse(value, out var parsed) ? parsed : null;
+
+    /// <summary>
+    /// True when an installed package can stand in for a dependency on this target. A framework is
+    /// loaded by the architecture of the app, so a differently built copy is not a substitute even
+    /// where Windows would happily run it under emulation - skipping on that basis produced main
+    /// installs that failed with 0x80073CF3 while the log said the framework was already there.
+    /// </summary>
+    /// <param name="installed">Installed package from the inventory.</param>
+    /// <param name="targetArchitecture">Architecture the plan is built for.</param>
+    private static bool SatisfiesArchitecture(InstalledPackage installed, string targetArchitecture)
+    {
+        var architecture = WindowsArchitecture.Normalize(installed.Architecture);
+        if (architecture.Length == 0 || string.Equals(architecture, "neutral", StringComparison.Ordinal))
+        {
+            // An inventory that does not report the architecture cannot rule the copy out.
+            return true;
+        }
+
+        return string.Equals(architecture, WindowsArchitecture.Normalize(targetArchitecture), StringComparison.Ordinal);
+    }
 
     private static bool Satisfies(InstalledPackage installed, Version? required) =>
         required is null || installed.GetVersion() >= required;

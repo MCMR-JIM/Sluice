@@ -134,6 +134,36 @@ public sealed class InstallPlannerTests : IDisposable
         Assert.Contains(plan.Issues, issue => issue.Message.Text.Contains("not required", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task InstallsTheFrameworkForTheTargetArchitectureWhenOnlyAnotherIsInstalled()
+    {
+        // An x86 copy of the same framework is installed. An x64 app loads the x64 framework, so
+        // skipping the x64 package here produced a main install that failed with 0x80073CF3 - a code
+        // whose own explanation blames a missing framework.
+        var framework = CreateFramework("Microsoft.VCLibs.140.00", "14.0.33728.0", "x64");
+        var app = CreateApp("Contoso.Notes", "2.0.0.0", "x64", ("Microsoft.VCLibs.140.00", "14.0.30035.0"));
+        var inventory = new FakeInventory(
+            new InstalledPackage("Microsoft.VCLibs.140.00", "14.0.33728.0", "x86", "Ok", "full", true));
+
+        var plan = await new InstallPlanner(inventory).CreatePlanAsync([framework, app], new InstallPlannerOptions("x64"));
+
+        var step = Assert.Single(plan.Steps, candidate => candidate.Kind == InstallStepKind.InstallFramework);
+        Assert.Equal("x64", step.Architecture);
+    }
+
+    [Fact]
+    public async Task SkipsAFrameworkOnlyWhenTheInstalledCopyHasTheTargetArchitecture()
+    {
+        var framework = CreateFramework("Microsoft.VCLibs.140.00", "14.0.33728.0", "x64");
+        var app = CreateApp("Contoso.Notes", "2.0.0.0", "x64", ("Microsoft.VCLibs.140.00", "14.0.30035.0"));
+        var inventory = new FakeInventory(
+            new InstalledPackage("Microsoft.VCLibs.140.00", "14.0.33728.0", "x64", "Ok", "full", true));
+
+        var plan = await new InstallPlanner(inventory).CreatePlanAsync([framework, app], new InstallPlannerOptions("x64"));
+
+        Assert.DoesNotContain(plan.Steps, candidate => candidate.Kind == InstallStepKind.InstallFramework);
+    }
+
     private string CreateFramework(string name, string version, string architecture) =>
         PackageFixtureBuilder.CreateAppPackage(
             _directory,
