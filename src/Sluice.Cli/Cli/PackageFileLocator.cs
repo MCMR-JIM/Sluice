@@ -27,8 +27,39 @@ internal static class PackageFileLocator
         throw new SluiceException($"'{path}' is neither an existing file nor a directory.");
     }
 
-    /// <summary>True when the argument looks like an existing path rather than a Store reference.</summary>
+    /// <summary>True when the argument looks like a path rather than a Store reference.</summary>
     /// <param name="value">Candidate argument.</param>
-    public static bool LooksLikePath(string value) =>
-        File.Exists(value) || Directory.Exists(value) || value.Contains(Path.DirectorySeparatorChar);
+    /// <remarks>
+    /// Both separators are looked for and a value that names a scheme is never a path. The check used to
+    /// compare against <see cref="Path.DirectorySeparatorChar"/>, which is <c>/</c> on Linux and macOS:
+    /// every Store link contains one, so <c>install --dry-run &lt;url&gt;</c> treated the link as a folder
+    /// and stopped with "is neither an existing file nor a directory" on those platforms - the exact form
+    /// the manual recommends for machines that cannot install.
+    /// </remarks>
+    public static bool LooksLikePath(string value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+
+        if (File.Exists(value) || Directory.Exists(value))
+        {
+            return true;
+        }
+
+        if (NamesAScheme(value))
+        {
+            return false;
+        }
+
+        return value.Contains('\\') || value.Contains('/');
+    }
+
+    /// <summary>True when the text starts with <c>scheme://</c>.</summary>
+    /// <param name="value">Candidate text.</param>
+    private static bool NamesAScheme(string value)
+    {
+        var separator = value.IndexOf("://", StringComparison.Ordinal);
+        return separator > 0
+            && value[..separator].All(character =>
+                char.IsAsciiLetterOrDigit(character) || character is '+' or '-' or '.');
+    }
 }
