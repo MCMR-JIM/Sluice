@@ -34,6 +34,23 @@ public sealed class StoreUrlParserTests
     }
 
     [Fact]
+    public void TrimsHintsFromADeepLinkLikeItTrimsThemFromAWebLink()
+    {
+        // A pasted deep link can carry escaped spaces. The web form trimmed the hints; the deep link form
+        // did not, so " CN " travelled into the catalog request, which answered 400 for a market that
+        // looks perfectly fine to the person who pasted it.
+        Assert.True(StoreUrlParser.TryParse(
+            "ms-windows-store://pdp/?ProductId=9NKSQGP7F2NH&market=%20CN%20&hl=%20zh-CN%20",
+            out var request,
+            out var error));
+
+        Assert.Null(error);
+        Assert.Equal("9NKSQGP7F2NH", request.ProductId);
+        Assert.Equal("CN", request.Market);
+        Assert.Equal("zh-CN", request.Locale);
+    }
+
+    [Fact]
     public void ReadsLocaleAndMarketHintsFromQuery()
     {
         Assert.True(StoreUrlParser.TryParse(
