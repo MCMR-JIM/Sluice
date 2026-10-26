@@ -144,6 +144,20 @@ internal static class PackageFixtureBuilder
         return path;
     }
 
+    /// <summary>Creates a container whose manifest is not valid XML, to test the error path.</summary>
+    /// <param name="directory">Folder to write into.</param>
+    /// <param name="fileName">File name of the package.</param>
+    public static string CreateMalformedPackage(string directory, string fileName)
+    {
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, fileName);
+
+        using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
+        WriteEntry(archive, "AppxManifest.xml", "<Package><Identity Name=\"Contoso.Broken\"");
+        WriteEntry(archive, "AppxBlockMap.xml", "<BlockMap />");
+        return path;
+    }
+
     public static string CreatePlainZip(string directory, string fileName)
     {
         Directory.CreateDirectory(directory);

@@ -120,7 +120,14 @@ internal static class InstallCommand
         var files = PackageFileLocator.Resolve(directory);
         if (files.Count == 0)
         {
-            Console.Error.WriteLine($"error: no package files in '{directory}'; run 'sluice download ... --dir {directory}' first");
+            var reason = $"no package files in '{directory}'; run 'sluice download ... --dir {directory}' first";
+            Console.Error.WriteLine($"error: {reason}");
+
+            if (json)
+            {
+                JsonOutput.Write(new { succeeded = false, error = reason, kind = "no-packages" });
+            }
+
             return 1;
         }
 
