@@ -55,7 +55,7 @@ internal static class PlanCommand
             files,
             new InstallPlannerOptions(
                 OptionValues.Architecture(arguments),
-                arguments.Get("locale")),
+                OptionValues.Locale(arguments)),
             CancellationToken.None).ConfigureAwait(false);
 
         if (arguments.Has("json"))

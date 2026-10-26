@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Sluice.Cli.Commands;
 using Sluice.Tests.Support;
 using Xunit;
@@ -13,9 +12,6 @@ namespace Sluice.Tests;
 /// </summary>
 public sealed class CliFailureDocumentTests
 {
-    /// <summary>Serialises the console redirection: <see cref="Console"/> is process wide.</summary>
-    private static readonly SemaphoreSlim ConsoleGate = new(1, 1);
-
     [Theory]
     [InlineData("resolve")]
     [InlineData("download")]
@@ -24,9 +20,10 @@ public sealed class CliFailureDocumentTests
     [InlineData("install")]
     public async Task AMissingArgumentStillAnswersWithADocument(string command)
     {
-        var (exitCode, document) = await Capture(() => Run(command, ["--json"]));
+        var run = await CliRunner.RunAsync(() => Run(command, ["--json"]));
+        var document = CliRunner.ReadDocument(run.StandardOutput);
 
-        Assert.Equal(2, exitCode);
+        Assert.Equal(2, run.ExitCode);
         Assert.False(document.GetProperty("succeeded").GetBoolean());
         Assert.Equal("invalid-arguments", document.GetProperty("kind").GetString());
         Assert.False(string.IsNullOrWhiteSpace(document.GetProperty("error").GetString()));
@@ -42,9 +39,10 @@ public sealed class CliFailureDocumentTests
 
         try
         {
-            var (exitCode, document) = await Capture(() => Run(command, [folder, "--json"]));
+            var run = await CliRunner.RunAsync(() => Run(command, [folder, "--json"]));
+            var document = CliRunner.ReadDocument(run.StandardOutput);
 
-            Assert.Equal(1, exitCode);
+            Assert.Equal(1, run.ExitCode);
             Assert.False(document.GetProperty("succeeded").GetBoolean());
             Assert.Equal("no-packages", document.GetProperty("kind").GetString());
         }
@@ -69,9 +67,10 @@ public sealed class CliFailureDocumentTests
                 "Contoso.Notes",
                 dependencies: [("Contoso.Framework", "1.0.0.0")]);
 
-            var (exitCode, document) = await Capture(() => InstallCommand.RunAsync([folder, "--dry-run", "--json"]));
+            var run = await CliRunner.RunAsync(() => InstallCommand.RunAsync([folder, "--dry-run", "--json"]));
+            var document = CliRunner.ReadDocument(run.StandardOutput);
 
-            Assert.Equal(1, exitCode);
+            Assert.Equal(1, run.ExitCode);
             Assert.False(document.GetProperty("succeeded").GetBoolean());
             Assert.Equal("plan-blocked", document.GetProperty("kind").GetString());
 
@@ -100,42 +99,4 @@ public sealed class CliFailureDocumentTests
         "install" => InstallCommand.RunAsync(args),
         _ => throw new ArgumentOutOfRangeException(nameof(command), command, "unknown command"),
     };
-
-    /// <summary>Runs a command with the console captured and returns what it wrote as a document.</summary>
-    /// <param name="run">Command to run.</param>
-    private static async Task<(int ExitCode, JsonElement Document)> Capture(Func<Task<int>> run)
-    {
-        ArgumentNullException.ThrowIfNull(run);
-
-        await ConsoleGate.WaitAsync().ConfigureAwait(false);
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
-        var output = new StringWriter();
-
-        try
-        {
-            Console.SetOut(output);
-            Console.SetError(new StringWriter());
-            var exitCode = await run().ConfigureAwait(false);
-            return (exitCode, ReadDocument(output.ToString()));
-        }
-        finally
-        {
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-            ConsoleGate.Release();
-        }
-    }
-
-    private static JsonElement ReadDocument(string stdout)
-    {
-        var start = stdout.IndexOf('{', StringComparison.Ordinal);
-        var end = stdout.LastIndexOf('}');
-        Assert.True(
-            start >= 0 && end > start,
-            $"standard output carried no JSON document. It said: '{stdout.Trim()}'");
-
-        using var document = JsonDocument.Parse(stdout[start..(end + 1)]);
-        return document.RootElement.Clone();
-    }
 }

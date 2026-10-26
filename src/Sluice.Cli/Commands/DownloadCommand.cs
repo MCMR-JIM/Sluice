@@ -22,7 +22,7 @@ internal static class DownloadCommand
 
         var reference = arguments.Positionals[0];
         var architecture = OptionValues.Architecture(arguments);
-        var locale = arguments.Get("locale") ?? Defaults.Locale;
+        var locale = OptionValues.Locale(arguments);
         var directory = arguments.Get("dir") ?? Path.Combine(Environment.CurrentDirectory, "downloads");
         var dependenciesOnly = arguments.Has("deps-only") || arguments.Has("dependencies-only");
         var json = arguments.Has("json");
