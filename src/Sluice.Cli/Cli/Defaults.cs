@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Sluice.Cli.Cli;
 
 /// <summary>Values the CLI uses when the operator does not supply one.</summary>
@@ -9,8 +7,5 @@ internal static class Defaults
     /// Locale used for resource packages: the Windows display language, so a Chinese machine gets
     /// Chinese resources without extra flags.
     /// </summary>
-    public static string Locale =>
-        string.IsNullOrWhiteSpace(CultureInfo.CurrentUICulture.Name)
-            ? "en-US"
-            : CultureInfo.CurrentUICulture.Name;
+    public static string Locale => Store.LocaleTag.Default;
 }

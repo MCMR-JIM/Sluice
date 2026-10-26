@@ -158,7 +158,11 @@ public static class PackageSelector
             return true;
         }
 
-        return string.Equals(resourceId.Split('-')[0], locale.Split('-')[0], StringComparison.OrdinalIgnoreCase);
+        // The tag is normalised here as well as on the command line, because a front end can hand over
+        // whatever a person typed: zh_CN splits into one part and matched nothing, so the resource
+        // packages were dropped while the run reported success.
+        var normalized = Store.LocaleTag.Normalize(locale) ?? locale;
+        return string.Equals(resourceId.Split('-')[0], normalized.Split('-')[0], StringComparison.OrdinalIgnoreCase);
     }
 
     private static PackageIdentifier Parse(WuPackage package) =>

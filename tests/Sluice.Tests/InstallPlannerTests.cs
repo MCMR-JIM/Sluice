@@ -211,6 +211,22 @@ public sealed class InstallPlannerTests : IDisposable
     }
 
     [Fact]
+    public async Task KeepsTheResourcePackageWhenTheTagIsTypedWithAnUnderscore()
+    {
+        // The same free text field feeds the plan: zh_CN split into one part, no resource package matched,
+        // and the plan installed the application alone - successfully, and without the resources.
+        var app = CreateApp("Contoso.Notes", "2.0.0.0", "x64");
+        var resource = PackageFixtureBuilder.CreateAppPackage(
+            _directory, "Contoso.Notes_2.0.0.0_neutral_zh-CN.appx", "Contoso.Notes", "2.0.0.0", "neutral", "zh-CN", false, true, 0);
+
+        var plan = await new InstallPlanner().CreatePlanAsync(
+            [app, resource],
+            new InstallPlannerOptions("x64", "zh_CN"));
+
+        Assert.Contains(plan.Steps, step => step.Kind == InstallStepKind.InstallResource);
+    }
+
+    [Fact]
     public async Task WarnsWhenOnlyADifferentlyBuiltApplicationIsAvailable()
     {
         var arm64 = PackageFixtureBuilder.CreateAppPackage(
