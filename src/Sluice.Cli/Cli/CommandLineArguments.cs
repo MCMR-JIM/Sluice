@@ -96,4 +96,18 @@ public sealed class CommandLineArguments
     /// <param name="fallback">Value returned when the option is missing or unparsable.</param>
     public int GetInt32(string name, int fallback) =>
         int.TryParse(Get(name), out var parsed) ? parsed : fallback;
+
+    /// <summary>
+    /// Lists the options that were supplied but are not in <paramref name="accepted"/>. A misspelled
+    /// switch used to be accepted and ignored, so the command quietly did something else than asked.
+    /// </summary>
+    /// <param name="accepted">Option names the command understands, without leading dashes.</param>
+    /// <returns>Supplied names that are not accepted, in the order they were typed.</returns>
+    public IReadOnlyList<string> FindUnaccepted(IEnumerable<string> accepted)
+    {
+        ArgumentNullException.ThrowIfNull(accepted);
+
+        var known = new HashSet<string>(accepted, StringComparer.OrdinalIgnoreCase);
+        return _options.Keys.Where(name => !known.Contains(name)).ToList();
+    }
 }

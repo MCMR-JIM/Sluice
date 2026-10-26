@@ -34,6 +34,19 @@ internal static class Program
             return ShowHelp([command]);
         }
 
+        if (CommandCatalog.Find(command) is { } manual)
+        {
+            var unaccepted = CommandArguments(rest).FindUnaccepted(CommandCatalog.AcceptedOptionNames(manual));
+            if (unaccepted.Count > 0)
+            {
+                // A misspelled switch used to be accepted and ignored: the command ran with its
+                // defaults while the caller believed the option had been applied.
+                Console.Error.WriteLine($"error: {manual.Name} does not take '--{unaccepted[0]}'");
+                Console.Error.WriteLine($"       run 'Sluice help {manual.Name}' for the options it does take");
+                return 2;
+            }
+        }
+
         try
         {
             return command switch
@@ -63,7 +76,23 @@ internal static class Program
             Console.Error.WriteLine($"error: network failure ({ex.Message})");
             return 1;
         }
+        catch (OperationCanceledException)
+        {
+            // Ctrl+C, or an HttpClient timeout surfacing as a cancellation: neither deserves a stack
+            // trace in a tool that is meant to be scriptable.
+            Console.Error.WriteLine("error: cancelled");
+            return 1;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Console.Error.WriteLine($"error: {ex.Message}");
+            return 1;
+        }
     }
+
+    /// <summary>Parses the arguments of a command the way the command itself will.</summary>
+    /// <param name="rest">Arguments following the command name.</param>
+    private static CommandLineArguments CommandArguments(string[] rest) => CommandLineArguments.Parse(rest);
 
     private static int ShowHelp(string[] arguments)
     {

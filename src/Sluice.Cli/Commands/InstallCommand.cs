@@ -65,6 +65,15 @@ internal static class InstallCommand
                 Console.WriteLine();
             }
 
+            if (dryRun)
+            {
+                // The manual says --dry-run touches nothing, and it used to download every package and
+                // write the manifest before printing the plan. The plan can only be built from files on
+                // disk, so a dry run from a Store reference reports the selection instead.
+                WriteDryRun(resolution, selection, architecture, locale, directory!, arguments.Has("all-deps"), json);
+                return 0;
+            }
+
             using var downloader = new PackageDownloader();
             var downloadOptions = new DownloadOptions(MaxParallelism: arguments.GetInt32("parallel", 3));
             var downloaded = new List<DownloadResult>();
@@ -228,6 +237,71 @@ internal static class InstallCommand
         }
 
         Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Reports what a real run would fetch, without resolving file URLs or writing anything.
+    /// </summary>
+    /// <param name="resolution">Resolved product.</param>
+    /// <param name="selection">Packages the selection picked.</param>
+    /// <param name="architecture">Target architecture.</param>
+    /// <param name="locale">Target locale.</param>
+    /// <param name="directory">Folder a real run would download into.</param>
+    /// <param name="allDependencies">True when every candidate dependency would be fetched.</param>
+    /// <param name="json">True when the caller asked for JSON.</param>
+    private static void WriteDryRun(
+        PackageResolution resolution,
+        PackageSelection selection,
+        string architecture,
+        string locale,
+        string directory,
+        bool allDependencies,
+        bool json)
+    {
+        var candidates = new List<ResolvedPackage>(selection.Main);
+        candidates.AddRange(selection.Dependencies);
+        candidates.AddRange(selection.Resources);
+
+        if (json)
+        {
+            JsonOutput.Write(new
+            {
+                dryRun = true,
+                product = new { resolution.Product.ProductId, resolution.Product.Title },
+                architecture,
+                locale,
+                directory,
+                allDependencies,
+                packages = candidates.Select(package => new
+                {
+                    file = package.Package.ReadableFileName,
+                    architecture = package.Package.Architecture, role = package.Package.IsFramework ? "framework" : "main",
+                    size = package.Package.SizeInBytes,
+                    downloadable = package.IsDownloadable,
+                }),
+            });
+
+            return;
+        }
+
+        TablePrinter.Print(
+            ["ROLE", "FILE", "ARCH", "SIZE"],
+            candidates
+                .Select(package => (IReadOnlyList<string>)
+                [
+                    package.Package.IsFramework ? "framework" : "main",
+                    package.Package.ReadableFileName,
+                    package.Package.Architecture ?? "neutral",
+                    TablePrinter.FormatSize(package.Package.SizeInBytes),
+                ])
+                .ToList());
+
+        Console.WriteLine();
+        Console.WriteLine(
+            $"Dry run: nothing was downloaded and nothing was written. A real run would fetch {candidates.Count} "
+            + $"candidate package(s) into {directory} "
+            + (allDependencies ? "(every candidate, because of --all-deps)" : "(only the dependencies the manifest declares)")
+            + ", then plan and install them.");
     }
 
     private static void WriteOutcome(InstallOutcome outcome)

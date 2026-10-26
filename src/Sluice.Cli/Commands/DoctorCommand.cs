@@ -15,8 +15,10 @@ internal static class DoctorCommand
 
         if (arguments.Has("json"))
         {
+            // The exit code has to describe the machine, not the output format: a scripted caller used
+            // to see 0 for a machine that cannot deploy packages while the text output said 3.
             JsonOutput.Write(report);
-            return 0;
+            return report.Warnings.Count == 0 ? 0 : 3;
         }
 
         Console.WriteLine("Environment");
