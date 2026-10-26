@@ -12,6 +12,10 @@ All notable changes to this project are documented here. The format follows
   `%LOCALAPPDATA%\sluice\registered` instead of the temp folder, because the registration points into
   that folder and a temp cleaner deleting it breaks an app Windows still lists as installed. A failed
   attempt now removes its own files, where before every retry left a few hundred megabytes behind.
+* A download only retries failures that can clear up by themselves. A full disk, a path that cannot
+  exist or a file the process may not write used to be retried three times with six seconds of
+  sleeping before failing with "after 3 attempts"; they are now reported at once, with the reason the
+  operating system gave in the message instead of buried in an inner exception.
 
 ## [0.4.8] - 2026-10-27
 
