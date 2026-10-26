@@ -28,7 +28,7 @@ whether the tool retries automatically.
 | `0x80073CF9` | ERROR_DEPLOYMENT_FAILED | The deployment service could not complete | none | Start `AppXSvc` and `StateRepository`, then `wsreset.exe` or a DISM repair |
 | `0x80073D02` | ERROR_PACKAGES_IN_USE | A package being replaced is in use | retries with `-ForceApplicationShutdown` | Close the app and any process holding it |
 | `0x80073CFB` | ERROR_PACKAGE_ALREADY_INSTALLED | Same or newer version already present | retries with `-ForceUpdateFromAnyVersion` | Uninstall the existing package, or accept it |
-| `0x80073CFF` | ERROR_INSTALL_POLICY_FAILURE | Policy blocked the deployment | none | Settings > System > For developers > Developer Mode, or set `AllowAllTrustedApps` to 1 |
+| `0x80073CFF` | ERROR_INSTALL_POLICY_FAILURE | Policy blocked the deployment | reports the policy setting that has to change first | Settings > System > For developers > Developer Mode, or set `AllowAllTrustedApps` to 1 |
 | `0x800B0100` | TRUST_E_NOSIGNATURE | The package is not signed | none | Use the original signed package; the tool only downloads those |
 | `0x800B0109` | CERT_E_UNTRUSTEDROOT | Signature chains to an untrusted root | none | Trust the signing certificate, or use the Microsoft-signed build |
 | `0x800B010A` | CERT_E_CHAINING | Invalid certificate chain | none | Verify the digest, then download again |
@@ -102,6 +102,11 @@ The tool compares `Get-AppxPackage -Name <identity>` with the plan and treats an
 failure. If it happens anyway, the deployment went to a different user (try `--all-users` with
 elevation) or was rolled back. Event Viewer > Applications and Services Logs > Microsoft > Windows >
 AppXDeployment-Server holds the activity id printed in the error detail.
+
+If the check itself could not run - the inventory query failed rather than answering - the run is
+reported as **unverified** instead: the steps succeeded, and the command line prints `Unverified:` with
+the reason while `--json` sets `succeeded` false only for the deployment, `verified` false. That is a
+different problem from a missing package, and it usually fixes itself by running the check again.
 
 ## Diagnostics worth running
 

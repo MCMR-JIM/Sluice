@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+* The troubleshooting page now says that a policy failure is reported with the setting that has to change,
+  rather than claiming no remedy exists, and it explains the **unverified** outcome for a check that could
+  not run - a different problem from a missing package, and one the page did not know about.
+* A new test keeps that table honest: every error the tool can explain has to appear in it with the name
+  the tool prints, and the table may not list codes the tool cannot explain.
+
 ## [0.4.25] - 2026-10-27
 
 ### Fixed
