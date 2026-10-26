@@ -10,6 +10,9 @@ public sealed class AppxErrorCatalogTests
     [InlineData("80073CF3", 0x80073CF3u)]
     [InlineData("2147958003", 0x80073CF3u)]
     [InlineData("-2147024891", 0x80070005u)]
+    // Eight digits without a letter: hex, because no decimal HRESULT starts that high.
+    [InlineData("80070005", 0x80070005u)]
+    [InlineData("80073CF9", 0x80073CF9u)]
     public void ParsesHResultsInEveryShapeWindowsProduces(string text, uint expected)
     {
         Assert.True(AppxErrorCatalog.TryParse(text, out var code));
